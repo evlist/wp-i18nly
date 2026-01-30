@@ -8,7 +8,7 @@ The primary goal of **I18nly** is to abstract the technical complexity of the st
 The traditional workflow—moving from **Source Code** to **.pot**, then **.po**, and finally to compiled **.mo** and **.json** files—is handled automatically. From a user or translator's perspective, the focus remains on the content. The management of specific file formats and naming conventions (such as MD5 hashes for JavaScript translations) is managed entirely by the plugin's internal logic.
 
 ### 🧬 Origins
-This project is the successor to **i18n-404-tools**.
+This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp-i18n-404-tools)**.
 
 > [!NOTE]
 > **On the name:** The "404" in the previous project referred to the "missing tools" in the WordPress ecosystem's i18n dashboard (the missing link), rather than missing files or server errors. **I18nly** builds upon that foundation, shifting from a diagnostic utility to a comprehensive workflow agent.
