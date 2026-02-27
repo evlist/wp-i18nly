@@ -80,6 +80,9 @@ For this repository setup, SPDX metadata in PHP files can be placed in file docb
 
 ## 6) Devcontainer / Graft Rules (Important)
 
+This repository uses `evlist/codespaces-grafting` for Codespace provisioning and workflow scaffolding.
+This context is important when interpreting `.devcontainer/` behavior and CI/ZIP workflow conventions.
+
 Do **not** customize managed files in `.devcontainer/` unless they are local override files.
 
 - Avoid modifying managed files such as `.devcontainer/.cs_env` directly.
@@ -114,6 +117,26 @@ Current selected CI suites in local override are oriented to standards/licensing
 4. Implement async job orchestration for extract/reload/save pipeline.
 5. Add build/export integration (POT/PO/MO/JSON) using WP i18n/gettext classes.
 6. Add admin-visible job status/logging and robust error reporting.
+
+## 8.1) Testing Strategy (Agreed)
+
+Unit tests should be added incrementally during implementation (not postponed to the end).
+
+Goal:
+
+- catch regressions early,
+- keep behavior stable while refactoring,
+- ensure each new feature ships with corresponding test coverage.
+
+Practical approach:
+
+- add tests next to each new service or workflow step,
+- prioritize deterministic tests for business rules and state transitions,
+- run focused tests first, then broader checks (PHPCS/CI suites).
+
+Note on front-end testing:
+
+- add JavaScript unit tests when/if front-end logic becomes significantly stateful or complex.
 
 ## 9) Session Safety Checklist for Future Runs
 
