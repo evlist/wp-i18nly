@@ -1,0 +1,257 @@
+# SPDX-FileCopyrightText: 2025, 2026 Eric van der Vlist <vdv@dyomedea.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later OR MIT
+
+name: CI
+
+on:
+  # Runtime configuration via GitHub variables (Settings > Secrets and variables > Variables)
+  # - WORKFLOWS_CI_ENABLED: "true" or "false"
+  # - WORKFLOWS_CI_BRANCHES: "main,develop" (comma-separated branches, runtime filter)
+  # - WORKFLOWS_CI_PLUGIN_DIR: "plugins-src/hello-world" (relative path)
+  # - WORKFLOWS_CI_TESTS: "phpunit,wpcs,wpcheck,reuse" (comma-separated test suites)
+  
+  push:
+  pull_request:
+
+env:
+  # Configuration sourced from repository variables (Settings > Secrets and variables > Variables)
+  WORKFLOWS_CI_ENABLED_VAR: ${{ vars.WORKFLOWS_CI_ENABLED || '' }}
+  WORKFLOWS_CI_BRANCHES_VAR: ${{ vars.WORKFLOWS_CI_BRANCHES || '' }}
+  WORKFLOWS_CI_PLUGIN_DIR_VAR: ${{ vars.WORKFLOWS_CI_PLUGIN_DIR || '' }}
+  WORKFLOWS_CI_TESTS_VAR: ${{ vars.WORKFLOWS_CI_TESTS || '' }}
+  WORKFLOWS_CI_PHP_VERSION_VAR: ${{ vars.WORKFLOWS_CI_PHP_VERSION || '' }}
+
+jobs:
+  # Gate: Skip entire workflow if CI is disabled
+  check-enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+      branch_allowed: ${{ steps.check.outputs.branch_allowed }}
+      plugin_dir: ${{ steps.check.outputs.plugin_dir }}
+      tests_to_run: ${{ steps.check.outputs.tests_to_run }}
+      php_version: ${{ steps.check.outputs.php_version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          load_dotenv_file() {
+            local file="$1"
+            local line key value first_char last_char
+
+            while IFS= read -r line || [ -n "$line" ]; do
+              line="${line%$'\r'}"
+              [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+              if [[ "$line" == export\ * ]]; then
+                line="${line#export }"
+              fi
+
+              [[ "$line" == *=* ]] || continue
+
+              key="${line%%=*}"
+              value="${line#*=}"
+
+              key="${key#"${key%%[![:space:]]*}"}"
+              key="${key%"${key##*[![:space:]]}"}"
+              value="${value#"${value%%[![:space:]]*}"}"
+              value="${value%"${value##*[![:space:]]}"}"
+
+              if [ "${#value}" -ge 2 ]; then
+                first_char="${value:0:1}"
+                last_char="${value: -1}"
+                if { [ "$first_char" = '"' ] && [ "$last_char" = '"' ]; } || { [ "$first_char" = "'" ] && [ "$last_char" = "'" ]; }; then
+                  value="${value:1:${#value}-2}"
+                fi
+              fi
+
+              export "$key=$value"
+            done < "$file"
+          }
+
+          if [ -f .devcontainer/sbin/merge-env.sh ]; then
+            bash .devcontainer/sbin/merge-env.sh || true
+          fi
+
+          if [ -f .devcontainer/tmp/.cs_env.merged ]; then
+            load_dotenv_file .devcontainer/tmp/.cs_env.merged
+          fi
+
+          ci_enabled="${WORKFLOWS_CI_ENABLED_VAR:-${WORKFLOWS_CI_ENABLED:-true}}"
+          branches_cfg="${WORKFLOWS_CI_BRANCHES_VAR:-${WORKFLOWS_CI_BRANCHES:-main}}"
+          plugin_dir="${WORKFLOWS_CI_PLUGIN_DIR_VAR:-${WORKFLOWS_CI_PLUGIN_DIR:-plugins-src/hello-world}}"
+          tests_to_run="${WORKFLOWS_CI_TESTS_VAR:-${WORKFLOWS_CI_TESTS:-phpunit,wpcs,wpcheck,reuse}}"
+          php_version="${WORKFLOWS_CI_PHP_VERSION_VAR:-${WORKFLOWS_CI_PHP_VERSION:-8.0}}"
+
+          event_name="${{ github.event_name }}"
+          current_branch="${{ github.ref_name }}"
+          if [ "$event_name" = "pull_request" ]; then
+            current_branch="${{ github.base_ref }}"
+          fi
+
+          normalize_csv() {
+            local input="$1"
+            printf '%s' "$input" | tr -d ' ' 
+          }
+
+          matches_branch() {
+            local branch="$1"
+            local patterns
+            patterns="$(normalize_csv "$2")"
+            [ -z "$patterns" ] && patterns="main"
+
+            IFS=',' read -r -a parts <<< "$patterns"
+            for pattern in "${parts[@]}"; do
+              [ -z "$pattern" ] && continue
+              if [[ "$branch" == $pattern ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          if [ "$ci_enabled" = "true" ] && matches_branch "$current_branch" "$branches_cfg"; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "branch_allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=$ci_enabled" >> "$GITHUB_OUTPUT"
+            echo "branch_allowed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "plugin_dir=$plugin_dir" >> "$GITHUB_OUTPUT"
+          echo "tests_to_run=$tests_to_run" >> "$GITHUB_OUTPUT"
+          echo "php_version=$php_version" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: check-enabled
+    if: needs.check-enabled.outputs.enabled == 'true' && needs.check-enabled.outputs.branch_allowed == 'true'
+    runs-on: ubuntu-latest
+    
+    services:
+      mariadb:
+        image: mariadb:10.5
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Verify plugin directory exists
+        run: |
+          if [ ! -d "${{ needs.check-enabled.outputs.plugin_dir }}" ]; then
+            echo "❌ Error: Plugin directory not found: ${{ needs.check-enabled.outputs.plugin_dir }}"
+            exit 1
+          fi
+          echo "✓ Plugin directory found: ${{ needs.check-enabled.outputs.plugin_dir }}"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ needs.check-enabled.outputs.php_version }}
+          extensions: mysqli, pdo_mysql, zip, xml
+          tools: composer, phpunit, phpcs
+
+      - name: Install WP-CLI
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'wpcheck')
+        run: |
+          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+
+      - name: Install dependencies
+        run: |
+          cd ${{ needs.check-enabled.outputs.plugin_dir }}
+          if [ -f composer.json ]; then
+            composer install --no-interaction
+          else
+            echo "⚠ No composer.json found in plugin directory"
+          fi
+
+      - name: Install REUSE tool
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'reuse')
+        run: |
+          python3 -m pip install --user --upgrade reuse
+
+      - name: Install WordPress Coding Standards (WPCS)
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'phpcs') || contains(needs.check-enabled.outputs.tests_to_run, 'wpcs')
+        run: |
+          composer global config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --no-interaction --no-progress --with-all-dependencies \
+            dealerdirect/phpcodesniffer-composer-installer:^1.1 \
+            wp-coding-standards/wpcs:^3.0 \
+            phpcsstandards/phpcsutils:^1.1 \
+            phpcsstandards/phpcsextra:^1.2
+          phpcs -i
+
+      - name: Run PHPUnit tests
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'phpunit')
+        run: |
+          cd ${{ needs.check-enabled.outputs.plugin_dir }}
+          config_file=""
+          if [ -f phpunit.xml ]; then
+            config_file="phpunit.xml"
+          elif [ -f phpunit.xml.dist ]; then
+            config_file="phpunit.xml.dist"
+          fi
+
+          if [ -n "$config_file" ]; then
+            echo "Using PHPUnit config: $config_file"
+            phpunit --configuration "$config_file"
+          else
+            echo "⚠ No phpunit.xml or phpunit.xml.dist found, skipping PHPUnit tests"
+          fi
+
+      - name: Run PHP CodeSniffer (phpcs/wpcs)
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'phpcs') || contains(needs.check-enabled.outputs.tests_to_run, 'wpcs')
+        run: |
+          if command -v phpcs &> /dev/null; then
+            phpcs --standard=.vscode/phpcs.xml .
+          else
+            echo "⚠ phpcs not found, skipping PHP CodeSniffer"
+          fi
+
+      - name: Run WordPress Plugin Check (wpcheck)
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'wpcheck')
+        run: |
+          set -euo pipefail
+
+          plugin_dir="${{ needs.check-enabled.outputs.plugin_dir }}"
+          plugin_slug="$(basename "$plugin_dir")"
+          wp_root="$RUNNER_TEMP/wordpress"
+
+          wp core download --path="$wp_root" --quiet
+          wp config create --path="$wp_root" --dbname=wordpress --dbuser=root --dbpass=root --dbhost=127.0.0.1 --skip-check --quiet
+          wp core install --path="$wp_root" --url=http://localhost --title="CI" --admin_user=admin --admin_password=admin --admin_email=admin@example.com --skip-email --quiet
+
+          wp plugin install plugin-check --activate --path="$wp_root" --quiet
+          mkdir -p "$wp_root/wp-content/plugins/$plugin_slug"
+          cp -a "$GITHUB_WORKSPACE/$plugin_dir/." "$wp_root/wp-content/plugins/$plugin_slug/"
+          wp plugin activate "$plugin_slug" --path="$wp_root" --quiet
+          wp plugin check "$plugin_slug" --path="$wp_root"
+
+      - name: Run REUSE lint
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'reuse')
+        run: |
+          ~/.local/bin/reuse lint
+
+      - name: Run custom lint script
+        if: contains(needs.check-enabled.outputs.tests_to_run, 'lint')
+        run: |
+          cd ${{ needs.check-enabled.outputs.plugin_dir }}
+          if [ -f scripts/lint.sh ]; then
+            bash scripts/lint.sh
+          else
+            echo "⚠ No scripts/lint.sh found"
+          fi

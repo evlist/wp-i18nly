@@ -1,0 +1,34 @@
+{
+  "name": "Codespaces Grafting (LAMP/WP oriented)",
+  "dockerFile": "Dockerfile",
+  "remoteUser": "vscode",
+  "forwardPorts": [80],
+  "initializeCommand": ".devcontainer/sbin/merge-env.sh",
+  "runArgs": ["--env-file", ".devcontainer/tmp/.cs_env.merged"],
+  "postCreateCommand": ".devcontainer/sbin/bootstrap.sh",
+  "postStartCommand": ".devcontainer/sbin/start.sh",
+  "postAttachCommand": ".devcontainer/sbin/start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.codespaces",
+        "GitHub.copilot",
+        "mads-hartmann.bash-ide-vscode",
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "valeryanm.vscode-phpsab",
+        "neilbrayfield.php-docblocker",
+        "johnbillion.vscode-wordpress-hooks",    // optional: WP hooks IntelliSense
+        "ms-azuretools.vscode-docker"            // Microsoft Docker (Container Tools)
+      ],
+      "settings": {
+        "files.associations": {
+          "*.php": "php",
+          "*.inc": "php",
+          "*.module": "php"
+        },
+        "php.validate.executablePath": "/usr/bin/php"
+      }
+    }
+  }
+}

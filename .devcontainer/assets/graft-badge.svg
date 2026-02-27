@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later OR MIT -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="142" height="20" role="img" aria-label="uses: cs-grafting">
+  <title>uses: cs-grafting</title>
+  <defs>
+    <linearGradient id="s" x2="0" y2="100%">
+      <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+      <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+    <clipPath id="r">
+      <rect width="142" height="20" rx="3" fill="#fff"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="41" height="20" fill="#555"/>
+    <rect x="41" width="101" height="20" fill="#76ce32"/>
+    <rect width="142" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
+    <!-- Icon section -->
+    <image x="5" y="3" width="14" height="14" xlink:href="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNjQgNjQiIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48c3R5bGU+LmJvb2t7ZmlsbDojMjE3NTlifS5ib29rLXNwaW5le2ZpbGw6IzFhNWE3OH0uc2Npb257ZmlsbDojNzZjZTMyfS5zY2lvbi1sZWF2ZXN7ZmlsbDojZmZmfTwvc3R5bGU+PC9kZWZzPjxyZWN0IGNsYXNzPSJib29rIiB4PSI4IiB5PSIyMCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjM4IiByeD0iMiIvPjxyZWN0IGNsYXNzPSJib29rLXNwaW5lIiB4PSI4IiB5PSIyMCIgd2lkdGg9IjgiIGhlaWdodD0iMzgiIHJ4PSIyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzIsOCkiPjxwYXRoIGNsYXNzPSJzY2lvbiIgZD0iTSAtOCwwIEggOCBWIDMyIEwgMCwyNiAtOCwzMiBaIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCw2KSI+PGVsbGlwc2UgY2xhc3M9InNjaW9uLWxlYXZlcyIgY3g9Ii02IiBjeT0iMCIgcng9IjYiIHJ5PSI4Ii8+PGVsbGlwc2UgY2xhc3M9InNjaW9uLWxlYXZlcyIgY3g9IjYiIGN5PSIwIiByeD0iNiIgcnk9IjgiLz48ZWxsaXBzZSBjbGFzcz0ic2Npb24iIGN4PSItNSIgY3k9IjAiIHJ4PSI1IiByeT0iNi41Ii8+PGVsbGlwc2UgY2xhc3M9InNjaW9uIiBjeD0iNSIgY3k9IjAiIHJ4PSI1IiByeT0iNi41Ii8+PC9nPjwvZz48L3N2Zz4="/>
+    <text aria-hidden="true" x="295" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="310">uses</text>
+    <text x="295" y="140" transform="scale(.1)" fill="#fff" textLength="310">uses</text>
+    <text aria-hidden="true" x="905" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="910">cs-grafting</text>
+    <text x="905" y="140" transform="scale(.1)" fill="#fff" textLength="910">cs-grafting</text>
+  </g>
+</svg>

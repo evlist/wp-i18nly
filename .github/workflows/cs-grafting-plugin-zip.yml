@@ -1,0 +1,235 @@
+# SPDX-FileCopyrightText: 2025, 2026 Eric van der Vlist <vdv@dyomedea.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later OR MIT
+
+name: Build Plugin ZIP
+
+permissions:
+  contents: write
+
+on:
+  # Runtime configuration via GitHub variables (Settings > Secrets and variables > Variables):
+  # - WORKFLOWS_ZIP_ENABLED: "true" or "false"
+  # - WORKFLOWS_ZIP_BRANCHES: "main" (comma-separated branches, runtime filter)
+  # - WORKFLOWS_ZIP_PLUGIN_DIR: "plugins-src/hello-world" (path to plugin folder)
+  # - WORKFLOWS_ZIP_EXCLUDE_PATTERNS: ".git*,node_modules/*,.env*,tests/*" (comma-separated)
+  
+  push:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+env:
+  # Configuration from repository variables
+  WORKFLOWS_ZIP_ENABLED_VAR: ${{ vars.WORKFLOWS_ZIP_ENABLED || '' }}
+  WORKFLOWS_ZIP_BRANCHES_VAR: ${{ vars.WORKFLOWS_ZIP_BRANCHES || '' }}
+  WORKFLOWS_ZIP_PLUGIN_DIR_VAR: ${{ vars.WORKFLOWS_ZIP_PLUGIN_DIR || '' }}
+  WORKFLOWS_ZIP_EXCLUDE_PATTERNS_VAR: ${{ vars.WORKFLOWS_ZIP_EXCLUDE_PATTERNS || '' }}
+  WORKFLOWS_ZIP_ARTIFACT_RETENTION_VAR: ${{ vars.WORKFLOWS_ZIP_ARTIFACT_RETENTION || '' }}
+  WORKFLOWS_ZIP_NIGHTLY_TAG_VAR: ${{ vars.WORKFLOWS_ZIP_NIGHTLY_TAG || '' }}
+
+jobs:
+  # Gate: Skip if ZIP building is disabled
+  check-enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+      branch_allowed: ${{ steps.check.outputs.branch_allowed }}
+      plugin_name: ${{ steps.check.outputs.plugin_name }}
+      plugin_dir: ${{ steps.check.outputs.plugin_dir }}
+      exclude_patterns: ${{ steps.check.outputs.exclude_patterns }}
+      artifact_retention: ${{ steps.check.outputs.artifact_retention }}
+      nightly_tag: ${{ steps.check.outputs.nightly_tag }}
+      nightly_tag_effective: ${{ steps.check.outputs.nightly_tag_effective }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          load_dotenv_file() {
+            local file="$1"
+            local line key value first_char last_char
+
+            while IFS= read -r line || [ -n "$line" ]; do
+              line="${line%$'\r'}"
+              [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+              if [[ "$line" == export\ * ]]; then
+                line="${line#export }"
+              fi
+
+              [[ "$line" == *=* ]] || continue
+
+              key="${line%%=*}"
+              value="${line#*=}"
+
+              key="${key#"${key%%[![:space:]]*}"}"
+              key="${key%"${key##*[![:space:]]}"}"
+              value="${value#"${value%%[![:space:]]*}"}"
+              value="${value%"${value##*[![:space:]]}"}"
+
+              if [ "${#value}" -ge 2 ]; then
+                first_char="${value:0:1}"
+                last_char="${value: -1}"
+                if { [ "$first_char" = '"' ] && [ "$last_char" = '"' ]; } || { [ "$first_char" = "'" ] && [ "$last_char" = "'" ]; }; then
+                  value="${value:1:${#value}-2}"
+                fi
+              fi
+
+              export "$key=$value"
+            done < "$file"
+          }
+
+          if [ -f .devcontainer/sbin/merge-env.sh ]; then
+            bash .devcontainer/sbin/merge-env.sh || true
+          fi
+
+          if [ -f .devcontainer/tmp/.cs_env.merged ]; then
+            load_dotenv_file .devcontainer/tmp/.cs_env.merged
+          fi
+
+          zip_enabled="${WORKFLOWS_ZIP_ENABLED_VAR:-${WORKFLOWS_ZIP_ENABLED:-true}}"
+          branches_cfg="${WORKFLOWS_ZIP_BRANCHES_VAR:-${WORKFLOWS_ZIP_BRANCHES:-main}}"
+          plugin_dir="${WORKFLOWS_ZIP_PLUGIN_DIR_VAR:-${WORKFLOWS_ZIP_PLUGIN_DIR:-plugins-src/hello-world}}"
+          exclude_patterns="${WORKFLOWS_ZIP_EXCLUDE_PATTERNS_VAR:-${WORKFLOWS_ZIP_EXCLUDE_PATTERNS:-.git*,node_modules/*,.env*,tests/*}}"
+          artifact_retention="${WORKFLOWS_ZIP_ARTIFACT_RETENTION_VAR:-${WORKFLOWS_ZIP_ARTIFACT_RETENTION:-90}}"
+          nightly_tag="${WORKFLOWS_ZIP_NIGHTLY_TAG_VAR:-${WORKFLOWS_ZIP_NIGHTLY_TAG:-nightly}}"
+          plugin_name="$(basename "$plugin_dir")"
+
+          event_name="${{ github.event_name }}"
+          current_branch="${{ github.ref_name }}"
+
+          normalize_csv() {
+            local input="$1"
+            printf '%s' "$input" | tr -d ' '
+          }
+
+          matches_branch() {
+            local branch="$1"
+            local patterns
+            patterns="$(normalize_csv "$2")"
+            [ -z "$patterns" ] && patterns="main"
+
+            IFS=',' read -r -a parts <<< "$patterns"
+            for pattern in "${parts[@]}"; do
+              [ -z "$pattern" ] && continue
+              if [[ "$branch" == $pattern ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          branch_allowed="false"
+          if [ "$event_name" = "release" ]; then
+            branch_allowed="true"
+          elif matches_branch "$current_branch" "$branches_cfg"; then
+            branch_allowed="true"
+          fi
+
+          branch_slug="$(printf '%s' "$current_branch" | sed -E 's#[^A-Za-z0-9._-]+#-#g')"
+          if [ "$event_name" = "push" ]; then
+            nightly_tag_effective="${nightly_tag}-${branch_slug}"
+          else
+            nightly_tag_effective="$nightly_tag"
+          fi
+
+          echo "enabled=$zip_enabled" >> "$GITHUB_OUTPUT"
+          echo "branch_allowed=$branch_allowed" >> "$GITHUB_OUTPUT"
+          echo "plugin_name=$plugin_name" >> "$GITHUB_OUTPUT"
+          echo "plugin_dir=$plugin_dir" >> "$GITHUB_OUTPUT"
+          echo "exclude_patterns=$exclude_patterns" >> "$GITHUB_OUTPUT"
+          echo "artifact_retention=$artifact_retention" >> "$GITHUB_OUTPUT"
+          echo "nightly_tag=$nightly_tag" >> "$GITHUB_OUTPUT"
+          echo "nightly_tag_effective=$nightly_tag_effective" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check-enabled
+    if: needs.check-enabled.outputs.enabled == 'true' && needs.check-enabled.outputs.branch_allowed == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Verify plugin directory
+        run: |
+          if [ ! -d "${{ needs.check-enabled.outputs.plugin_dir }}" ]; then
+            echo "❌ Error: Plugin directory not found: ${{ needs.check-enabled.outputs.plugin_dir }}"
+            exit 1
+          fi
+          echo "✓ Plugin directory found: ${{ needs.check-enabled.outputs.plugin_dir }}"
+          echo "Contents:"
+          ls -la "${{ needs.check-enabled.outputs.plugin_dir }}/" | head -20
+
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build ZIP artifact
+        run: |
+          plugin_dir="${{ needs.check-enabled.outputs.plugin_dir }}"
+          plugin_name="${{ needs.check-enabled.outputs.plugin_name }}"
+          plugin_parent="$(dirname "$plugin_dir")"
+
+          # Build exclusion list dynamically
+          exclude_args=""
+          IFS=',' read -ra patterns <<< "${{ needs.check-enabled.outputs.exclude_patterns }}"
+          for pattern in "${patterns[@]}"; do
+            exclude_args="${exclude_args} -x \"${plugin_name}/${pattern}\""
+          done
+          
+          # Create ZIP with plugin folder as archive root (e.g. hello-world/)
+          cd "$plugin_parent"
+          eval "zip -r \"$GITHUB_WORKSPACE/dist/${plugin_name}.zip\" \"$plugin_name\" ${exclude_args}"
+          
+          echo "✓ ZIP created successfully"
+          ls -lh "$GITHUB_WORKSPACE"/dist/*.zip
+
+      - name: Upload to workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zip
+          path: dist/*.zip
+          retention-days: ${{ needs.check-enabled.outputs.artifact_retention }}
+
+      - name: Reset nightly release (on push branch)
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ needs.check-enabled.outputs.nightly_tag_effective }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release delete "$tag" --cleanup-tag --yes
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create nightly release (on push branch)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.check-enabled.outputs.nightly_tag_effective }}
+          target_commitish: ${{ github.sha }}
+          name: Nightly Build (${{ github.ref_name }})
+          prerelease: true
+          files: dist/*.zip
+          generate_release_notes: false
+          body: |
+            Automated nightly pre-release for `${{ github.ref_name }}`.
+
+            - Commit: `${{ github.sha }}`
+            - Generated by: `${{ github.workflow }}`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to release assets (on GitHub Release published)
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--
+SPDX-FileCopyrightText: 2025, 2026 Eric van der Vlist <vdv@dyomedea.com>
+
+SPDX-License-Identifier: GPL-3.0-or-later OR MIT
+-->
+<ruleset name="codespaces-grafting PHPCS">
+  <description>Shared PHPCS ruleset for VS Code and CI.</description>
+
+  <file>./</file>
+
+  <arg name="extensions" value="php"/>
+
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <exclude-pattern>*/node_modules/*</exclude-pattern>
+  <exclude-pattern>*/.devcontainer/*</exclude-pattern>
+  <exclude-pattern>*/.vscode/*</exclude-pattern>
+  <exclude-pattern>*/languages/*</exclude-pattern>
+
+  <rule ref="WordPress"/>
+</ruleset>

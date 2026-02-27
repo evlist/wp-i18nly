@@ -1,3 +1,6 @@
+<img src=".devcontainer/assets/icon.svg" width="64" height="64" alt="cs-grafting" />Codespace created with [evlist/codespaces-grafting](https://github.com/evlist/codespaces-grafting) -
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=evlist/wp-i18nly)
+
 # ⚠️ I18nly (Work In Progress)
 
 **I18nly** is a workflow management tool for WordPress internationalization (i18n). It centralizes and automates the detection, extraction, synchronization, and compilation of translation strings.

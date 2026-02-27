@@ -1,0 +1,4 @@
+.vscode/*.bak.*
+.devcontainer/tmp/
+.devcontainer/var/
+.composer/

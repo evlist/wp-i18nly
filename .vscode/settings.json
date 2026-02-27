@@ -1,0 +1,23 @@
+{
+  "files.associations": {
+    "*.php": "php",
+    "*.inc": "php",
+    "*.module": "php"
+  },
+  "intelephense.cs_environment.phpVersion": "8.2",
+  "intelephense.diagnostics.runtime": "8.2",
+  "php.validate.executablePath": "/usr/bin/php",
+  "phpsab.snifferEnable": true,
+  "phpsab.snifferMode": "onType",
+  "phpsab.executablePathCS": "/home/vscode/.composer/vendor/bin/phpcs",
+  "phpsab.executablePathCBF": "/home/vscode/.composer/vendor/bin/phpcbf",
+  "phpsab.autoRulesetSearch": false,
+  "phpsab.standard": ".vscode/phpcs.xml",
+  "phpsab.excludeGlobs": [
+    "**/vendor/**",
+    "**/node_modules/**",
+    "**/.devcontainer/**"
+  ],
+  "phpsab.phpExecutablePath": "/usr/bin/php",
+  "phpsab.debug": true
+}
