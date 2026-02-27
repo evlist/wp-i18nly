@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <img src=".devcontainer/assets/icon.svg" width="64" height="64" alt="cs-grafting" />Codespace created with [evlist/codespaces-grafting](https://github.com/evlist/codespaces-grafting) -
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=evlist/wp-i18nly)
 
@@ -28,6 +31,18 @@ This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp
 * **Dual Composer Setup:**
     * **Root:** Development tools (PHPCS, static analysis).
     * **Plugin-level:** Production dependencies (WP-CLI i18n components).
+
+### 🚀 Current Implementation Status
+The first implementation step is now in place:
+
+* A WordPress plugin bootstrap file exists at `plugin/i18nly.php`.
+* A top-level admin sidebar entry (**I18nly**) is registered.
+* The menu opens an initial blank workspace page intended for future workflow UI.
+
+### 🔧 Local Activation (Development)
+1. Copy or symlink the `plugin/` directory into your WordPress `wp-content/plugins/` directory.
+2. Activate **I18nly** in the WordPress admin Plugins screen.
+3. Open **I18nly** from the left admin sidebar to access the starter workspace screen.
 
 ---
 *I18nly — Streamlining WordPress Localization.*
