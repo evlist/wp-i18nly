@@ -8,6 +8,8 @@
  * @package I18nly
  */
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Handles the I18nly admin workspace page.
  */

@@ -24,12 +24,27 @@ define( 'I18NLY_PLUGIN_FILE', __FILE__ );
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page.php';
 
 /**
- * Loads the plugin text domain.
+ * Loads plugin translations.
+ *
+ * WordPress.org language packs are loaded automatically. This function adds
+ * a fallback for direct distributions by loading MO files from the plugin
+ * `languages` directory when needed.
  *
  * @return void
  */
 function i18nly_load_textdomain() {
-	load_plugin_textdomain( 'i18nly', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	$locale = determine_locale();
+
+	$wp_lang_mofile = WP_LANG_DIR . '/plugins/i18nly-' . $locale . '.mo';
+	if ( is_readable( $wp_lang_mofile ) ) {
+		load_textdomain( 'i18nly', $wp_lang_mofile );
+		return;
+	}
+
+	$plugin_mofile = plugin_dir_path( __FILE__ ) . 'languages/i18nly-' . $locale . '.mo';
+	if ( is_readable( $plugin_mofile ) ) {
+		load_textdomain( 'i18nly', $plugin_mofile );
+	}
 }
 add_action( 'init', 'i18nly_load_textdomain' );
 
