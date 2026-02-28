@@ -36,7 +36,7 @@ jobs:
     outputs:
       enabled: ${{ steps.check.outputs.enabled }}
       branch_allowed: ${{ steps.check.outputs.branch_allowed }}
-      plugin_name: ${{ steps.check.outputs.plugin_name }}
+      plugin_slug: ${{ steps.check.outputs.plugin_slug }}
       plugin_dir: ${{ steps.check.outputs.plugin_dir }}
       exclude_patterns: ${{ steps.check.outputs.exclude_patterns }}
       artifact_retention: ${{ steps.check.outputs.artifact_retention }}
@@ -95,10 +95,10 @@ jobs:
           zip_enabled="${WORKFLOWS_ZIP_ENABLED_VAR:-${WORKFLOWS_ZIP_ENABLED:-true}}"
           branches_cfg="${WORKFLOWS_ZIP_BRANCHES_VAR:-${WORKFLOWS_ZIP_BRANCHES:-main}}"
           plugin_dir="${WORKFLOWS_ZIP_PLUGIN_DIR_VAR:-${WORKFLOWS_ZIP_PLUGIN_DIR:-plugins-src/hello-world}}"
+          plugin_slug="${PLUGIN_SLUG:-$(basename "$plugin_dir")}" 
           exclude_patterns="${WORKFLOWS_ZIP_EXCLUDE_PATTERNS_VAR:-${WORKFLOWS_ZIP_EXCLUDE_PATTERNS:-.git*,node_modules/*,.env*,tests/*}}"
           artifact_retention="${WORKFLOWS_ZIP_ARTIFACT_RETENTION_VAR:-${WORKFLOWS_ZIP_ARTIFACT_RETENTION:-90}}"
           nightly_tag="${WORKFLOWS_ZIP_NIGHTLY_TAG_VAR:-${WORKFLOWS_ZIP_NIGHTLY_TAG:-nightly}}"
-          plugin_name="$(basename "$plugin_dir")"
 
           event_name="${{ github.event_name }}"
           current_branch="${{ github.ref_name }}"
@@ -140,7 +140,7 @@ jobs:
 
           echo "enabled=$zip_enabled" >> "$GITHUB_OUTPUT"
           echo "branch_allowed=$branch_allowed" >> "$GITHUB_OUTPUT"
-          echo "plugin_name=$plugin_name" >> "$GITHUB_OUTPUT"
+          echo "plugin_slug=$plugin_slug" >> "$GITHUB_OUTPUT"
           echo "plugin_dir=$plugin_dir" >> "$GITHUB_OUTPUT"
           echo "exclude_patterns=$exclude_patterns" >> "$GITHUB_OUTPUT"
           echo "artifact_retention=$artifact_retention" >> "$GITHUB_OUTPUT"
@@ -171,21 +171,30 @@ jobs:
       - name: Build ZIP artifact
         run: |
           plugin_dir="${{ needs.check-enabled.outputs.plugin_dir }}"
-          plugin_name="${{ needs.check-enabled.outputs.plugin_name }}"
-          plugin_parent="$(dirname "$plugin_dir")"
+          plugin_slug="${{ needs.check-enabled.outputs.plugin_slug }}"
+          stage_dir="$(mktemp -d)"
+
+          cleanup() {
+            rm -rf "$stage_dir"
+          }
+          trap cleanup EXIT
+
+          mkdir -p "$stage_dir/$plugin_slug"
+          rsync -a "$plugin_dir/" "$stage_dir/$plugin_slug/"
 
           # Build exclusion list dynamically
           exclude_args=""
           IFS=',' read -ra patterns <<< "${{ needs.check-enabled.outputs.exclude_patterns }}"
           for pattern in "${patterns[@]}"; do
-            exclude_args="${exclude_args} -x \"${plugin_name}/${pattern}\""
+            exclude_args="${exclude_args} -x \"${plugin_slug}/${pattern}\""
           done
           
-          # Create ZIP with plugin folder as archive root (e.g. hello-world/)
-          cd "$plugin_parent"
-          eval "zip -r \"$GITHUB_WORKSPACE/dist/${plugin_name}.zip\" \"$plugin_name\" ${exclude_args}"
+          # Create ZIP with plugin slug as archive root (e.g. I18nly/)
+          cd "$stage_dir"
+          eval "zip -r \"$GITHUB_WORKSPACE/dist/${plugin_slug}.zip\" \"$plugin_slug\" ${exclude_args}"
           
           echo "✓ ZIP created successfully"
+          echo "ZIP slug: $plugin_slug"
           ls -lh "$GITHUB_WORKSPACE"/dist/*.zip
 
       - name: Upload to workflow artifacts
