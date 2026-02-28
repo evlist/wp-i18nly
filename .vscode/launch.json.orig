@@ -1,4 +1,7 @@
 {
+  // SPDX-FileCopyrightText: 2025, 2026 Eric van der Vlist <vdv@dyomedea.com>
+  // SPDX-License-Identifier: GPL-3.0-or-later OR MIT
+
   // Static VS Code PHP debug config.
   // NOTE: /var/www is symlinked or bind-mounted to ${workspaceFolder}/.devcontainer/var/www
   // (set up in bootstrap or devcontainer mounts). This single root mapping aligns
