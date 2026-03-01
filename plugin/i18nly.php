@@ -21,18 +21,7 @@ defined( 'ABSPATH' ) || exit;
 define( 'I18NLY_VERSION', '0.1.0' );
 define( 'I18NLY_PLUGIN_FILE', __FILE__ );
 
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-schema.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page.php';
-
-/**
- * Activates the plugin.
- *
- * @return void
- */
-function i18nly_activate() {
-	I18nly_Schema::install( true );
-}
-register_activation_hook( __FILE__, 'i18nly_activate' );
 
 /**
  * Loads plugin translations.
@@ -65,8 +54,6 @@ add_action( 'init', 'i18nly_load_textdomain' );
  * @return void
  */
 function i18nly_bootstrap() {
-	I18nly_Schema::maybe_upgrade();
-
 	$admin_page = new I18nly_Admin_Page();
 	$admin_page->register();
 }
