@@ -36,6 +36,7 @@ Runtime-resolved variables in this workflow:
 - `WORKFLOWS_CI_PLUGIN_DIR`
 - `WORKFLOWS_CI_TESTS`
 - `WORKFLOWS_CI_PHP_VERSION`
+- `WORKFLOWS_CI_PHPUNIT_CONFIG`
 
 | Variable | Default | Purpose | Example |
 |----------|---------|---------|---------|
@@ -44,6 +45,7 @@ Runtime-resolved variables in this workflow:
 | `WORKFLOWS_CI_PLUGIN_DIR` | `plugins-src/hello-world` | Path to plugin directory | `plugins-src/my-plugin` |
 | `WORKFLOWS_CI_TESTS` | `phpunit,phpcs` | Comma-separated test suites to run | `phpunit`, `phpcs`, `lint`, `wpcheck`, `reuse` |
 | `WORKFLOWS_CI_PHP_VERSION` | `8.0` | PHP version for tests | `8.0`, `8.1`, `8.2`, `8.3` |
+| `WORKFLOWS_CI_PHPUNIT_CONFIG` | _(unset)_ | Optional PHPUnit config path (relative to repository root). If set and missing, CI fails. | `phpunit.xml`, `tests/phpunit.xml.dist` |
 
 ### ZIP Build Workflow (`cs-grafting-plugin-zip.yml`)
 
@@ -136,6 +138,7 @@ Example:
 WORKFLOWS_CI_ENABLED=true
 WORKFLOWS_CI_BRANCHES=main,develop
 WORKFLOWS_CI_PLUGIN_DIR=plugins-src/hello-world
+WORKFLOWS_CI_PHPUNIT_CONFIG=phpunit.xml
 
 WORKFLOWS_ZIP_ENABLED=true
 WORKFLOWS_ZIP_BRANCHES=main,release/*
@@ -164,7 +167,7 @@ If the same variable exists in both places, GitHub Variables take precedence.
 3. ✓ Installs WP-CLI (only when `wpcheck` is enabled)
 4. ✓ Installs Composer dependencies (if composer.json exists)
 5. ✓ Runs enabled tests:
-    - **phpunit**: Runs PHPUnit tests (prefers `phpunit.xml`, then `phpunit.xml.dist`)
+    - **phpunit**: Runs PHPUnit tests using `WORKFLOWS_CI_PHPUNIT_CONFIG` when set; otherwise prefers `phpunit.xml`, then `phpunit.xml.dist` in plugin directory
    - **phpcs**: Runs PHP CodeSniffer with WordPress standard
     - **wpcheck**: Runs WordPress.org Plugin Check via WP-CLI (`wp plugin check`)
     - **reuse**: Runs license compliance checks (`reuse lint`)

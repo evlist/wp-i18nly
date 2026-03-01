@@ -70,6 +70,11 @@ WORKFLOWS_ZIP_ENABLED = true
 WORKFLOWS_CI_PHP_VERSION = 8.3
 ```
 
+### Use custom PHPUnit config path
+```
+WORKFLOWS_CI_PHPUNIT_CONFIG = tests/phpunit.xml.dist
+```
+
 ### Custom plugin location
 ```
 WORKFLOWS_CI_PLUGIN_DIR = src/plugins/my-plugin

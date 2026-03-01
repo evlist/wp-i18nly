@@ -10,6 +10,7 @@ on:
   # - WORKFLOWS_CI_BRANCHES: "main,develop" (comma-separated branches, runtime filter)
   # - WORKFLOWS_CI_PLUGIN_DIR: "plugins-src/hello-world" (relative path)
   # - WORKFLOWS_CI_TESTS: "phpunit,wpcs,wpcheck,reuse" (comma-separated test suites)
+  # - WORKFLOWS_CI_PHPUNIT_CONFIG: "phpunit.xml" (optional path relative to repo root)
   
   push:
   pull_request:
@@ -21,6 +22,7 @@ env:
   WORKFLOWS_CI_PLUGIN_DIR_VAR: ${{ vars.WORKFLOWS_CI_PLUGIN_DIR || '' }}
   WORKFLOWS_CI_TESTS_VAR: ${{ vars.WORKFLOWS_CI_TESTS || '' }}
   WORKFLOWS_CI_PHP_VERSION_VAR: ${{ vars.WORKFLOWS_CI_PHP_VERSION || '' }}
+  WORKFLOWS_CI_PHPUNIT_CONFIG_VAR: ${{ vars.WORKFLOWS_CI_PHPUNIT_CONFIG || '' }}
 
 jobs:
   # Gate: Skip entire workflow if CI is disabled
@@ -33,6 +35,7 @@ jobs:
       plugin_slug: ${{ steps.check.outputs.plugin_slug }}
       tests_to_run: ${{ steps.check.outputs.tests_to_run }}
       php_version: ${{ steps.check.outputs.php_version }}
+      phpunit_config: ${{ steps.check.outputs.phpunit_config }}
     steps:
       - uses: actions/checkout@v3
 
@@ -89,6 +92,7 @@ jobs:
           plugin_slug="${PLUGIN_SLUG:-$(basename "$plugin_dir")}" 
           tests_to_run="${WORKFLOWS_CI_TESTS_VAR:-${WORKFLOWS_CI_TESTS:-phpunit,wpcs,wpcheck,reuse}}"
           php_version="${WORKFLOWS_CI_PHP_VERSION_VAR:-${WORKFLOWS_CI_PHP_VERSION:-8.0}}"
+          phpunit_config="${WORKFLOWS_CI_PHPUNIT_CONFIG_VAR:-${WORKFLOWS_CI_PHPUNIT_CONFIG:-}}"
 
           event_name="${{ github.event_name }}"
           current_branch="${{ github.ref_name }}"
@@ -128,6 +132,7 @@ jobs:
           echo "plugin_slug=$plugin_slug" >> "$GITHUB_OUTPUT"
           echo "tests_to_run=$tests_to_run" >> "$GITHUB_OUTPUT"
           echo "php_version=$php_version" >> "$GITHUB_OUTPUT"
+          echo "phpunit_config=$phpunit_config" >> "$GITHUB_OUTPUT"
 
   test:
     needs: check-enabled
@@ -203,7 +208,18 @@ jobs:
         run: |
           cd ${{ needs.check-enabled.outputs.plugin_dir }}
           config_file=""
-          if [ -f phpunit.xml ]; then
+
+          configured_phpunit_config="${{ needs.check-enabled.outputs.phpunit_config }}"
+          if [ -n "$configured_phpunit_config" ]; then
+            if [ -f "$GITHUB_WORKSPACE/$configured_phpunit_config" ]; then
+              config_file="$GITHUB_WORKSPACE/$configured_phpunit_config"
+            elif [ -f "$configured_phpunit_config" ]; then
+              config_file="$configured_phpunit_config"
+            else
+              echo "❌ Configured WORKFLOWS_CI_PHPUNIT_CONFIG not found: $configured_phpunit_config"
+              exit 1
+            fi
+          elif [ -f phpunit.xml ]; then
             config_file="phpunit.xml"
           elif [ -f phpunit.xml.dist ]; then
             config_file="phpunit.xml.dist"

@@ -21,6 +21,7 @@ WORKFLOWS_CI_BRANCHES = main,develop
 WORKFLOWS_CI_PLUGIN_DIR = plugins-src/my-plugin
 WORKFLOWS_CI_TESTS = phpunit,phpcs,wpcheck
 WORKFLOWS_CI_PHP_VERSION = 8.2
+WORKFLOWS_CI_PHPUNIT_CONFIG = phpunit.xml
 
 WORKFLOWS_ZIP_ENABLED = true
 WORKFLOWS_ZIP_BRANCHES = main
@@ -83,6 +84,7 @@ WORKFLOWS_CI_BRANCHES = main,develop,feature/*
 WORKFLOWS_CI_PLUGIN_DIR = plugins-src/my-plugin
 WORKFLOWS_CI_TESTS = phpunit,phpcs,lint,wpcheck,reuse
 WORKFLOWS_CI_PHP_VERSION = 8.3
+WORKFLOWS_CI_PHPUNIT_CONFIG = tests/phpunit.xml.dist
 
 WORKFLOWS_ZIP_ENABLED = false
 ```
@@ -95,6 +97,7 @@ WORKFLOWS_CI_BRANCHES = main
 WORKFLOWS_CI_PLUGIN_DIR = plugins-src/my-plugin
 WORKFLOWS_CI_TESTS = phpunit,phpcs,lint,wpcheck,reuse
 WORKFLOWS_CI_PHP_VERSION = 8.3
+WORKFLOWS_CI_PHPUNIT_CONFIG = phpunit.xml
 
 WORKFLOWS_ZIP_ENABLED = true
 WORKFLOWS_ZIP_BRANCHES = main,release/*
