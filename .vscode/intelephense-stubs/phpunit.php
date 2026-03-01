@@ -46,4 +46,20 @@ abstract class TestCase {
 	 * @return void
 	 */
 	public function assertSame( $expected, $actual, string $message = '' ): void {}
+
+	/**
+	 * @param int         $expectedCount Expected item count.
+	 * @param iterable<mixed>|Countable $haystack Countable value.
+	 * @param string      $message Failure message.
+	 * @return void
+	 */
+	public function assertCount( int $expectedCount, $haystack, string $message = '' ): void {}
+
+	/**
+	 * @param string $needle Needle.
+	 * @param string $haystack Haystack.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertStringNotContainsString( string $needle, string $haystack, string $message = '' ): void {}
 }
