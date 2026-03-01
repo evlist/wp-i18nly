@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<phpunit bootstrap="tests/phpunit/bootstrap.php" colors="true" cacheResult="false">
+  <testsuites>
+    <testsuite name="I18nly Unit Tests">
+      <directory suffix="Test.php">tests/phpunit</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
