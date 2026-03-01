@@ -118,6 +118,122 @@ Current selected CI suites in local override are oriented to standards/licensing
 5. Add build/export integration (POT/PO/MO/JSON) using WP i18n/gettext classes.
 6. Add admin-visible job status/logging and robust error reporting.
 
+## 8.2) MVP Data Schema (Implemented)
+
+An initial schema installer now exists in `plugin/includes/class-i18nly-schema.php`.
+
+Four tables are defined for the MVP:
+
+1. `{$wpdb->prefix}i18nly_translations`
+	- one row per Translation entity identity,
+	- identity key: `(object_type, object_slug, source_locale, target_locale)`,
+	- includes lifecycle metadata (`state`, extraction timestamp, created/updated by, timestamps).
+
+2. `{$wpdb->prefix}i18nly_translation_entries`
+	- one row per source string entry (and its current translation value),
+	- designed for tabular editing and easier source change diffing,
+	- includes status/fuzzy/source hash metadata for synchronization workflows.
+
+3. `{$wpdb->prefix}i18nly_translation_drafts`
+	- stores draft revisions for unsaved/in-progress work,
+	- unique revision key per translation: `(translation_id, revision)`,
+	- includes draft `status`, base/current source fingerprints, `requires_refresh`, and audit metadata.
+
+4. `{$wpdb->prefix}i18nly_translation_entry_history`
+	- stores entry-level change history events,
+	- captures before/after translated values and statuses,
+	- enables auditability and future rollback support.
+
+Column-level reference:
+
+`i18nly_translations`
+
+- `id`: technical primary key.
+- `object_type`: object scope (`plugin`, then later `theme`/`core`).
+- `object_slug`: object identifier in its scope.
+- `source_locale`: source locale code.
+- `target_locale`: target locale code.
+- `translation_status`: translation lifecycle state.
+- `active_draft_revision`: currently active draft revision number.
+- `last_extracted_at`: last source extraction timestamp.
+- `created_by` / `updated_by`: WordPress user IDs.
+- `created_at` / `updated_at`: audit timestamps.
+
+`i18nly_translation_entries`
+
+- `id`: technical primary key.
+- `translation_id`: parent translation ID.
+- `entry_context`: optional gettext context used to disambiguate identical source strings.
+- `entry_source`: source singular string.
+- `entry_source_plural`: source plural string when applicable.
+- `entry_plural_index`: one row per plural slot (`0` is singular slot).
+- `entry_target`: target value for the row plural slot.
+- `entry_status`: entry state (`new`, `translated`, `obsolete`, etc.).
+- `entry_is_fuzzy`: gettext fuzzy flag.
+- `entry_source_references`: source references from extraction (typically file and line hints).
+- `entry_source_signature`: source identity signature used by the current MVP implementation.
+- `created_at` / `updated_at`: audit timestamps.
+
+`i18nly_translation_drafts`
+
+- `id`: technical primary key.
+- `translation_id`: parent translation ID.
+- `revision`: draft revision number.
+- `draft_status`: draft status (`draft`, `saved`, `published`, `stale`, etc.).
+- `baseline_source_signature`: source signature captured when draft baseline was established.
+- `current_source_signature`: latest known source signature for comparison.
+- `requires_source_refresh`: whether the draft should be refreshed from current sources.
+- `source_refresh_reason`: short reason explaining refresh requirement.
+- `notes`: optional internal notes/metadata.
+- `created_by`: WordPress user ID.
+- `created_at` / `updated_at`: audit timestamps.
+
+`i18nly_translation_entry_history`
+
+- `id`: technical primary key.
+- `translation_id`: parent translation ID.
+- `entry_id`: parent entry ID when available.
+- `revision`: draft revision linked to the change.
+- `entry_plural_index`: plural slot impacted by the change.
+- `entry_context` / `entry_source` / `entry_source_plural`: source snapshot used for auditability.
+- `previous_entry_target` / `current_entry_target`: before/after translated value.
+- `previous_entry_status` / `current_entry_status`: before/after entry status.
+- `event_type`: change type (`manual_edit`, `auto_merge`, `source_refresh`, etc.).
+- `changed_by`: WordPress user ID.
+- `changed_at`: change timestamp.
+
+Schema lifecycle:
+
+- tables are recreated on activation for clean test sessions (destructive reset),
+- schema upgrades remain version-gated through `i18nly_db_version` during bootstrap.
+
+Versioning note:
+
+- while the plugin remains in pre-usage test mode, schema version can remain `1.0.0` and tables can be reset between sessions.
+
+## 8.3) Pre-AJAX Backend Layer (Implemented)
+
+A first backend service layer has been added to validate core workflows before introducing AJAX endpoints.
+
+Main classes:
+
+- `plugin/includes/class-i18nly-translation-storage-interface.php`
+- `plugin/includes/class-i18nly-in-memory-translation-storage.php`
+- `plugin/includes/class-i18nly-translation-backend-service.php`
+
+Current scope:
+
+- open/create translation and draft,
+- detect source signature drift and mark drafts for refresh,
+- modify entries and append history events,
+- save and publish draft lifecycle state transitions.
+
+Unit test scaffold:
+
+- `phpunit.xml.dist`
+- `tests/phpunit/bootstrap.php`
+- `tests/phpunit/TranslationBackendServiceTest.php`
+
 ## 8.1) Testing Strategy (Agreed)
 
 Unit tests should be added incrementally during implementation (not postponed to the end).

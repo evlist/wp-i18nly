@@ -8,6 +8,9 @@
     "*.module": "php"
   },
   "intelephense.cs_environment.phpVersion": "8.2",
+  "intelephense.environment.includePaths": [
+    ".vscode/intelephense-stubs"
+  ],
   "intelephense.diagnostics.runtime": "8.2",
   "php.validate.executablePath": "/usr/bin/php",
   "phpsab.snifferEnable": true,
