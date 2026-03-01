@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $i18nly_test_can_manage_options = true;
 $i18nly_test_menu_pages         = array();
 $i18nly_test_submenu_pages      = array();
+$i18nly_test_plugins            = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -38,6 +39,18 @@ function i18nly_test_reset_admin_menu_capture() {
 
 	$i18nly_test_menu_pages    = array();
 	$i18nly_test_submenu_pages = array();
+}
+
+/**
+ * Sets plugin list used by get_plugins test stub.
+ *
+ * @param array<string, array<string, mixed>> $plugins Plugin data keyed by plugin file.
+ * @return void
+ */
+function i18nly_test_set_plugins( array $plugins ) {
+	global $i18nly_test_plugins;
+
+	$i18nly_test_plugins = $plugins;
 }
 
 /**
@@ -103,6 +116,30 @@ if ( ! function_exists( 'esc_attr__' ) ) {
 	function esc_attr__( $text, $domain ) {
 		unset( $domain );
 
+		return (string) $text;
+	}
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+	/**
+	 * Returns escaped attribute string in tests.
+	 *
+	 * @param string $text Text value.
+	 * @return string
+	 */
+	function esc_attr( $text ) {
+		return (string) $text;
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Returns escaped HTML string in tests.
+	 *
+	 * @param string $text Text value.
+	 * @return string
+	 */
+	function esc_html( $text ) {
 		return (string) $text;
 	}
 }
@@ -187,6 +224,19 @@ if ( ! function_exists( 'current_user_can' ) ) {
 		unset( $capability );
 
 		return (bool) $i18nly_test_can_manage_options;
+	}
+}
+
+if ( ! function_exists( 'get_plugins' ) ) {
+	/**
+	 * Returns plugin list from test runtime.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	function get_plugins() {
+		global $i18nly_test_plugins;
+
+		return $i18nly_test_plugins;
 	}
 }
 

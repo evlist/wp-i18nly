@@ -65,6 +65,16 @@ class AdminPageRenderTest extends TestCase {
 	 */
 	public function test_render_add_translation_page_outputs_add_translation_heading() {
 		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php'   => array(
+					'Name' => 'Akismet',
+				),
+				'hello-dolly/hello.php' => array(
+					'Name' => 'Hello Dolly',
+				),
+			)
+		);
 
 		$page = new I18nly_Admin_Page();
 
@@ -75,6 +85,10 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( '<h1>Add translation</h1>', $html );
 		$this->assertStringContainsString( 'id="i18nly-translation-create"', $html );
+		$this->assertStringContainsString( 'id="i18nly-plugin-selector"', $html );
+		$this->assertStringContainsString( '>Select a plugin<', $html );
+		$this->assertStringContainsString( 'value="akismet/akismet.php"', $html );
+		$this->assertStringContainsString( '>Akismet<', $html );
 	}
 
 	/**

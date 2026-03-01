@@ -25,6 +25,32 @@ class I18nly_Admin_Page {
 	private const ADD_MENU_SLUG = 'i18nly-add-translation';
 
 	/**
+	 * Returns installed plugins as options for the selector.
+	 *
+	 * @return array<string, string>
+	 */
+	private function get_plugin_options() {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugins = get_plugins();
+		$options = array();
+
+		foreach ( $plugins as $plugin_file => $plugin_data ) {
+			if ( empty( $plugin_data['Name'] ) ) {
+				continue;
+			}
+
+			$options[ $plugin_file ] = (string) $plugin_data['Name'];
+		}
+
+		asort( $options );
+
+		return $options;
+	}
+
+	/**
 	 * Registers hooks used by the admin page.
 	 *
 	 * @return void
@@ -94,10 +120,30 @@ class I18nly_Admin_Page {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
+
+		$plugin_options = $this->get_plugin_options();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'Add translation', 'i18nly' ); ?></h1>
-			<div id="i18nly-translation-create" aria-live="polite"></div>
+			<div id="i18nly-translation-create" aria-live="polite">
+				<table class="form-table" role="presentation">
+					<tbody>
+						<tr>
+							<th scope="row">
+								<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
+							</th>
+							<td>
+								<select id="i18nly-plugin-selector" name="i18nly_plugin_selector">
+									<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
+									<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
+										<option value="<?php echo esc_attr( $plugin_file ); ?>"><?php echo esc_html( $plugin_name ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 		<?php
 	}
