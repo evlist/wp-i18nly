@@ -58,16 +58,16 @@ class I18nly_Admin_Page {
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'I18nly Workspace', 'i18nly' ); ?></h1>
 			<nav class="i18nly-workspace-menu" aria-label="<?php echo esc_attr__( 'Workspace actions', 'i18nly' ); ?>">
-				<ul>
-					<li>
-						<strong><?php echo esc_html__( 'Translation', 'i18nly' ); ?></strong>
-					</li>
-					<li>
-						<button type="button" class="button button-secondary" id="i18nly-action-new" aria-label="<?php echo esc_attr__( 'Create a new translation', 'i18nly' ); ?>">
-							<?php echo esc_html__( 'New', 'i18nly' ); ?>
-						</button>
-					</li>
-				</ul>
+				<details>
+					<summary><?php echo esc_html__( 'File', 'i18nly' ); ?></summary>
+					<ul>
+						<li>
+							<button type="button" class="button-link" id="i18nly-action-new" aria-label="<?php echo esc_attr__( 'Create a new translation', 'i18nly' ); ?>">
+								<?php echo esc_html__( 'New', 'i18nly' ); ?>
+							</button>
+						</li>
+					</ul>
+				</details>
 			</nav>
 			<div id="i18nly-workspace" class="i18nly-workspace" aria-live="polite"></div>
 		</div>
