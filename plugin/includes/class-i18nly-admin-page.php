@@ -11,13 +11,18 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles the I18nly admin workspace page.
+ * Handles the I18nly admin pages.
  */
 class I18nly_Admin_Page {
 	/**
 	 * The top-level menu slug.
 	 */
-	private const MENU_SLUG = 'i18nly-workspace';
+	private const MENU_SLUG = 'i18nly-translations';
+
+	/**
+	 * The add translation submenu slug.
+	 */
+	private const ADD_MENU_SLUG = 'i18nly-add-translation';
 
 	/**
 	 * Registers hooks used by the admin page.
@@ -29,47 +34,70 @@ class I18nly_Admin_Page {
 	}
 
 	/**
-	 * Registers the top-level admin menu entry.
+	 * Registers the admin menu entries.
 	 *
 	 * @return void
 	 */
 	public function register_menu() {
 		add_menu_page(
-			__( 'I18nly', 'i18nly' ),
-			__( 'I18nly', 'i18nly' ),
+			__( 'Translations', 'i18nly' ),
+			__( 'Translations', 'i18nly' ),
 			'manage_options',
 			self::MENU_SLUG,
-			array( $this, 'render_page' ),
+			array( $this, 'render_all_translations_page' ),
 			'dashicons-translation',
 			58
+		);
+
+		add_submenu_page(
+			self::MENU_SLUG,
+			__( 'All translations', 'i18nly' ),
+			__( 'All translations', 'i18nly' ),
+			'manage_options',
+			self::MENU_SLUG,
+			array( $this, 'render_all_translations_page' )
+		);
+
+		add_submenu_page(
+			self::MENU_SLUG,
+			__( 'Add translation', 'i18nly' ),
+			__( 'Add translation', 'i18nly' ),
+			'manage_options',
+			self::ADD_MENU_SLUG,
+			array( $this, 'render_add_translation_page' )
 		);
 	}
 
 	/**
-	 * Renders the workspace page.
+	 * Renders the all translations page.
 	 *
 	 * @return void
 	 */
-	public function render_page() {
+	public function render_all_translations_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html__( 'I18nly Workspace', 'i18nly' ); ?></h1>
-			<nav class="i18nly-workspace-menu" aria-label="<?php echo esc_attr__( 'Workspace actions', 'i18nly' ); ?>">
-				<details>
-					<summary><?php echo esc_html__( 'File', 'i18nly' ); ?></summary>
-					<ul>
-						<li>
-							<button type="button" class="button-link" id="i18nly-action-new" aria-label="<?php echo esc_attr__( 'Create a new translation', 'i18nly' ); ?>">
-								<?php echo esc_html__( 'New', 'i18nly' ); ?>
-							</button>
-						</li>
-					</ul>
-				</details>
-			</nav>
-			<div id="i18nly-workspace" class="i18nly-workspace" aria-live="polite"></div>
+			<h1><?php echo esc_html__( 'Translations', 'i18nly' ); ?></h1>
+			<div id="i18nly-translations-list" aria-live="polite"></div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the add translation page.
+	 *
+	 * @return void
+	 */
+	public function render_add_translation_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html__( 'Add translation', 'i18nly' ); ?></h1>
+			<div id="i18nly-translation-create" aria-live="polite"></div>
 		</div>
 		<?php
 	}

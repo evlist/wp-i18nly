@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $i18nly_test_can_manage_options = true;
+$i18nly_test_menu_pages         = array();
+$i18nly_test_submenu_pages      = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -24,6 +26,40 @@ function i18nly_test_set_can_manage_options( $can_manage_options ) {
 	global $i18nly_test_can_manage_options;
 
 	$i18nly_test_can_manage_options = (bool) $can_manage_options;
+}
+
+/**
+ * Resets captured admin menu registration calls.
+ *
+ * @return void
+ */
+function i18nly_test_reset_admin_menu_capture() {
+	global $i18nly_test_menu_pages, $i18nly_test_submenu_pages;
+
+	$i18nly_test_menu_pages    = array();
+	$i18nly_test_submenu_pages = array();
+}
+
+/**
+ * Returns captured top-level admin menu calls.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function i18nly_test_get_menu_pages() {
+	global $i18nly_test_menu_pages;
+
+	return $i18nly_test_menu_pages;
+}
+
+/**
+ * Returns captured submenu admin menu calls.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function i18nly_test_get_submenu_pages() {
+	global $i18nly_test_submenu_pages;
+
+	return $i18nly_test_submenu_pages;
 }
 
 if ( ! function_exists( '__' ) ) {
@@ -98,7 +134,43 @@ if ( ! function_exists( 'add_menu_page' ) ) {
 	 * @return void
 	 */
 	function add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position ) {
-		unset( $page_title, $menu_title, $capability, $menu_slug, $callback, $icon_url, $position );
+		global $i18nly_test_menu_pages;
+
+		$i18nly_test_menu_pages[] = array(
+			'page_title' => $page_title,
+			'menu_title' => $menu_title,
+			'capability' => $capability,
+			'menu_slug'  => $menu_slug,
+			'callback'   => $callback,
+			'icon_url'   => $icon_url,
+			'position'   => $position,
+		);
+	}
+}
+
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	/**
+	 * Captures add_submenu_page calls for tests.
+	 *
+	 * @param string   $parent_slug Parent slug.
+	 * @param string   $page_title Page title.
+	 * @param string   $menu_title Menu title.
+	 * @param string   $capability Capability.
+	 * @param string   $menu_slug Menu slug.
+	 * @param callable $callback Callback.
+	 * @return void
+	 */
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback ) {
+		global $i18nly_test_submenu_pages;
+
+		$i18nly_test_submenu_pages[] = array(
+			'parent_slug' => $parent_slug,
+			'page_title'  => $page_title,
+			'menu_title'  => $menu_title,
+			'capability'  => $capability,
+			'menu_slug'   => $menu_slug,
+			'callback'    => $callback,
+		);
 	}
 }
 
