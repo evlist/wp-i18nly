@@ -170,6 +170,18 @@ if ( ! function_exists( 'esc_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_url' ) ) {
+	/**
+	 * Returns escaped URL in tests.
+	 *
+	 * @param string $url URL value.
+	 * @return string
+	 */
+	function esc_url( $url ) {
+		return (string) $url;
+	}
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	/**
 	 * No-op add_action stub.
@@ -253,6 +265,66 @@ if ( ! function_exists( 'current_user_can' ) ) {
 	}
 }
 
+if ( ! function_exists( 'admin_url' ) ) {
+	/**
+	 * Returns a test admin URL.
+	 *
+	 * @param string $path Relative admin path.
+	 * @return string
+	 */
+	function admin_url( $path = '' ) {
+		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'wp_nonce_field' ) ) {
+	/**
+	 * Returns nonce field markup in tests.
+	 *
+	 * @param string $action Nonce action.
+	 * @param string $name Nonce field name.
+	 * @param bool   $referer Whether to add referer field.
+	 * @param bool   $display Whether to display output.
+	 * @return string
+	 */
+	function wp_nonce_field( $action = -1, $name = '_wpnonce', $referer = true, $display = true ) {
+		unset( $referer );
+
+		$html = '<input type="hidden" name="' . (string) $name . '" value="nonce-' . (string) $action . '">';
+
+		if ( $display ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Test stub output.
+			echo $html;
+		}
+
+		return $html;
+	}
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+	/**
+	 * Returns unslashed value in tests.
+	 *
+	 * @param mixed $value Value.
+	 * @return mixed
+	 */
+	function wp_unslash( $value ) {
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'absint' ) ) {
+	/**
+	 * Returns integer absolute value.
+	 *
+	 * @param mixed $value Value.
+	 * @return int
+	 */
+	function absint( $value ) {
+		return abs( (int) $value );
+	}
+}
+
 if ( ! function_exists( 'get_plugins' ) ) {
 	/**
 	 * Returns plugin list from test runtime.
@@ -310,4 +382,5 @@ if ( ! function_exists( 'disabled' ) ) {
 	}
 }
 
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-schema.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';

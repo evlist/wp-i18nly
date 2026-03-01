@@ -32,11 +32,13 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 'Translations', $menus[0]['menu_title'] );
 		$this->assertSame( 'i18nly-translations', $menus[0]['menu_slug'] );
 
-		$this->assertCount( 2, $submenus );
+		$this->assertCount( 3, $submenus );
 		$this->assertSame( 'All translations', $submenus[0]['menu_title'] );
 		$this->assertSame( 'i18nly-translations', $submenus[0]['menu_slug'] );
 		$this->assertSame( 'Add translation', $submenus[1]['menu_title'] );
 		$this->assertSame( 'i18nly-add-translation', $submenus[1]['menu_slug'] );
+		$this->assertSame( 'Edit translation', $submenus[2]['menu_title'] );
+		$this->assertSame( 'i18nly-edit-translation', $submenus[2]['menu_slug'] );
 	}
 
 	/**
@@ -104,6 +106,8 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( '<h1>Add translation</h1>', $html );
 		$this->assertStringContainsString( 'id="i18nly-translation-create"', $html );
+		$this->assertStringContainsString( 'method="post"', $html );
+		$this->assertStringContainsString( 'name="action" value="i18nly_add_translation"', $html );
 		$this->assertStringContainsString( 'id="i18nly-plugin-selector"', $html );
 		$this->assertStringContainsString( '>Select a plugin<', $html );
 		$this->assertStringContainsString( 'value="akismet/akismet.php"', $html );
@@ -116,6 +120,8 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( 'value="de_DE"', $html );
 		$this->assertStringContainsString( '>Deutsch<', $html );
 		$this->assertStringNotContainsString( 'value="en_US"', $html );
+		$this->assertStringContainsString( 'id="i18nly-add-translation-submit"', $html );
+		$this->assertStringContainsString( '>Add<', $html );
 	}
 
 	/**
