@@ -12,10 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/../../' );
 }
 
-$i18nly_test_can_manage_options = true;
-$i18nly_test_menu_pages         = array();
-$i18nly_test_submenu_pages      = array();
-$i18nly_test_plugins            = array();
+$i18nly_test_can_manage_options     = true;
+$i18nly_test_menu_pages             = array();
+$i18nly_test_submenu_pages          = array();
+$i18nly_test_plugins                = array();
+$i18nly_test_available_languages    = array();
+$i18nly_test_available_translations = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -51,6 +53,30 @@ function i18nly_test_set_plugins( array $plugins ) {
 	global $i18nly_test_plugins;
 
 	$i18nly_test_plugins = $plugins;
+}
+
+/**
+ * Sets available languages returned by get_available_languages stub.
+ *
+ * @param array<int, string> $languages Installed locale codes.
+ * @return void
+ */
+function i18nly_test_set_available_languages( array $languages ) {
+	global $i18nly_test_available_languages;
+
+	$i18nly_test_available_languages = $languages;
+}
+
+/**
+ * Sets available translations returned by wp_get_available_translations stub.
+ *
+ * @param array<string, array<string, mixed>> $translations Translation metadata.
+ * @return void
+ */
+function i18nly_test_set_available_translations( array $translations ) {
+	global $i18nly_test_available_translations;
+
+	$i18nly_test_available_translations = $translations;
 }
 
 /**
@@ -237,6 +263,50 @@ if ( ! function_exists( 'get_plugins' ) ) {
 		global $i18nly_test_plugins;
 
 		return $i18nly_test_plugins;
+	}
+}
+
+if ( ! function_exists( 'get_available_languages' ) ) {
+	/**
+	 * Returns available installed languages from test runtime.
+	 *
+	 * @return array<int, string>
+	 */
+	function get_available_languages() {
+		global $i18nly_test_available_languages;
+
+		return $i18nly_test_available_languages;
+	}
+}
+
+if ( ! function_exists( 'wp_get_available_translations' ) ) {
+	/**
+	 * Returns available translations from test runtime.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	function wp_get_available_translations() {
+		global $i18nly_test_available_translations;
+
+		return $i18nly_test_available_translations;
+	}
+}
+
+if ( ! function_exists( 'disabled' ) ) {
+	/**
+	 * Returns disabled attribute in test context.
+	 *
+	 * @param bool $disabled True when option should be disabled.
+	 * @param bool $current Current comparison value.
+	 * @param bool $should_echo Whether to echo the attribute.
+	 * @return string
+	 */
+	function disabled( $disabled, $current = true, $should_echo = true ) {
+		$attribute = ( $disabled === $current ) ? ' disabled="disabled"' : '';
+
+		unset( $should_echo );
+
+		return $attribute;
 	}
 }
 

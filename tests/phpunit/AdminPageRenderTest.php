@@ -75,6 +75,25 @@ class AdminPageRenderTest extends TestCase {
 				),
 			)
 		);
+		i18nly_test_set_available_languages(
+			array(
+				'en_US',
+				'fr_FR',
+			)
+		);
+		i18nly_test_set_available_translations(
+			array(
+				'en_US' => array(
+					'native_name' => 'English (United States)',
+				),
+				'fr_FR' => array(
+					'native_name' => 'Français',
+				),
+				'de_DE' => array(
+					'native_name' => 'Deutsch',
+				),
+			)
+		);
 
 		$page = new I18nly_Admin_Page();
 
@@ -89,6 +108,14 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( '>Select a plugin<', $html );
 		$this->assertStringContainsString( 'value="akismet/akismet.php"', $html );
 		$this->assertStringContainsString( '>Akismet<', $html );
+		$this->assertStringContainsString( 'id="i18nly-target-language-selector"', $html );
+		$this->assertStringContainsString( '>Select a target language<', $html );
+		$this->assertStringContainsString( 'value="fr_FR"', $html );
+		$this->assertStringContainsString( '>Français<', $html );
+		$this->assertStringContainsString( 'disabled="disabled">──────────<', $html );
+		$this->assertStringContainsString( 'value="de_DE"', $html );
+		$this->assertStringContainsString( '>Deutsch<', $html );
+		$this->assertStringNotContainsString( 'value="en_US"', $html );
 	}
 
 	/**

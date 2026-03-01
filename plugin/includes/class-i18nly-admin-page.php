@@ -15,6 +15,11 @@ defined( 'ABSPATH' ) || exit;
  */
 class I18nly_Admin_Page {
 	/**
+	 * Source locale used by the current MVP.
+	 */
+	private const SOURCE_LOCALE = 'en_US';
+
+	/**
 	 * The top-level menu slug.
 	 */
 	private const MENU_SLUG = 'i18nly-translations';
@@ -48,6 +53,97 @@ class I18nly_Admin_Page {
 		asort( $options );
 
 		return $options;
+	}
+
+	/**
+	 * Returns language options for target language selector.
+	 *
+	 * Installed languages are listed first, then a separator, then all
+	 * remaining languages.
+	 *
+	 * @return array<int, array{value: string, label: string, disabled: bool}>
+	 */
+	private function get_target_language_options() {
+		$source_locale     = self::SOURCE_LOCALE;
+		$installed_locales = array();
+		$all_translations  = array();
+		$preferred_options = array();
+		$remaining_options = array();
+		$ordered_options   = array();
+
+		if ( ! function_exists( 'wp_get_available_translations' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/translation-install.php';
+		}
+
+		if ( function_exists( 'get_available_languages' ) ) {
+			$installed_locales = get_available_languages();
+		}
+
+		if ( function_exists( 'wp_get_available_translations' ) ) {
+			$all_translations = wp_get_available_translations();
+		}
+
+		foreach ( $installed_locales as $locale ) {
+			if ( $source_locale === $locale ) {
+				continue;
+			}
+
+			$preferred_options[ $locale ] = $this->get_locale_label( $locale, $all_translations );
+		}
+
+		asort( $preferred_options );
+
+		foreach ( $all_translations as $locale => $translation ) {
+			if ( $source_locale === $locale || isset( $preferred_options[ $locale ] ) ) {
+				continue;
+			}
+
+			unset( $translation );
+			$remaining_options[ $locale ] = $this->get_locale_label( $locale, $all_translations );
+		}
+
+		asort( $remaining_options );
+
+		foreach ( $preferred_options as $locale => $label ) {
+			$ordered_options[] = array(
+				'value'    => (string) $locale,
+				'label'    => (string) $label,
+				'disabled' => false,
+			);
+		}
+
+		if ( ! empty( $preferred_options ) && ! empty( $remaining_options ) ) {
+			$ordered_options[] = array(
+				'value'    => '',
+				'label'    => '──────────',
+				'disabled' => true,
+			);
+		}
+
+		foreach ( $remaining_options as $locale => $label ) {
+			$ordered_options[] = array(
+				'value'    => (string) $locale,
+				'label'    => (string) $label,
+				'disabled' => false,
+			);
+		}
+
+		return $ordered_options;
+	}
+
+	/**
+	 * Returns a human-readable locale label.
+	 *
+	 * @param string                              $locale Locale code.
+	 * @param array<string, array<string, mixed>> $all_translations Available translations.
+	 * @return string
+	 */
+	private function get_locale_label( $locale, array $all_translations ) {
+		if ( isset( $all_translations[ $locale ]['native_name'] ) && '' !== (string) $all_translations[ $locale ]['native_name'] ) {
+			return (string) $all_translations[ $locale ]['native_name'];
+		}
+
+		return (string) $locale;
 	}
 
 	/**
@@ -121,7 +217,8 @@ class I18nly_Admin_Page {
 			return;
 		}
 
-		$plugin_options = $this->get_plugin_options();
+		$plugin_options   = $this->get_plugin_options();
+		$target_languages = $this->get_target_language_options();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'Add translation', 'i18nly' ); ?></h1>
@@ -137,6 +234,19 @@ class I18nly_Admin_Page {
 									<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
 									<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
 										<option value="<?php echo esc_attr( $plugin_file ); ?>"><?php echo esc_html( $plugin_name ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="i18nly-target-language-selector"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></label>
+							</th>
+							<td>
+								<select id="i18nly-target-language-selector" name="i18nly_target_language_selector">
+									<option value=""><?php echo esc_html__( 'Select a target language', 'i18nly' ); ?></option>
+									<?php foreach ( $target_languages as $target_language ) : ?>
+										<option value="<?php echo esc_attr( $target_language['value'] ); ?>"<?php echo disabled( true, (bool) $target_language['disabled'], false ); ?>><?php echo esc_html( $target_language['label'] ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</td>
