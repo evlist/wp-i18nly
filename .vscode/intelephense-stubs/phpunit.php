@@ -56,6 +56,14 @@ abstract class TestCase {
 	public function assertCount( int $expectedCount, $haystack, string $message = '' ): void {}
 
 	/**
+	 * @param array-key $key Key expected to exist.
+	 * @param array<mixed>|ArrayAccess<mixed, mixed> $array Array or ArrayAccess value.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertArrayHasKey( $key, $array, string $message = '' ): void {}
+
+	/**
 	 * @param string $needle Needle.
 	 * @param string $haystack Haystack.
 	 * @param string $message Failure message.
