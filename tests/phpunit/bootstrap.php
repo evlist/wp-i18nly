@@ -771,3 +771,6 @@ if ( ! function_exists( 'selected' ) ) {
 }
 
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-temporary-storage.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-workspace-service.php';
