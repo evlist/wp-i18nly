@@ -176,11 +176,67 @@ class I18nly_Admin_Page {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
+		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
+		add_filter( 'bulk_post_updated_messages', array( $this, 'filter_translation_bulk_updated_messages' ), 10, 2 );
 		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_columns', array( $this, 'filter_translation_list_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_translation_list_column' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_sortable_columns', array( $this, 'filter_translation_sortable_columns' ) );
 		add_action( 'pre_get_posts', array( $this, 'apply_translation_sorting' ) );
+	}
+
+	/**
+	 * Replaces default post update messages for translation posts.
+	 *
+	 * @param array<string, array<int, string>> $messages Current messages.
+	 * @return array<string, array<int, string>>
+	 */
+	public function filter_translation_post_updated_messages( array $messages ) {
+		$messages[ self::POST_TYPE ] = array(
+			0  => '',
+			1  => __( 'Translation updated.', 'i18nly' ),
+			2  => __( 'Custom field updated.', 'i18nly' ),
+			3  => __( 'Custom field deleted.', 'i18nly' ),
+			4  => __( 'Translation updated.', 'i18nly' ),
+			5  => __( 'Translation restored to revision.', 'i18nly' ),
+			6  => __( 'Translation published.', 'i18nly' ),
+			7  => __( 'Translation saved.', 'i18nly' ),
+			8  => __( 'Translation submitted.', 'i18nly' ),
+			9  => __( 'Translation scheduled.', 'i18nly' ),
+			10 => __( 'Translation draft updated.', 'i18nly' ),
+		);
+
+		return $messages;
+	}
+
+	/**
+	 * Replaces default bulk update messages for translation posts.
+	 *
+	 * @param array<string, array<string, string>> $bulk_messages Current bulk messages.
+	 * @param array<string, int>                   $bulk_counts Item counts.
+	 * @return array<string, array<string, string>>
+	 */
+	public function filter_translation_bulk_updated_messages( array $bulk_messages, array $bulk_counts ) {
+		$updated_count   = isset( $bulk_counts['updated'] ) ? (int) $bulk_counts['updated'] : 0;
+		$locked_count    = isset( $bulk_counts['locked'] ) ? (int) $bulk_counts['locked'] : 0;
+		$deleted_count   = isset( $bulk_counts['deleted'] ) ? (int) $bulk_counts['deleted'] : 0;
+		$trashed_count   = isset( $bulk_counts['trashed'] ) ? (int) $bulk_counts['trashed'] : 0;
+		$untrashed_count = isset( $bulk_counts['untrashed'] ) ? (int) $bulk_counts['untrashed'] : 0;
+
+		$bulk_messages[ self::POST_TYPE ] = array(
+			/* translators: %s: Number of translations. */
+			'updated'   => sprintf( _n( '%s translation updated.', '%s translations updated.', $updated_count, 'i18nly' ), number_format_i18n( $updated_count ) ),
+			/* translators: %s: Number of translations. */
+			'locked'    => sprintf( _n( '%s translation not updated, somebody is editing it.', '%s translations not updated, somebody is editing them.', $locked_count, 'i18nly' ), number_format_i18n( $locked_count ) ),
+			/* translators: %s: Number of translations. */
+			'deleted'   => sprintf( _n( '%s translation permanently deleted.', '%s translations permanently deleted.', $deleted_count, 'i18nly' ), number_format_i18n( $deleted_count ) ),
+			/* translators: %s: Number of translations. */
+			'trashed'   => sprintf( _n( '%s translation moved to the Trash.', '%s translations moved to the Trash.', $trashed_count, 'i18nly' ), number_format_i18n( $trashed_count ) ),
+			/* translators: %s: Number of translations. */
+			'untrashed' => sprintf( _n( '%s translation restored from the Trash.', '%s translations restored from the Trash.', $untrashed_count, 'i18nly' ), number_format_i18n( $untrashed_count ) ),
+		);
+
+		return $bulk_messages;
 	}
 
 	/**
