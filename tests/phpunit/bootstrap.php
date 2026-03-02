@@ -12,18 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/../../' );
 }
 
-if ( ! defined( 'ARRAY_A' ) ) {
-	define( 'ARRAY_A', 'ARRAY_A' );
-}
-
-require_once __DIR__ . '/class-i18nly-test-wpdb.php';
-
 $i18nly_test_can_manage_options     = true;
 $i18nly_test_menu_pages             = array();
 $i18nly_test_submenu_pages          = array();
 $i18nly_test_plugins                = array();
 $i18nly_test_available_languages    = array();
 $i18nly_test_available_translations = array();
+$i18nly_test_posts                  = array();
+$i18nly_test_post_meta              = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -86,20 +82,37 @@ function i18nly_test_set_available_translations( array $translations ) {
 }
 
 /**
- * Sets translations returned by wpdb get_results/get_row stubs.
+ * Sets translations returned by post/postmeta test stubs.
  *
  * @param array<int, array<string, mixed>> $translations Translation rows.
  * @return void
  */
 function i18nly_test_set_translations_rows( array $translations ) {
-	global $wpdb;
+	global $i18nly_test_posts, $i18nly_test_post_meta;
 
-	if ( ! $wpdb instanceof I18nly_Test_WPDB ) {
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Test bootstrap provides a wpdb stub.
-		$wpdb = new I18nly_Test_WPDB();
+	$i18nly_test_posts     = array();
+	$i18nly_test_post_meta = array();
+
+	foreach ( $translations as $translation ) {
+		if ( ! isset( $translation['id'] ) ) {
+			continue;
+		}
+
+		$post_id = (int) $translation['id'];
+
+		$i18nly_test_posts[] = (object) array(
+			'ID'            => $post_id,
+			'post_type'     => 'i18nly_translation',
+			'post_status'   => 'publish',
+			'post_title'    => (string) $translation['source_slug'] . ' → ' . (string) $translation['target_language'],
+			'post_date_gmt' => isset( $translation['created_at'] ) ? (string) $translation['created_at'] : '',
+		);
+
+		$i18nly_test_post_meta[ $post_id ] = array(
+			'_i18nly_source_slug'     => (string) $translation['source_slug'],
+			'_i18nly_target_language' => (string) $translation['target_language'],
+		);
 	}
-
-	$wpdb->set_translations( $translations );
 }
 
 /**
@@ -215,6 +228,19 @@ if ( ! function_exists( 'add_action' ) ) {
 	 */
 	function add_action( $hook_name, $callback ) {
 		unset( $hook_name, $callback );
+	}
+}
+
+if ( ! function_exists( 'register_post_type' ) ) {
+	/**
+	 * No-op register_post_type stub.
+	 *
+	 * @param string               $post_type Post type key.
+	 * @param array<string, mixed> $args Post type args.
+	 * @return void
+	 */
+	function register_post_type( $post_type, array $args ) {
+		unset( $post_type, $args );
 	}
 }
 
@@ -352,6 +378,20 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_wp_error' ) ) {
+	/**
+	 * Returns whether a value is a WP_Error.
+	 *
+	 * @param mixed $value Value.
+	 * @return bool
+	 */
+	function is_wp_error( $value ) {
+		unset( $value );
+
+		return false;
+	}
+}
+
 if ( ! function_exists( 'absint' ) ) {
 	/**
 	 * Returns integer absolute value.
@@ -374,6 +414,113 @@ if ( ! function_exists( 'get_plugins' ) ) {
 		global $i18nly_test_plugins;
 
 		return $i18nly_test_plugins;
+	}
+}
+
+if ( ! function_exists( 'get_posts' ) ) {
+	/**
+	 * Returns test posts for get_posts calls.
+	 *
+	 * @param array<string, mixed> $args Query arguments.
+	 * @return array<int, object>
+	 */
+	function get_posts( array $args ) {
+		global $i18nly_test_posts;
+
+		unset( $args );
+
+		return $i18nly_test_posts;
+	}
+}
+
+if ( ! function_exists( 'get_post' ) ) {
+	/**
+	 * Returns one test post by ID.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return object|null
+	 */
+	function get_post( $post_id ) {
+		global $i18nly_test_posts;
+
+		foreach ( $i18nly_test_posts as $post ) {
+			if ( (int) $post->ID === (int) $post_id ) {
+				return $post;
+			}
+		}
+
+		return null;
+	}
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	/**
+	 * Returns test post meta values.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $meta_key Meta key.
+	 * @param bool   $single Single value flag.
+	 * @return mixed
+	 */
+	function get_post_meta( $post_id, $meta_key, $single = false ) {
+		global $i18nly_test_post_meta;
+
+		if ( ! isset( $i18nly_test_post_meta[ $post_id ][ $meta_key ] ) ) {
+			return $single ? '' : array();
+		}
+
+		$meta_value = $i18nly_test_post_meta[ $post_id ][ $meta_key ];
+
+		return $single ? $meta_value : array( $meta_value );
+	}
+}
+
+if ( ! function_exists( 'update_post_meta' ) ) {
+	/**
+	 * Sets test post meta value.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $meta_key Meta key.
+	 * @param mixed  $meta_value Meta value.
+	 * @return bool
+	 */
+	function update_post_meta( $post_id, $meta_key, $meta_value ) {
+		global $i18nly_test_post_meta;
+
+		if ( ! isset( $i18nly_test_post_meta[ $post_id ] ) ) {
+			$i18nly_test_post_meta[ $post_id ] = array();
+		}
+
+		$i18nly_test_post_meta[ $post_id ][ $meta_key ] = $meta_value;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_insert_post' ) ) {
+	/**
+	 * Inserts one test post.
+	 *
+	 * @param array<string, mixed> $postarr Post data.
+	 * @param bool                 $wp_error Whether to return WP_Error on failure.
+	 * @return int
+	 */
+	function wp_insert_post( array $postarr, $wp_error = false ) {
+		global $i18nly_test_posts;
+
+		unset( $wp_error );
+
+		$post_id = count( $i18nly_test_posts ) + 1;
+
+		$i18nly_test_posts[] = (object) array(
+			'ID'            => $post_id,
+			'post_type'     => isset( $postarr['post_type'] ) ? (string) $postarr['post_type'] : 'post',
+			'post_status'   => isset( $postarr['post_status'] ) ? (string) $postarr['post_status'] : 'publish',
+			'post_title'    => isset( $postarr['post_title'] ) ? (string) $postarr['post_title'] : '',
+			'post_date_gmt' => '2026-03-02 00:00:00',
+		);
+
+		return $post_id;
 	}
 }
 
@@ -421,5 +568,4 @@ if ( ! function_exists( 'disabled' ) ) {
 	}
 }
 
-require_once __DIR__ . '/../../plugin/includes/class-i18nly-schema.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';

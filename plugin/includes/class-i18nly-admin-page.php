@@ -20,6 +20,21 @@ class I18nly_Admin_Page {
 	private const ADD_ACTION = 'i18nly_add_translation';
 
 	/**
+	 * Translation post type.
+	 */
+	private const POST_TYPE = 'i18nly_translation';
+
+	/**
+	 * Source slug post meta key.
+	 */
+	private const META_SOURCE_SLUG = '_i18nly_source_slug';
+
+	/**
+	 * Target language post meta key.
+	 */
+	private const META_TARGET_LANGUAGE = '_i18nly_target_language';
+
+	/**
 	 * Source locale used by the current MVP.
 	 */
 	private const SOURCE_LOCALE = 'en_US';
@@ -162,8 +177,31 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function register() {
+		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_' . self::ADD_ACTION, array( $this, 'handle_add_translation_submission' ) );
+	}
+
+	/**
+	 * Registers the translation custom post type.
+	 *
+	 * @return void
+	 */
+	public function register_post_type() {
+		register_post_type(
+			self::POST_TYPE,
+			array(
+				'label'        => __( 'Translations', 'i18nly' ),
+				'labels'       => array(
+					'name'          => __( 'Translations', 'i18nly' ),
+					'singular_name' => __( 'Translation', 'i18nly' ),
+				),
+				'public'       => false,
+				'show_ui'      => false,
+				'supports'     => array( 'title' ),
+				'map_meta_cap' => true,
+			)
+		);
 	}
 
 	/**
@@ -259,26 +297,23 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function create_translation( $source_slug, $target_language ) {
-		global $wpdb;
-
-		$table_name = I18nly_Schema::translations_table_name();
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$result = $wpdb->insert(
-			$table_name,
+		$translation_post_id = wp_insert_post(
 			array(
-				'source_slug'     => $source_slug,
-				'target_language' => $target_language,
-				'created_at'      => current_time( 'mysql', true ),
+				'post_type'   => self::POST_TYPE,
+				'post_status' => 'draft',
+				'post_title'  => $source_slug . ' → ' . $target_language,
 			),
-			array( '%s', '%s', '%s' )
+			true
 		);
 
-		if ( false === $result ) {
+		if ( is_wp_error( $translation_post_id ) || $translation_post_id <= 0 ) {
 			return 0;
 		}
 
-		return (int) $wpdb->insert_id;
+		update_post_meta( $translation_post_id, self::META_SOURCE_SLUG, $source_slug );
+		update_post_meta( $translation_post_id, self::META_TARGET_LANGUAGE, $target_language );
+
+		return (int) $translation_post_id;
 	}
 
 	/**
@@ -288,25 +323,17 @@ class I18nly_Admin_Page {
 	 * @return array<string, mixed>|null
 	 */
 	private function get_translation( $translation_id ) {
-		global $wpdb;
-
-		$table_name = I18nly_Schema::translations_table_name();
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$translation = $wpdb->get_row(
-			$wpdb->prepare(
-				'SELECT id, source_slug, target_language, created_at FROM %i WHERE id = %d LIMIT 1',
-				$table_name,
-				$translation_id
-			),
-			ARRAY_A
-		);
-
-		if ( ! is_array( $translation ) ) {
+		$translation_post = get_post( (int) $translation_id );
+		if ( ! $translation_post || self::POST_TYPE !== $translation_post->post_type ) {
 			return null;
 		}
 
-		return $translation;
+		return array(
+			'id'              => (int) $translation_post->ID,
+			'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
+			'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
+			'created_at'      => (string) $translation_post->post_date_gmt,
+		);
 	}
 
 	/**
@@ -315,25 +342,24 @@ class I18nly_Admin_Page {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function get_translations_for_list() {
-		global $wpdb;
-
-		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
-			return array();
-		}
-
-		$table_name = I18nly_Schema::translations_table_name();
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$translations = $wpdb->get_results(
-			$wpdb->prepare(
-				'SELECT id, source_slug, target_language, created_at FROM %i ORDER BY id DESC',
-				$table_name
-			),
-			ARRAY_A
+		$translation_posts = get_posts(
+			array(
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => array( 'draft', 'publish' ),
+				'posts_per_page' => -1,
+				'orderby'        => 'ID',
+				'order'          => 'DESC',
+			)
 		);
 
-		if ( ! is_array( $translations ) ) {
-			return array();
+		$translations = array();
+		foreach ( $translation_posts as $translation_post ) {
+			$translations[] = array(
+				'id'              => (int) $translation_post->ID,
+				'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
+				'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
+				'created_at'      => (string) $translation_post->post_date_gmt,
+			);
 		}
 
 		return $translations;

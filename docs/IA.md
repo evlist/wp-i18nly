@@ -21,8 +21,12 @@ The long-term product goal is to hide low-level translation file complexity from
 ### Implemented so far
 
 - A first working plugin bootstrap exists.
-- A top-level admin sidebar menu entry (**I18nly**) exists.
-- The admin page currently exposes a minimal blank workspace container.
+- A top-level admin sidebar menu entry (**Translations**) exists.
+- Admin pages now follow WordPress patterns:
+	- `All translations` (WP-style table),
+	- `Add translation` (form),
+	- `Edit translation` (details view).
+- The `Add` flow creates a translation and redirects to the same `Edit translation` page used by list row links.
 
 ## 3) UX/Product Direction Agreed in Session
 
@@ -53,9 +57,11 @@ Guiding UX principle: users manipulate translations, not raw POT/PO/MO/JSON inte
 
 ### Storage model
 
-- Use database tables for unsaved translation versions/drafts.
-- On open: load DB draft if available.
-- Run extraction/refresh checks against source files to detect changes.
+- Translation entities are currently stored as a custom post type (`i18nly_translation`).
+- Translation identity fields are stored in post meta:
+	- `_i18nly_source_slug`,
+	- `_i18nly_target_language`.
+- Entry-level data is expected to move to a dedicated custom table later when editing workflows become richer.
 
 ### Build pipeline intent
 
@@ -137,9 +143,9 @@ Core principles for this repository:
 
 ## 9) Next Steps (XP Order)
 
-1. Stabilize current Step 1 UI slice in admin workspace (`Translation` + `New` no-op).
-2. Add Step 2 minimal behavior (plugin selector for creating/opening a translation).
-3. Add minimal backend contract for the selected Step 2 flow only.
+1. Add actions on `All translations` (for example trash/untrash) with minimal status handling.
+2. Expand `Edit translation` page from read-only details to first editable translation entries.
+3. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
 4. Repeat with the same loop: implement → validate → commit.
 
 ## 10) Session Safety Checklist for Future Runs
