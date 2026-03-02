@@ -20,15 +20,16 @@ class I18nly_Pot_Generator {
 	 * @param string                          $destination_file Absolute destination file path.
 	 * @param string                          $text_domain Text domain for generated headers.
 	 * @param array<int, array<string,mixed>> $entries Extracted entries.
+	 * @param array<string, string>           $header_overrides Header values overriding defaults.
 	 * @return void
 	 * @throws RuntimeException When destination directory or file cannot be written.
 	 */
-	public function generate( $destination_file, $text_domain, array $entries ) {
+	public function generate( $destination_file, $text_domain, array $entries, array $header_overrides = array() ) {
 		$this->ensure_gettext_classes_are_available();
 
 		$destination_file = (string) $destination_file;
 		$text_domain      = (string) $text_domain;
-		$translations     = $this->build_translations( $text_domain, $entries );
+		$translations     = $this->build_translations( $text_domain, $entries, $header_overrides );
 
 		$directory = dirname( $destination_file );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Runtime utility writes local generated artifacts.
@@ -47,11 +48,12 @@ class I18nly_Pot_Generator {
 	 *
 	 * @param string                           $text_domain Text domain.
 	 * @param array<int, array<string, mixed>> $entries POT entries.
+	 * @param array<string, string>            $header_overrides Header values overriding defaults.
 	 * @return \Gettext\Translations
 	 */
-	private function build_translations( $text_domain, array $entries ) {
+	private function build_translations( $text_domain, array $entries, array $header_overrides = array() ) {
 		$translations = \Gettext\Translations::create();
-		$headers = $this->build_headers( $text_domain );
+		$headers      = $this->build_headers( $text_domain, $header_overrides );
 
 		foreach ( $headers as $header_name => $header_value ) {
 			$translations->getHeaders()->set( (string) $header_name, (string) $header_value );
@@ -72,10 +74,11 @@ class I18nly_Pot_Generator {
 	/**
 	 * Builds default POT headers.
 	 *
-	 * @param string $text_domain Text domain.
+	 * @param string                $text_domain Text domain.
+	 * @param array<string, string> $header_overrides Header values overriding defaults.
 	 * @return array<string, string>
 	 */
-	private function build_headers( $text_domain ) {
+	private function build_headers( $text_domain, array $header_overrides = array() ) {
 		$creation_date = gmdate( 'Y-m-d H:i+0000' );
 		$headers       = array();
 
@@ -90,6 +93,16 @@ class I18nly_Pot_Generator {
 		$headers['Content-Type']              = 'text/plain; charset=UTF-8';
 		$headers['Content-Transfer-Encoding'] = '8bit';
 		$headers['X-Domain']                  = $text_domain;
+
+		foreach ( $header_overrides as $header_name => $header_value ) {
+			$name = trim( (string) $header_name );
+
+			if ( '' === $name ) {
+				continue;
+			}
+
+			$headers[ $name ] = (string) $header_value;
+		}
 
 		return $headers;
 	}

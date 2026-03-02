@@ -300,6 +300,18 @@ if ( ! function_exists( 'esc_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	/**
+	 * Returns sanitized raw URL in tests.
+	 *
+	 * @param string $url URL value.
+	 * @return string
+	 */
+	function esc_url_raw( $url ) {
+		return (string) $url;
+	}
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	/**
 	 * No-op add_action stub.

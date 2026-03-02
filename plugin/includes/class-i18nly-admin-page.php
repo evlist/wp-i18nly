@@ -743,11 +743,12 @@ class I18nly_Admin_Page {
 		$source_extractor = new I18nly_Pot_Source_Entry_Extractor();
 		$entries          = $source_extractor->extract_from_source_slug( $source_slug );
 		$text_domain      = $this->infer_text_domain_from_source_slug( $source_slug );
+		$header_overrides = $this->build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
 
 		$pot_workspace = new I18nly_Pot_Workspace_Service();
 
 		try {
-			$pot_file_path = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries );
+			$pot_file_path = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries, $header_overrides );
 		} catch ( RuntimeException $exception ) {
 			wp_send_json_error( array( 'message' => $exception->getMessage() ), 500 );
 			return;
@@ -776,6 +777,56 @@ class I18nly_Admin_Page {
 		}
 
 		return sanitize_text_field( (string) $parts[0] );
+	}
+
+	/**
+	 * Builds POT header overrides from source plugin metadata.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @param string $text_domain Text domain.
+	 * @return array<string, string>
+	 */
+	private function build_pot_header_overrides_from_source_slug( $source_slug, $text_domain ) {
+		$plugin_data = $this->get_source_plugin_data( $source_slug );
+
+		$project_id_version = $text_domain;
+		if ( ! empty( $plugin_data['Name'] ) && ! empty( $plugin_data['Version'] ) ) {
+			$project_id_version = sanitize_text_field( $plugin_data['Name'] . ' ' . $plugin_data['Version'] );
+		} elseif ( ! empty( $plugin_data['Version'] ) ) {
+			$project_id_version = sanitize_text_field( $text_domain . ' ' . $plugin_data['Version'] );
+		}
+
+		$bugs_url = '';
+		if ( ! empty( $plugin_data['PluginURI'] ) ) {
+			$bugs_url = esc_url_raw( (string) $plugin_data['PluginURI'] );
+		} elseif ( ! empty( $plugin_data['AuthorURI'] ) ) {
+			$bugs_url = esc_url_raw( (string) $plugin_data['AuthorURI'] );
+		}
+
+		return array(
+			'Project-Id-Version'   => (string) $project_id_version,
+			'Report-Msgid-Bugs-To' => (string) $bugs_url,
+		);
+	}
+
+	/**
+	 * Returns source plugin metadata from installed plugins list.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @return array<string, string>
+	 */
+	private function get_source_plugin_data( $source_slug ) {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugins = get_plugins();
+
+		if ( isset( $plugins[ $source_slug ] ) && is_array( $plugins[ $source_slug ] ) ) {
+			return array_map( 'strval', $plugins[ $source_slug ] );
+		}
+
+		return array();
 	}
 
 	/**

@@ -58,6 +58,15 @@ class AjaxPotGenerationTest extends TestCase {
 	 */
 	public function test_ajax_generate_translation_pot_returns_success_and_file_path() {
 		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array(
+					'Name'      => 'Akismet Anti-Spam',
+					'Version'   => '5.3.7',
+					'PluginURI' => 'https://example.test/akismet',
+				),
+			)
+		);
 		i18nly_test_set_translations_rows(
 			array(
 				array(
@@ -87,6 +96,11 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertSame( 0, $response['data']['entries_count'] );
 		$this->assertIsString( $response['data']['pot_file_path'] );
 		$this->assertFileExists( $response['data']['pot_file_path'] );
+
+		$content = file_get_contents( $response['data']['pot_file_path'] );
+		$this->assertIsString( $content );
+		$this->assertStringContainsString( '"Project-Id-Version: Akismet Anti-Spam 5.3.7\\n"', $content );
+		$this->assertStringContainsString( '"Report-Msgid-Bugs-To: https://example.test/akismet\\n"', $content );
 
 		$storage = new I18nly_Temporary_Storage();
 		$storage->cleanup_translation_workspace( 42 );

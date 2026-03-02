@@ -164,6 +164,12 @@ Current MVP slice scope is intentionally narrower:
 - postpone PO merge/conflict policies to later slices,
 - keep POT header persistence separate from translation post-meta when shared across multiple translations.
 
+### TODO (future slice)
+
+- Add a dedicated settings page to manage editable POT header defaults
+	(for example `Language-Team`, `Last-Translator`, contact values),
+	while keeping template-specific placeholders when appropriate.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:

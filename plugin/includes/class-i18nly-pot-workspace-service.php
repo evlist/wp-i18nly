@@ -50,13 +50,14 @@ class I18nly_Pot_Workspace_Service {
 	 * @param int                              $translation_post_id Translation post ID.
 	 * @param string                           $text_domain Text domain for the POT file.
 	 * @param array<int, array<string, mixed>> $entries Extracted translation entries.
+	 * @param array<string, string>            $header_overrides Header values overriding defaults.
 	 * @return string Absolute generated POT path.
 	 */
-	public function generate_temporary_pot( $translation_post_id, $text_domain, array $entries ) {
+	public function generate_temporary_pot( $translation_post_id, $text_domain, array $entries, array $header_overrides = array() ) {
 		$this->temporary_storage->ensure_translation_workspace( $translation_post_id );
 
 		$pot_file_path = $this->temporary_storage->get_pot_file_path( $translation_post_id );
-		$this->pot_generator->generate( $pot_file_path, $text_domain, $entries );
+		$this->pot_generator->generate( $pot_file_path, $text_domain, $entries, $header_overrides );
 
 		return $pot_file_path;
 	}
