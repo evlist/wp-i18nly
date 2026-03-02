@@ -23,6 +23,7 @@ $i18nly_test_post_meta              = array();
 $i18nly_test_last_redirect_url      = '';
 $i18nly_test_last_updated_post      = array();
 $i18nly_test_options                = array();
+$i18nly_test_last_json_response     = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -79,6 +80,28 @@ function i18nly_test_reset_options() {
 	global $i18nly_test_options;
 
 	$i18nly_test_options = array();
+}
+
+/**
+ * Resets last JSON response captured from wp_send_json_* stubs.
+ *
+ * @return void
+ */
+function i18nly_test_reset_last_json_response() {
+	global $i18nly_test_last_json_response;
+
+	$i18nly_test_last_json_response = array();
+}
+
+/**
+ * Returns last JSON response captured from wp_send_json_* stubs.
+ *
+ * @return array<string, mixed>
+ */
+function i18nly_test_get_last_json_response() {
+	global $i18nly_test_last_json_response;
+
+	return $i18nly_test_last_json_response;
 }
 
 /**
@@ -541,6 +564,62 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	/**
+	 * Returns deterministic nonce in tests.
+	 *
+	 * @param string|int $action Nonce action.
+	 * @return string
+	 */
+	function wp_create_nonce( $action = -1 ) {
+		return 'nonce-' . (string) $action;
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_success' ) ) {
+	/**
+	 * Captures successful JSON responses in tests.
+	 *
+	 * @param mixed    $value Response payload.
+	 * @param int|null $status_code Optional status code.
+	 * @param int      $flags Json flags.
+	 * @return void
+	 */
+	function wp_send_json_success( $value = null, $status_code = null, $flags = 0 ) {
+		global $i18nly_test_last_json_response;
+
+		unset( $flags );
+
+		$i18nly_test_last_json_response = array(
+			'success' => true,
+			'data'    => $value,
+			'status'  => $status_code,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_error' ) ) {
+	/**
+	 * Captures error JSON responses in tests.
+	 *
+	 * @param mixed    $value Response payload.
+	 * @param int|null $status_code Optional status code.
+	 * @param int      $flags Json flags.
+	 * @return void
+	 */
+	function wp_send_json_error( $value = null, $status_code = null, $flags = 0 ) {
+		global $i18nly_test_last_json_response;
+
+		unset( $flags );
+
+		$i18nly_test_last_json_response = array(
+			'success' => false,
+			'data'    => $value,
+			'status'  => $status_code,
+		);
+	}
+}
+
 if ( ! function_exists( 'get_option' ) ) {
 	/**
 	 * Returns option value from test runtime.
@@ -823,6 +902,7 @@ if ( ! function_exists( 'selected' ) ) {
 
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-source-entry-extractor.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-temporary-storage.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-workspace-service.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-source-schema-manager.php';

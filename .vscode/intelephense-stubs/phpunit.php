@@ -24,6 +24,13 @@ abstract class TestCase {
 	public function assertIsString( $actual, string $message = '' ): void {}
 
 	/**
+	 * @param mixed  $actual Actual value.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertIsArray( $actual, string $message = '' ): void {}
+
+	/**
 	 * @param string $needle Needle.
 	 * @param string $haystack Haystack.
 	 * @param string $message Failure message.
@@ -62,6 +69,14 @@ abstract class TestCase {
 	 * @return void
 	 */
 	public function assertArrayHasKey( $key, $array, string $message = '' ): void {}
+
+	/**
+	 * @param mixed  $needle Needle.
+	 * @param iterable<mixed> $haystack Haystack.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertContains( $needle, iterable $haystack, string $message = '' ): void {}
 
 	/**
 	 * @param string $needle Needle.

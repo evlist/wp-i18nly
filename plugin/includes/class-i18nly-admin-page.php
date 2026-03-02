@@ -174,6 +174,8 @@ class I18nly_Admin_Page {
 	public function register() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'admin_footer-post.php', array( $this, 'render_translation_edit_pot_generation_script' ) );
+		add_action( 'wp_ajax_i18nly_generate_translation_pot', array( $this, 'ajax_generate_translation_pot' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
@@ -658,5 +660,146 @@ class I18nly_Admin_Page {
 		}
 
 		wp_safe_redirect( $this->get_native_list_url() );
+	}
+
+	/**
+	 * Renders a tiny script that triggers POT generation on edit screen open.
+	 *
+	 * @return void
+	 */
+	public function render_translation_edit_pot_generation_script() {
+		$translation_id = $this->get_current_edit_translation_id();
+
+		if ( $translation_id <= 0 ) {
+			return;
+		}
+
+		$nonce    = wp_create_nonce( 'i18nly_generate_translation_pot_' . $translation_id );
+		$ajax_url = admin_url( 'admin-ajax.php' );
+		?>
+		<script>
+			(function () {
+				if (window.i18nlyPotInitDone) {
+					return;
+				}
+
+				window.i18nlyPotInitDone = true;
+
+				var body = 'action=i18nly_generate_translation_pot&translation_id=<?php echo (int) $translation_id; ?>&nonce=<?php echo rawurlencode( (string) $nonce ); ?>';
+
+				if (typeof window.fetch !== 'function') {
+					return;
+				}
+
+				window.fetch('<?php echo esc_url( $ajax_url ); ?>', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+					},
+					body: body
+				});
+			})();
+		</script>
+		<?php
+	}
+
+	/**
+	 * Handles AJAX request to generate temporary POT for one translation.
+	 *
+	 * @return void
+	 */
+	public function ajax_generate_translation_pot() {
+		if ( ! isset( $_POST['translation_id'], $_POST['nonce'] ) ) {
+			wp_send_json_error( array( 'message' => 'Missing parameters.' ), 400 );
+			return;
+		}
+
+		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
+		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+
+		if ( $translation_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $translation_id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
+			return;
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'i18nly_generate_translation_pot_' . $translation_id ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
+			return;
+		}
+
+		$translation = $this->get_translation( $translation_id );
+		if ( null === $translation || empty( $translation['source_slug'] ) ) {
+			wp_send_json_error( array( 'message' => 'Translation source is missing.' ), 400 );
+			return;
+		}
+
+		$source_slug      = (string) $translation['source_slug'];
+		$source_extractor = new I18nly_Pot_Source_Entry_Extractor();
+		$entries          = $source_extractor->extract_from_source_slug( $source_slug );
+		$text_domain      = $this->infer_text_domain_from_source_slug( $source_slug );
+
+		$pot_workspace = new I18nly_Pot_Workspace_Service();
+
+		try {
+			$pot_file_path = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries );
+		} catch ( RuntimeException $exception ) {
+			wp_send_json_error( array( 'message' => $exception->getMessage() ), 500 );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'translation_id' => $translation_id,
+				'entries_count'  => count( $entries ),
+				'pot_file_path'  => $pot_file_path,
+			)
+		);
+	}
+
+	/**
+	 * Infers text domain from source slug.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @return string
+	 */
+	private function infer_text_domain_from_source_slug( $source_slug ) {
+		$parts = explode( '/', trim( (string) $source_slug, '/\\' ) );
+
+		if ( empty( $parts[0] ) ) {
+			return 'i18nly';
+		}
+
+		return sanitize_text_field( (string) $parts[0] );
+	}
+
+	/**
+	 * Returns translation id when current screen is translation edit.
+	 *
+	 * @return int
+	 */
+	private function get_current_edit_translation_id() {
+		if ( ! isset( $_GET['post'], $_GET['action'] ) ) {
+			return 0;
+		}
+
+		$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+		if ( 'edit' !== $action ) {
+			return 0;
+		}
+
+		$translation_id = absint( wp_unslash( $_GET['post'] ) );
+		if ( $translation_id <= 0 ) {
+			return 0;
+		}
+
+		$translation = $this->get_translation( $translation_id );
+
+		return null === $translation ? 0 : $translation_id;
 	}
 }
