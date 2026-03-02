@@ -105,7 +105,8 @@ function i18nly_test_set_translations_rows( array $translations ) {
 			'post_type'     => 'i18nly_translation',
 			'post_status'   => 'publish',
 			'post_title'    => (string) $translation['source_slug'] . ' → ' . (string) $translation['target_language'],
-			'post_date_gmt' => isset( $translation['created_at'] ) ? (string) $translation['created_at'] : '',
+			'post_date_gmt' => isset( $translation['created_at_gmt'] ) ? (string) $translation['created_at_gmt'] : ( isset( $translation['created_at'] ) ? (string) $translation['created_at'] : '' ),
+			'post_date'     => isset( $translation['created_at_local'] ) ? (string) $translation['created_at_local'] : ( isset( $translation['created_at'] ) ? (string) $translation['created_at'] : '' ),
 		);
 
 		$i18nly_test_post_meta[ $post_id ] = array(

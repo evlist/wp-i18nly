@@ -51,10 +51,11 @@ class AdminPageRenderTest extends TestCase {
 		i18nly_test_set_translations_rows(
 			array(
 				array(
-					'id'              => 42,
-					'source_slug'     => 'akismet/akismet.php',
-					'target_language' => 'fr_FR',
-					'created_at'      => '2026-03-02 10:15:00',
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '0000-00-00 00:00:00',
+					'created_at_local' => '2026-03-02 11:15:00',
 				),
 			)
 		);
@@ -74,6 +75,7 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( '>Created<', $html );
 		$this->assertStringContainsString( '>akismet/akismet.php<', $html );
 		$this->assertMatchesRegularExpression( '/admin\.php\?page=i18nly-edit-translation(?:&|&amp;)translation_id=42/', $html );
+		$this->assertStringContainsString( '>2026-03-02 11:15:00<', $html );
 		$this->assertStringNotContainsString( '>No translations found.<', $html );
 	}
 

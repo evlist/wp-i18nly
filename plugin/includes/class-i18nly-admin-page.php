@@ -297,11 +297,16 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function create_translation( $source_slug, $target_language ) {
+		$created_at_local = current_time( 'mysql' );
+		$created_at_gmt   = current_time( 'mysql', true );
+
 		$translation_post_id = wp_insert_post(
 			array(
-				'post_type'   => self::POST_TYPE,
-				'post_status' => 'draft',
-				'post_title'  => $source_slug . ' → ' . $target_language,
+				'post_type'     => self::POST_TYPE,
+				'post_status'   => 'draft',
+				'post_title'    => $source_slug . ' → ' . $target_language,
+				'post_date'     => $created_at_local,
+				'post_date_gmt' => $created_at_gmt,
 			),
 			true
 		);
@@ -332,7 +337,7 @@ class I18nly_Admin_Page {
 			'id'              => (int) $translation_post->ID,
 			'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
 			'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
-			'created_at'      => (string) $translation_post->post_date_gmt,
+			'created_at'      => $this->get_post_created_at( $translation_post ),
 		);
 	}
 
@@ -358,7 +363,7 @@ class I18nly_Admin_Page {
 				'id'              => (int) $translation_post->ID,
 				'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
 				'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
-				'created_at'      => (string) $translation_post->post_date_gmt,
+				'created_at'      => $this->get_post_created_at( $translation_post ),
 			);
 		}
 
@@ -373,6 +378,24 @@ class I18nly_Admin_Page {
 	 */
 	private function get_admin_page_url( $page_slug ) {
 		return admin_url( 'admin.php?page=' . rawurlencode( $page_slug ) );
+	}
+
+	/**
+	 * Returns a stable creation date for one post.
+	 *
+	 * Draft posts can keep `post_date_gmt` to zero in WordPress internals,
+	 * so we fall back to `post_date` when needed.
+	 *
+	 * @param object $translation_post Translation post object.
+	 * @return string
+	 */
+	private function get_post_created_at( $translation_post ) {
+		$post_date_gmt = isset( $translation_post->post_date_gmt ) ? (string) $translation_post->post_date_gmt : '';
+		if ( '' !== $post_date_gmt && '0000-00-00 00:00:00' !== $post_date_gmt ) {
+			return $post_date_gmt;
+		}
+
+		return isset( $translation_post->post_date ) ? (string) $translation_post->post_date : '';
 	}
 
 	/**
