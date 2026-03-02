@@ -24,8 +24,11 @@ class I18nly_Pot_Generator {
 	 * @throws RuntimeException When destination directory or file cannot be written.
 	 */
 	public function generate( $destination_file, $text_domain, array $entries ) {
+		$this->ensure_gettext_classes_are_available();
+
 		$destination_file = (string) $destination_file;
 		$text_domain      = (string) $text_domain;
+		$translations     = $this->build_translations( $text_domain, $entries );
 
 		$directory = dirname( $destination_file );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Runtime utility writes local generated artifacts.
@@ -33,44 +36,37 @@ class I18nly_Pot_Generator {
 			throw new RuntimeException( 'Unable to create destination directory for POT file.' );
 		}
 
-		$content = $this->build_pot_content( $text_domain, $entries );
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Runtime utility writes local generated artifacts.
-		if ( false === file_put_contents( $destination_file, $content ) ) {
+		$generator = new \Gettext\Generator\PoGenerator();
+		if ( ! $generator->generateFile( $translations, $destination_file ) ) {
 			throw new RuntimeException( 'Unable to write POT file to destination.' );
 		}
 	}
 
 	/**
-	 * Builds POT file content.
+	 * Builds gettext translations object from extracted entries.
 	 *
 	 * @param string                           $text_domain Text domain.
 	 * @param array<int, array<string, mixed>> $entries POT entries.
-	 * @return string
+	 * @return \Gettext\Translations
 	 */
-	private function build_pot_content( $text_domain, array $entries ) {
-		$lines   = array();
+	private function build_translations( $text_domain, array $entries ) {
+		$translations = \Gettext\Translations::create();
 		$headers = $this->build_headers( $text_domain );
 
-		$lines[] = 'msgid ""';
-		$lines[] = 'msgstr ""';
-
 		foreach ( $headers as $header_name => $header_value ) {
-			$lines[] = sprintf( '"%s: %s\\n"', $header_name, $header_value );
+			$translations->getHeaders()->set( (string) $header_name, (string) $header_value );
 		}
-
-		$lines[] = '';
 
 		foreach ( $entries as $entry ) {
 			if ( empty( $entry['original'] ) || ! is_string( $entry['original'] ) ) {
 				continue;
 			}
 
-			$lines   = array_merge( $lines, $this->build_entry_lines( $entry ) );
-			$lines[] = '';
+			$translation = $this->build_translation_entry( $entry );
+			$translations->add( $translation );
 		}
 
-		return implode( "\n", $lines );
+		return $translations;
 	}
 
 	/**
@@ -99,18 +95,19 @@ class I18nly_Pot_Generator {
 	}
 
 	/**
-	 * Builds one entry block lines.
+	 * Builds one gettext translation entry.
 	 *
 	 * @param array<string, mixed> $entry Entry descriptor.
-	 * @return array<int, string>
+	 * @return \Gettext\Translation
 	 */
-	private function build_entry_lines( array $entry ) {
-		$lines = array();
+	private function build_translation_entry( array $entry ) {
+		$context     = ( ! empty( $entry['context'] ) && is_string( $entry['context'] ) ) ? $entry['context'] : null;
+		$translation = \Gettext\Translation::create( $context, (string) $entry['original'] );
 
 		if ( ! empty( $entry['comments'] ) && is_array( $entry['comments'] ) ) {
 			foreach ( $entry['comments'] as $comment ) {
 				if ( is_string( $comment ) && '' !== trim( $comment ) ) {
-					$lines[] = '#. ' . trim( $comment );
+					$translation->getExtractedComments()->add( trim( $comment ) );
 				}
 			}
 		}
@@ -119,46 +116,38 @@ class I18nly_Pot_Generator {
 			foreach ( $entry['references'] as $reference ) {
 				if ( is_array( $reference ) && ! empty( $reference['file'] ) ) {
 					$file = (string) $reference['file'];
-					$line = isset( $reference['line'] ) ? (int) $reference['line'] : 0;
+					$line = isset( $reference['line'] ) ? absint( $reference['line'] ) : 0;
 
-					$lines[] = '#: ' . $file . ( $line > 0 ? ':' . $line : '' );
+					$translation->getReferences()->add( $file, $line > 0 ? $line : null );
 				}
 			}
 		}
 
-		if ( ! empty( $entry['context'] ) && is_string( $entry['context'] ) ) {
-			$lines[] = 'msgctxt ' . $this->quote( $entry['context'] );
+		if ( ! empty( $entry['flags'] ) && is_array( $entry['flags'] ) ) {
+			foreach ( $entry['flags'] as $flag ) {
+				if ( is_string( $flag ) && '' !== trim( $flag ) ) {
+					$translation->getFlags()->add( trim( $flag ) );
+				}
+			}
 		}
-
-		$lines[] = 'msgid ' . $this->quote( $entry['original'] );
 
 		if ( ! empty( $entry['plural'] ) && is_string( $entry['plural'] ) ) {
-			$lines[] = 'msgid_plural ' . $this->quote( $entry['plural'] );
-			$lines[] = 'msgstr[0] ""';
-			$lines[] = 'msgstr[1] ""';
-		} else {
-			$lines[] = 'msgstr ""';
+			$translation->setPlural( $entry['plural'] );
 		}
 
-		return $lines;
+		return $translation;
 	}
 
 	/**
-	 * Quotes and escapes a string for PO/POT format.
+	 * Ensures gettext classes can be autoloaded.
 	 *
-	 * @param string $value Raw string.
-	 * @return string
+	 * @return void
 	 */
-	private function quote( $value ) {
-		return '"' . strtr(
-			(string) $value,
-			array(
-				'\\' => '\\\\',
-				'"'  => '\\"',
-				"\n" => '\\n',
-				"\r" => '\\r',
-				"\t" => '\\t',
-			)
-		) . '"';
+	private function ensure_gettext_classes_are_available() {
+		if ( class_exists( '\\Gettext\\Generator\\PoGenerator' ) && class_exists( '\\Gettext\\Translations' ) ) {
+			return;
+		}
+
+		require_once dirname( __DIR__ ) . '/third-party/vendor/autoload.php';
 	}
 }
