@@ -36,7 +36,7 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 'All translations', $submenus[0]['menu_title'] );
 		$this->assertSame( 'edit.php?post_type=i18nly_translation', $submenus[0]['menu_slug'] );
 		$this->assertSame( 'Add translation', $submenus[1]['menu_title'] );
-		$this->assertSame( 'i18nly-add-translation', $submenus[1]['menu_slug'] );
+		$this->assertSame( 'post-new.php?post_type=i18nly_translation', $submenus[1]['menu_slug'] );
 	}
 
 	/**
@@ -60,70 +60,6 @@ class AdminPageRenderTest extends TestCase {
 			'https://example.test/wp-admin/edit.php?post_type=i18nly_translation',
 			i18nly_test_get_last_redirect_url()
 		);
-	}
-
-	/**
-	 * Renders the add translation page for authorized users.
-	 *
-	 * @return void
-	 */
-	public function test_render_add_translation_page_outputs_add_translation_heading() {
-		i18nly_test_set_can_manage_options( true );
-		i18nly_test_set_plugins(
-			array(
-				'akismet/akismet.php'   => array(
-					'Name' => 'Akismet',
-				),
-				'hello-dolly/hello.php' => array(
-					'Name' => 'Hello Dolly',
-				),
-			)
-		);
-		i18nly_test_set_available_languages(
-			array(
-				'en_US',
-				'fr_FR',
-			)
-		);
-		i18nly_test_set_available_translations(
-			array(
-				'en_US' => array(
-					'native_name' => 'English (United States)',
-				),
-				'fr_FR' => array(
-					'native_name' => 'Français',
-				),
-				'de_DE' => array(
-					'native_name' => 'Deutsch',
-				),
-			)
-		);
-
-		$page = new I18nly_Admin_Page();
-
-		ob_start();
-		$page->render_add_translation_page();
-		$html = ob_get_clean();
-
-		$this->assertIsString( $html );
-		$this->assertStringContainsString( '<h1>Add translation</h1>', $html );
-		$this->assertStringContainsString( 'id="i18nly-translation-create"', $html );
-		$this->assertStringContainsString( 'method="post"', $html );
-		$this->assertStringContainsString( 'name="action" value="i18nly_add_translation"', $html );
-		$this->assertStringContainsString( 'id="i18nly-plugin-selector"', $html );
-		$this->assertStringContainsString( '>Select a plugin<', $html );
-		$this->assertStringContainsString( 'value="akismet/akismet.php"', $html );
-		$this->assertStringContainsString( '>Akismet<', $html );
-		$this->assertStringContainsString( 'id="i18nly-target-language-selector"', $html );
-		$this->assertStringContainsString( '>Select a target language<', $html );
-		$this->assertStringContainsString( 'value="fr_FR"', $html );
-		$this->assertStringContainsString( '>Français<', $html );
-		$this->assertStringContainsString( 'disabled="disabled">──────────<', $html );
-		$this->assertStringContainsString( 'value="de_DE"', $html );
-		$this->assertStringContainsString( '>Deutsch<', $html );
-		$this->assertStringNotContainsString( 'value="en_US"', $html );
-		$this->assertStringContainsString( 'id="i18nly-add-translation-submit"', $html );
-		$this->assertStringContainsString( '>Add<', $html );
 	}
 
 	/**

@@ -15,11 +15,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class I18nly_Admin_Page {
 	/**
-	 * Action used by Add translation form submissions.
-	 */
-	private const ADD_ACTION = 'i18nly_add_translation';
-
-	/**
 	 * Translation post type.
 	 */
 	private const POST_TYPE = 'i18nly_translation';
@@ -50,9 +45,9 @@ class I18nly_Admin_Page {
 	private const MENU_SLUG = 'i18nly-translations';
 
 	/**
-	 * The add translation submenu slug.
+	 * Native WordPress new translation screen slug.
 	 */
-	private const ADD_MENU_SLUG = 'i18nly-add-translation';
+	private const NEW_SCREEN_SLUG = 'post-new.php?post_type=i18nly_translation';
 
 	/**
 	 * Returns installed plugins as options for the selector.
@@ -179,7 +174,6 @@ class I18nly_Admin_Page {
 	public function register() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
-		add_action( 'admin_post_' . self::ADD_ACTION, array( $this, 'handle_add_translation_submission' ) );
 		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_columns', array( $this, 'filter_translation_list_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_translation_list_column' ), 10, 2 );
@@ -354,50 +348,8 @@ class I18nly_Admin_Page {
 			__( 'Add translation', 'i18nly' ),
 			__( 'Add translation', 'i18nly' ),
 			'manage_options',
-			self::ADD_MENU_SLUG,
-			array( $this, 'render_add_translation_page' )
+			self::NEW_SCREEN_SLUG
 		);
-	}
-
-	/**
-	 * Handles Add translation form submission.
-	 *
-	 * @return void
-	 */
-	public function handle_add_translation_submission() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$add_page_url = $this->get_admin_page_url( self::ADD_MENU_SLUG );
-
-		check_admin_referer( self::ADD_ACTION );
-
-		$source_slug = '';
-		if ( isset( $_POST['i18nly_plugin_selector'] ) ) {
-			$source_slug = sanitize_text_field( wp_unslash( $_POST['i18nly_plugin_selector'] ) );
-		}
-
-		$target_language = '';
-		if ( isset( $_POST['i18nly_target_language_selector'] ) ) {
-			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
-		}
-
-		if ( '' === $source_slug || '' === $target_language ) {
-			wp_safe_redirect( add_query_arg( 'i18nly_error', 'missing_required_fields', $add_page_url ) );
-			exit;
-		}
-
-		$translation_id = $this->create_translation( $source_slug, $target_language );
-		if ( $translation_id <= 0 ) {
-			wp_safe_redirect( add_query_arg( 'i18nly_error', 'insert_failed', $add_page_url ) );
-			exit;
-		}
-
-		wp_safe_redirect(
-			$this->get_standard_edit_translation_url( $translation_id )
-		);
-		exit;
 	}
 
 	/**
@@ -519,67 +471,5 @@ class I18nly_Admin_Page {
 		}
 
 		wp_safe_redirect( $this->get_native_list_url() );
-	}
-
-	/**
-	 * Renders the add translation page.
-	 *
-	 * @return void
-	 */
-	public function render_add_translation_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$plugin_options   = $this->get_plugin_options();
-		$target_languages = $this->get_target_language_options();
-		?>
-		<div class="wrap">
-			<h1><?php echo esc_html__( 'Add translation', 'i18nly' ); ?></h1>
-			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display of query error flag. ?>
-			<?php if ( isset( $_GET['i18nly_error'] ) ) : ?>
-				<div class="notice notice-error"><p><?php echo esc_html__( 'Plugin and target language are required.', 'i18nly' ); ?></p></div>
-			<?php endif; ?>
-			<div id="i18nly-translation-create" aria-live="polite">
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="<?php echo esc_attr( self::ADD_ACTION ); ?>">
-					<?php wp_nonce_field( self::ADD_ACTION ); ?>
-					<table class="form-table" role="presentation">
-						<tbody>
-							<tr>
-								<th scope="row">
-									<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
-								</th>
-								<td>
-									<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required>
-										<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
-										<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
-											<option value="<?php echo esc_attr( $plugin_file ); ?>"><?php echo esc_html( $plugin_name ); ?></option>
-										<?php endforeach; ?>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row">
-									<label for="i18nly-target-language-selector"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></label>
-								</th>
-								<td>
-									<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required>
-										<option value=""><?php echo esc_html__( 'Select a target language', 'i18nly' ); ?></option>
-										<?php foreach ( $target_languages as $target_language ) : ?>
-											<option value="<?php echo esc_attr( $target_language['value'] ); ?>"<?php echo disabled( true, (bool) $target_language['disabled'], false ); ?>><?php echo esc_html( $target_language['label'] ); ?></option>
-										<?php endforeach; ?>
-									</select>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<p class="submit">
-						<button type="submit" class="button button-primary" id="i18nly-add-translation-submit"><?php echo esc_html__( 'Add', 'i18nly' ); ?></button>
-					</p>
-				</form>
-			</div>
-		</div>
-		<?php
 	}
 }
