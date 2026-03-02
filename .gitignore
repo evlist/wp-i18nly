@@ -4,3 +4,5 @@
 .devcontainer/tmp/
 .devcontainer/var/
 .composer/
+
+.devcontainer/wp-content/mu-plugins/pexlechris_adminer_avoid_conflicts_with_other_plugins.php
