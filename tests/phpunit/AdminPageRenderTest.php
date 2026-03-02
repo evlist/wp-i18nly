@@ -150,6 +150,54 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Renders translation meta box fields on native editor screen.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_meta_box_outputs_plugin_and_language_selectors() {
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array(
+					'Name' => 'Akismet',
+				),
+			)
+		);
+		i18nly_test_set_available_languages(
+			array(
+				'fr_FR',
+			)
+		);
+		i18nly_test_set_available_translations(
+			array(
+				'fr_FR' => array(
+					'native_name' => 'Français',
+				),
+			)
+		);
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$page = new I18nly_Admin_Page();
+
+		ob_start();
+		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'id="i18nly-plugin-selector"', $html );
+		$this->assertStringContainsString( 'id="i18nly-target-language-selector"', $html );
+		$this->assertStringContainsString( 'selected="selected"', $html );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void

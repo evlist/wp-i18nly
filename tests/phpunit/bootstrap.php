@@ -654,4 +654,25 @@ if ( ! function_exists( 'disabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'selected' ) ) {
+	/**
+	 * Returns selected attribute in test context.
+	 *
+	 * @param mixed $selected Selected value.
+	 * @param mixed $current Current value.
+	 * @param bool  $should_echo Whether to echo attribute.
+	 * @return string
+	 */
+	function selected( $selected, $current = true, $should_echo = true ) {
+		$attribute = ( (string) $selected === (string) $current ) ? ' selected="selected"' : '';
+
+		if ( $should_echo ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Test stub output.
+			echo $attribute;
+		}
+
+		return $attribute;
+	}
+}
+
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';

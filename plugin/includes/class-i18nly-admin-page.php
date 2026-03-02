@@ -174,11 +174,73 @@ class I18nly_Admin_Page {
 	public function register() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_columns', array( $this, 'filter_translation_list_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_translation_list_column' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_sortable_columns', array( $this, 'filter_translation_sortable_columns' ) );
 		add_action( 'pre_get_posts', array( $this, 'apply_translation_sorting' ) );
+	}
+
+	/**
+	 * Registers translation meta box on native editor screens.
+	 *
+	 * @return void
+	 */
+	public function register_translation_meta_box() {
+		add_meta_box(
+			'i18nly-translation-settings',
+			__( 'Translation', 'i18nly' ),
+			array( $this, 'render_translation_meta_box' ),
+			self::POST_TYPE,
+			'normal',
+			'high'
+		);
+	}
+
+	/**
+	 * Renders translation meta box fields.
+	 *
+	 * @param object $post Current post object.
+	 * @return void
+	 */
+	public function render_translation_meta_box( $post ) {
+		$plugin_options    = $this->get_plugin_options();
+		$target_languages  = $this->get_target_language_options();
+		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
+		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
+		?>
+		<table class="form-table" role="presentation">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
+					</th>
+					<td>
+						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required>
+							<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
+							<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
+								<option value="<?php echo esc_attr( $plugin_file ); ?>"<?php selected( $selected_source, (string) $plugin_file ); ?>><?php echo esc_html( $plugin_name ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="i18nly-target-language-selector"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></label>
+					</th>
+					<td>
+						<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required>
+							<option value=""><?php echo esc_html__( 'Select a target language', 'i18nly' ); ?></option>
+							<?php foreach ( $target_languages as $target_language ) : ?>
+								<option value="<?php echo esc_attr( $target_language['value'] ); ?>"<?php echo disabled( true, (bool) $target_language['disabled'], false ); ?><?php selected( $selected_language, (string) $target_language['value'] ); ?>><?php echo esc_html( $target_language['label'] ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<?php
 	}
 
 	/**
