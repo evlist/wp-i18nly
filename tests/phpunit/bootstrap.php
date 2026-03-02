@@ -20,6 +20,7 @@ $i18nly_test_available_languages    = array();
 $i18nly_test_available_translations = array();
 $i18nly_test_posts                  = array();
 $i18nly_test_post_meta              = array();
+$i18nly_test_last_redirect_url      = '';
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -43,6 +44,28 @@ function i18nly_test_reset_admin_menu_capture() {
 
 	$i18nly_test_menu_pages    = array();
 	$i18nly_test_submenu_pages = array();
+}
+
+/**
+ * Resets captured redirect URL.
+ *
+ * @return void
+ */
+function i18nly_test_reset_last_redirect_url() {
+	global $i18nly_test_last_redirect_url;
+
+	$i18nly_test_last_redirect_url = '';
+}
+
+/**
+ * Returns captured redirect URL.
+ *
+ * @return string
+ */
+function i18nly_test_get_last_redirect_url() {
+	global $i18nly_test_last_redirect_url;
+
+	return (string) $i18nly_test_last_redirect_url;
 }
 
 /**
@@ -232,6 +255,21 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_filter' ) ) {
+	/**
+	 * No-op add_filter stub.
+	 *
+	 * @param string   $hook_name Hook name.
+	 * @param callable $callback Hook callback.
+	 * @param int      $priority Hook priority.
+	 * @param int      $accepted_args Number of accepted args.
+	 * @return void
+	 */
+	function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {
+		unset( $hook_name, $callback, $priority, $accepted_args );
+	}
+}
+
 if ( ! function_exists( 'register_post_type' ) ) {
 	/**
 	 * No-op register_post_type stub.
@@ -277,15 +315,15 @@ if ( ! function_exists( 'add_submenu_page' ) ) {
 	/**
 	 * Captures add_submenu_page calls for tests.
 	 *
-	 * @param string   $parent_slug Parent slug.
-	 * @param string   $page_title Page title.
-	 * @param string   $menu_title Menu title.
-	 * @param string   $capability Capability.
-	 * @param string   $menu_slug Menu slug.
-	 * @param callable $callback Callback.
+	 * @param string          $parent_slug Parent slug.
+	 * @param string          $page_title Page title.
+	 * @param string          $menu_title Menu title.
+	 * @param string          $capability Capability.
+	 * @param string          $menu_slug Menu slug.
+	 * @param callable|string $callback Callback.
 	 * @return void
 	 */
-	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback ) {
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '' ) {
 		global $i18nly_test_submenu_pages;
 
 		$i18nly_test_submenu_pages[] = array(
@@ -296,6 +334,25 @@ if ( ! function_exists( 'add_submenu_page' ) ) {
 			'menu_slug'   => $menu_slug,
 			'callback'    => $callback,
 		);
+	}
+}
+
+if ( ! function_exists( 'wp_safe_redirect' ) ) {
+	/**
+	 * Captures safe redirects in tests.
+	 *
+	 * @param string $location Redirect URL.
+	 * @param int    $status HTTP status.
+	 * @return bool
+	 */
+	function wp_safe_redirect( $location, $status = 302 ) {
+		global $i18nly_test_last_redirect_url;
+
+		unset( $status );
+
+		$i18nly_test_last_redirect_url = (string) $location;
+
+		return true;
 	}
 }
 

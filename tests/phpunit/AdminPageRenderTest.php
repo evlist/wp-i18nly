@@ -30,15 +30,13 @@ class AdminPageRenderTest extends TestCase {
 
 		$this->assertCount( 1, $menus );
 		$this->assertSame( 'Translations', $menus[0]['menu_title'] );
-		$this->assertSame( 'i18nly-translations', $menus[0]['menu_slug'] );
+		$this->assertSame( 'edit.php?post_type=i18nly_translation', $menus[0]['menu_slug'] );
 
-		$this->assertCount( 3, $submenus );
+		$this->assertCount( 2, $submenus );
 		$this->assertSame( 'All translations', $submenus[0]['menu_title'] );
-		$this->assertSame( 'i18nly-translations', $submenus[0]['menu_slug'] );
+		$this->assertSame( 'edit.php?post_type=i18nly_translation', $submenus[0]['menu_slug'] );
 		$this->assertSame( 'Add translation', $submenus[1]['menu_title'] );
 		$this->assertSame( 'i18nly-add-translation', $submenus[1]['menu_slug'] );
-		$this->assertSame( 'Edit translation', $submenus[2]['menu_title'] );
-		$this->assertSame( 'i18nly-edit-translation', $submenus[2]['menu_slug'] );
 	}
 
 	/**
@@ -46,19 +44,9 @@ class AdminPageRenderTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function test_render_all_translations_page_outputs_translations_heading() {
+	public function test_render_all_translations_page_redirects_to_native_list_screen() {
 		i18nly_test_set_can_manage_options( true );
-		i18nly_test_set_translations_rows(
-			array(
-				array(
-					'id'               => 42,
-					'source_slug'      => 'akismet/akismet.php',
-					'target_language'  => 'fr_FR',
-					'created_at_gmt'   => '0000-00-00 00:00:00',
-					'created_at_local' => '2026-03-02 11:15:00',
-				),
-			)
-		);
+		i18nly_test_reset_last_redirect_url();
 
 		$page = new I18nly_Admin_Page();
 
@@ -67,21 +55,11 @@ class AdminPageRenderTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( '<h1>Translations</h1>', $html );
-		$this->assertStringContainsString( 'id="i18nly-translations-list"', $html );
-		$this->assertStringContainsString( 'wp-list-table widefat fixed striped table-view-list', $html );
-		$this->assertStringContainsString( '>Source<', $html );
-		$this->assertStringContainsString( '>Target language<', $html );
-		$this->assertStringContainsString( '>Created<', $html );
-		$this->assertStringContainsString( '>akismet/akismet.php<', $html );
-		$this->assertMatchesRegularExpression( '/admin\.php\?page=i18nly-edit-translation(?:&|&amp;)translation_id=42/', $html );
-		$this->assertStringContainsString( 'class="row-actions"', $html );
-		$this->assertStringContainsString( '>Edit<', $html );
-		$this->assertStringContainsString( '>Trash<', $html );
-		$this->assertStringContainsString( 'class="submitdelete"', $html );
-		$this->assertMatchesRegularExpression( '/admin-post\.php(?:\?|&amp;|&)action=i18nly_trash_translation(?:&|&amp;)translation_id=42/', $html );
-		$this->assertStringContainsString( '>2026-03-02 11:15:00<', $html );
-		$this->assertStringNotContainsString( '>No translations found.<', $html );
+		$this->assertSame( '', $html );
+		$this->assertSame(
+			'https://example.test/wp-admin/edit.php?post_type=i18nly_translation',
+			i18nly_test_get_last_redirect_url()
+		);
 	}
 
 	/**
@@ -155,6 +133,7 @@ class AdminPageRenderTest extends TestCase {
 	 */
 	public function test_render_all_translations_page_outputs_nothing_without_capability() {
 		i18nly_test_set_can_manage_options( false );
+		i18nly_test_reset_last_redirect_url();
 
 		$page = new I18nly_Admin_Page();
 
@@ -163,5 +142,184 @@ class AdminPageRenderTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertSame( '', $html );
+		$this->assertSame( '', i18nly_test_get_last_redirect_url() );
+	}
+
+	/**
+	 * Adds source and target columns to native translations list.
+	 *
+	 * @return void
+	 */
+	public function test_filter_translation_list_columns_adds_source_and_target_columns() {
+		$page = new I18nly_Admin_Page();
+
+		$columns = $page->filter_translation_list_columns(
+			array(
+				'cb'    => '<input type="checkbox">',
+				'title' => 'Title',
+				'date'  => 'Date',
+			)
+		);
+
+		$this->assertArrayHasKey( 'source_slug', $columns );
+		$this->assertArrayHasKey( 'target_language', $columns );
+		$this->assertSame( 'Source', $columns['source_slug'] );
+		$this->assertSame( 'Target language', $columns['target_language'] );
+	}
+
+	/**
+	 * Renders source and target values from post meta.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_list_column_outputs_meta_values() {
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '0000-00-00 00:00:00',
+					'created_at_local' => '2026-03-02 11:15:00',
+				),
+			)
+		);
+
+		$page = new I18nly_Admin_Page();
+
+		ob_start();
+		$page->render_translation_list_column( 'source_slug', 42 );
+		$source = ob_get_clean();
+
+		ob_start();
+		$page->render_translation_list_column( 'target_language', 42 );
+		$target = ob_get_clean();
+
+		$this->assertSame( 'akismet/akismet.php', $source );
+		$this->assertSame( 'fr_FR', $target );
+	}
+
+	/**
+	 * Declares source and target as sortable columns.
+	 *
+	 * @return void
+	 */
+	public function test_filter_translation_sortable_columns_adds_source_and_target() {
+		$page = new I18nly_Admin_Page();
+
+		$columns = $page->filter_translation_sortable_columns( array() );
+
+		$this->assertSame( 'source_slug', $columns['source_slug'] );
+		$this->assertSame( 'target_language', $columns['target_language'] );
+	}
+
+	/**
+	 * Maps source sort to source meta key.
+	 *
+	 * @return void
+	 */
+	public function test_apply_translation_sorting_maps_source_slug_to_meta_ordering() {
+		$page  = new I18nly_Admin_Page();
+		$query = new class() {
+			/**
+			 * Query vars.
+			 *
+			 * @var array<string, mixed>
+			 */
+			private $vars = array(
+				'post_type' => 'i18nly_translation',
+				'orderby'   => 'source_slug',
+			);
+
+			/**
+			 * Gets one query var.
+			 *
+			 * @param string $key Var key.
+			 * @return mixed
+			 */
+			public function get( $key ) {
+				return isset( $this->vars[ $key ] ) ? $this->vars[ $key ] : null;
+			}
+
+			/**
+			 * Sets one query var.
+			 *
+			 * @param string $key Var key.
+			 * @param mixed  $value Var value.
+			 * @return void
+			 */
+			public function set( $key, $value ) {
+				$this->vars[ $key ] = $value;
+			}
+
+			/**
+			 * Returns whether this is main query.
+			 *
+			 * @return bool
+			 */
+			public function is_main_query() {
+				return true;
+			}
+		};
+
+		$page->apply_translation_sorting( $query );
+
+		$this->assertSame( '_i18nly_source_slug', $query->get( 'meta_key' ) );
+		$this->assertSame( 'meta_value', $query->get( 'orderby' ) );
+	}
+
+	/**
+	 * Maps target sort to target meta key.
+	 *
+	 * @return void
+	 */
+	public function test_apply_translation_sorting_maps_target_language_to_meta_ordering() {
+		$page  = new I18nly_Admin_Page();
+		$query = new class() {
+			/**
+			 * Query vars.
+			 *
+			 * @var array<string, mixed>
+			 */
+			private $vars = array(
+				'post_type' => 'i18nly_translation',
+				'orderby'   => 'target_language',
+			);
+
+			/**
+			 * Gets one query var.
+			 *
+			 * @param string $key Var key.
+			 * @return mixed
+			 */
+			public function get( $key ) {
+				return isset( $this->vars[ $key ] ) ? $this->vars[ $key ] : null;
+			}
+
+			/**
+			 * Sets one query var.
+			 *
+			 * @param string $key Var key.
+			 * @param mixed  $value Var value.
+			 * @return void
+			 */
+			public function set( $key, $value ) {
+				$this->vars[ $key ] = $value;
+			}
+
+			/**
+			 * Returns whether this is main query.
+			 *
+			 * @return bool
+			 */
+			public function is_main_query() {
+				return true;
+			}
+		};
+
+		$page->apply_translation_sorting( $query );
+
+		$this->assertSame( '_i18nly_target_language', $query->get( 'meta_key' ) );
+		$this->assertSame( 'meta_value', $query->get( 'orderby' ) );
 	}
 }

@@ -20,11 +20,6 @@ class I18nly_Admin_Page {
 	private const ADD_ACTION = 'i18nly_add_translation';
 
 	/**
-	 * Action used by Trash translation row action.
-	 */
-	private const TRASH_ACTION = 'i18nly_trash_translation';
-
-	/**
 	 * Translation post type.
 	 */
 	private const POST_TYPE = 'i18nly_translation';
@@ -40,6 +35,11 @@ class I18nly_Admin_Page {
 	private const META_TARGET_LANGUAGE = '_i18nly_target_language';
 
 	/**
+	 * Native WordPress list screen slug for translations.
+	 */
+	private const LIST_SCREEN_SLUG = 'edit.php?post_type=i18nly_translation';
+
+	/**
 	 * Source locale used by the current MVP.
 	 */
 	private const SOURCE_LOCALE = 'en_US';
@@ -53,11 +53,6 @@ class I18nly_Admin_Page {
 	 * The add translation submenu slug.
 	 */
 	private const ADD_MENU_SLUG = 'i18nly-add-translation';
-
-	/**
-	 * The edit translation page slug.
-	 */
-	private const EDIT_MENU_SLUG = 'i18nly-edit-translation';
 
 	/**
 	 * Returns installed plugins as options for the selector.
@@ -185,7 +180,107 @@ class I18nly_Admin_Page {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_' . self::ADD_ACTION, array( $this, 'handle_add_translation_submission' ) );
-		add_action( 'admin_post_' . self::TRASH_ACTION, array( $this, 'handle_trash_translation_submission' ) );
+		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
+		add_filter( 'manage_edit-' . self::POST_TYPE . '_columns', array( $this, 'filter_translation_list_columns' ) );
+		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_translation_list_column' ), 10, 2 );
+		add_filter( 'manage_edit-' . self::POST_TYPE . '_sortable_columns', array( $this, 'filter_translation_sortable_columns' ) );
+		add_action( 'pre_get_posts', array( $this, 'apply_translation_sorting' ) );
+	}
+
+	/**
+	 * Filters translation list table columns.
+	 *
+	 * @param array<string, string> $columns Current columns.
+	 * @return array<string, string>
+	 */
+	public function filter_translation_list_columns( array $columns ) {
+		$filtered_columns = array();
+
+		foreach ( $columns as $column_key => $column_label ) {
+			$filtered_columns[ $column_key ] = $column_label;
+
+			if ( 'title' !== $column_key ) {
+				continue;
+			}
+
+			$filtered_columns['source_slug']     = __( 'Source', 'i18nly' );
+			$filtered_columns['target_language'] = __( 'Target language', 'i18nly' );
+		}
+
+		if ( ! isset( $filtered_columns['source_slug'] ) ) {
+			$filtered_columns['source_slug'] = __( 'Source', 'i18nly' );
+		}
+
+		if ( ! isset( $filtered_columns['target_language'] ) ) {
+			$filtered_columns['target_language'] = __( 'Target language', 'i18nly' );
+		}
+
+		return $filtered_columns;
+	}
+
+	/**
+	 * Renders custom column content for translation rows.
+	 *
+	 * @param string $column_name Column key.
+	 * @param int    $post_id Translation post ID.
+	 * @return void
+	 */
+	public function render_translation_list_column( $column_name, $post_id ) {
+		if ( 'source_slug' === $column_name ) {
+			echo esc_html( (string) get_post_meta( (int) $post_id, self::META_SOURCE_SLUG, true ) );
+
+			return;
+		}
+
+		if ( 'target_language' === $column_name ) {
+			echo esc_html( (string) get_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, true ) );
+		}
+	}
+
+	/**
+	 * Filters sortable columns for translation list table.
+	 *
+	 * @param array<string, string> $columns Current sortable columns.
+	 * @return array<string, string>
+	 */
+	public function filter_translation_sortable_columns( array $columns ) {
+		$columns['source_slug']     = 'source_slug';
+		$columns['target_language'] = 'target_language';
+
+		return $columns;
+	}
+
+	/**
+	 * Applies meta sorting for translation custom columns.
+	 *
+	 * @param object $query Current query object.
+	 * @return void
+	 */
+	public function apply_translation_sorting( $query ) {
+		if ( ! is_object( $query ) || ! method_exists( $query, 'get' ) || ! method_exists( $query, 'set' ) ) {
+			return;
+		}
+
+		if ( method_exists( $query, 'is_main_query' ) && ! $query->is_main_query() ) {
+			return;
+		}
+
+		$post_type = (string) $query->get( 'post_type' );
+		if ( self::POST_TYPE !== $post_type ) {
+			return;
+		}
+
+		$orderby = (string) $query->get( 'orderby' );
+
+		if ( 'source_slug' === $orderby ) {
+			$query->set( 'meta_key', self::META_SOURCE_SLUG );
+			$query->set( 'orderby', 'meta_value' );
+		}
+
+		if ( 'target_language' === $orderby ) {
+			$query->set( 'meta_key', self::META_TARGET_LANGUAGE );
+			$query->set( 'orderby', 'meta_value' );
+		}
 	}
 
 	/**
@@ -199,11 +294,31 @@ class I18nly_Admin_Page {
 			array(
 				'label'        => __( 'Translations', 'i18nly' ),
 				'labels'       => array(
-					'name'          => __( 'Translations', 'i18nly' ),
-					'singular_name' => __( 'Translation', 'i18nly' ),
+					'name'                  => __( 'Translations', 'i18nly' ),
+					'singular_name'         => __( 'Translation', 'i18nly' ),
+					'add_new'               => __( 'Add translation', 'i18nly' ),
+					'add_new_item'          => __( 'Add translation', 'i18nly' ),
+					'edit_item'             => __( 'Edit translation', 'i18nly' ),
+					'new_item'              => __( 'Translation', 'i18nly' ),
+					'view_item'             => __( 'View translation', 'i18nly' ),
+					'view_items'            => __( 'View translations', 'i18nly' ),
+					'search_items'          => __( 'Search translations', 'i18nly' ),
+					'not_found'             => __( 'No translations found.', 'i18nly' ),
+					'not_found_in_trash'    => __( 'No translations found in Trash.', 'i18nly' ),
+					'all_items'             => __( 'All translations', 'i18nly' ),
+					'archives'              => __( 'Translation archives', 'i18nly' ),
+					'attributes'            => __( 'Translation attributes', 'i18nly' ),
+					'insert_into_item'      => __( 'Insert into translation', 'i18nly' ),
+					'uploaded_to_this_item' => __( 'Uploaded to this translation', 'i18nly' ),
+					'filter_items_list'     => __( 'Filter translations list', 'i18nly' ),
+					'items_list_navigation' => __( 'Translations list navigation', 'i18nly' ),
+					'items_list'            => __( 'Translations list', 'i18nly' ),
+					'item_published'        => __( 'Translation published.', 'i18nly' ),
+					'item_updated'          => __( 'Translation updated.', 'i18nly' ),
 				),
 				'public'       => false,
-				'show_ui'      => false,
+				'show_ui'      => true,
+				'show_in_menu' => false,
 				'supports'     => array( 'title' ),
 				'map_meta_cap' => true,
 			)
@@ -220,37 +335,27 @@ class I18nly_Admin_Page {
 			__( 'Translations', 'i18nly' ),
 			__( 'Translations', 'i18nly' ),
 			'manage_options',
-			self::MENU_SLUG,
-			array( $this, 'render_all_translations_page' ),
+			self::LIST_SCREEN_SLUG,
+			'',
 			'dashicons-translation',
 			58
 		);
 
 		add_submenu_page(
-			self::MENU_SLUG,
+			self::LIST_SCREEN_SLUG,
 			__( 'All translations', 'i18nly' ),
 			__( 'All translations', 'i18nly' ),
 			'manage_options',
-			self::MENU_SLUG,
-			array( $this, 'render_all_translations_page' )
+			self::LIST_SCREEN_SLUG
 		);
 
 		add_submenu_page(
-			self::MENU_SLUG,
+			self::LIST_SCREEN_SLUG,
 			__( 'Add translation', 'i18nly' ),
 			__( 'Add translation', 'i18nly' ),
 			'manage_options',
 			self::ADD_MENU_SLUG,
 			array( $this, 'render_add_translation_page' )
-		);
-
-		add_submenu_page(
-			null,
-			__( 'Edit translation', 'i18nly' ),
-			__( 'Edit translation', 'i18nly' ),
-			'manage_options',
-			self::EDIT_MENU_SLUG,
-			array( $this, 'render_edit_translation_page' )
 		);
 	}
 
@@ -290,44 +395,26 @@ class I18nly_Admin_Page {
 		}
 
 		wp_safe_redirect(
-			$this->get_edit_translation_url( $translation_id )
+			$this->get_standard_edit_translation_url( $translation_id )
 		);
 		exit;
 	}
 
 	/**
-	 * Handles Trash translation row action.
+	 * Filters row actions to remove Quick Edit for translation posts.
 	 *
-	 * @return void
+	 * @param array<string, string> $actions Current row actions.
+	 * @param object                $post Current post object.
+	 * @return array<string, string>
 	 */
-	public function handle_trash_translation_submission() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
+	public function filter_translation_row_actions( array $actions, $post ) {
+		if ( ! isset( $post->post_type ) || self::POST_TYPE !== (string) $post->post_type ) {
+			return $actions;
 		}
 
-		$all_page_url = $this->get_admin_page_url( self::MENU_SLUG );
+		unset( $actions['inline hide-if-no-js'] );
 
-		$translation_id = 0;
-		if ( isset( $_GET['translation_id'] ) ) {
-			$translation_id = absint( wp_unslash( $_GET['translation_id'] ) );
-		}
-
-		if ( $translation_id <= 0 ) {
-			wp_safe_redirect( $all_page_url );
-			exit;
-		}
-
-		check_admin_referer( self::TRASH_ACTION . '_' . $translation_id );
-
-		$translation_post = get_post( $translation_id );
-		if ( ! $translation_post || self::POST_TYPE !== $translation_post->post_type ) {
-			wp_safe_redirect( $all_page_url );
-			exit;
-		}
-
-		wp_trash_post( $translation_id );
-		wp_safe_redirect( $all_page_url );
-		exit;
+		return $actions;
 	}
 
 	/**
@@ -383,45 +470,6 @@ class I18nly_Admin_Page {
 	}
 
 	/**
-	 * Returns translations for the all translations list.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function get_translations_for_list() {
-		$translation_posts = get_posts(
-			array(
-				'post_type'      => self::POST_TYPE,
-				'post_status'    => array( 'draft', 'publish' ),
-				'posts_per_page' => -1,
-				'orderby'        => 'ID',
-				'order'          => 'DESC',
-			)
-		);
-
-		$translations = array();
-		foreach ( $translation_posts as $translation_post ) {
-			$translations[] = array(
-				'id'              => (int) $translation_post->ID,
-				'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
-				'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
-				'created_at'      => $this->get_post_created_at( $translation_post ),
-			);
-		}
-
-		return $translations;
-	}
-
-	/**
-	 * Returns an admin URL for one plugin page.
-	 *
-	 * @param string $page_slug Page slug.
-	 * @return string
-	 */
-	private function get_admin_page_url( $page_slug ) {
-		return admin_url( 'admin.php?page=' . rawurlencode( $page_slug ) );
-	}
-
-	/**
 	 * Returns a stable creation date for one post.
 	 *
 	 * Draft posts can keep `post_date_gmt` to zero in WordPress internals,
@@ -440,39 +488,24 @@ class I18nly_Admin_Page {
 	}
 
 	/**
-	 * Returns the edit translation page URL for one translation.
+	 * Returns the standard WordPress edit post URL for one translation.
 	 *
 	 * @param int $translation_id Translation ID.
 	 * @return string
 	 */
-	private function get_edit_translation_url( $translation_id ) {
-		return add_query_arg(
-			'translation_id',
-			(string) $translation_id,
-			$this->get_admin_page_url( self::EDIT_MENU_SLUG )
-		);
+	private function get_standard_edit_translation_url( $translation_id ) {
+		$edit_url = add_query_arg( 'post', (string) $translation_id, admin_url( 'post.php' ) );
+
+		return add_query_arg( 'action', 'edit', $edit_url );
 	}
 
 	/**
-	 * Returns the trash translation action URL for one translation.
+	 * Returns the native WordPress list page URL for translations.
 	 *
-	 * @param int $translation_id Translation ID.
 	 * @return string
 	 */
-	private function get_trash_translation_url( $translation_id ) {
-		$trash_action_url = add_query_arg(
-			'action',
-			self::TRASH_ACTION,
-			admin_url( 'admin-post.php' )
-		);
-
-		$trash_action_url = add_query_arg(
-			'translation_id',
-			(string) $translation_id,
-			$trash_action_url
-		);
-
-		return wp_nonce_url( $trash_action_url, self::TRASH_ACTION . '_' . $translation_id );
+	private function get_native_list_url() {
+		return admin_url( self::LIST_SCREEN_SLUG );
 	}
 
 	/**
@@ -485,44 +518,7 @@ class I18nly_Admin_Page {
 			return;
 		}
 
-		$translations = $this->get_translations_for_list();
-		?>
-		<div class="wrap">
-			<h1><?php echo esc_html__( 'Translations', 'i18nly' ); ?></h1>
-			<div id="i18nly-translations-list" aria-live="polite">
-				<table class="wp-list-table widefat fixed striped table-view-list i18nly-translations-table">
-					<thead>
-						<tr>
-							<th scope="col" class="column-primary"><?php echo esc_html__( 'Source', 'i18nly' ); ?></th>
-							<th scope="col"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></th>
-							<th scope="col"><?php echo esc_html__( 'Created', 'i18nly' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php if ( empty( $translations ) ) : ?>
-							<tr>
-								<td colspan="3"><?php echo esc_html__( 'No translations found.', 'i18nly' ); ?></td>
-							</tr>
-						<?php else : ?>
-							<?php foreach ( $translations as $translation ) : ?>
-								<tr>
-									<td class="column-primary has-row-actions">
-										<strong><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html( (string) $translation['source_slug'] ); ?></a></strong>
-										<div class="row-actions">
-											<span class="edit"><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html__( 'Edit', 'i18nly' ); ?></a> | </span>
-											<span class="trash"><a href="<?php echo esc_url( $this->get_trash_translation_url( (int) $translation['id'] ) ); ?>" class="submitdelete"><?php echo esc_html__( 'Trash', 'i18nly' ); ?></a></span>
-										</div>
-									</td>
-									<td><?php echo esc_html( (string) $translation['target_language'] ); ?></td>
-									<td><?php echo esc_html( (string) $translation['created_at'] ); ?></td>
-								</tr>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</tbody>
-				</table>
-			</div>
-		</div>
-		<?php
+		wp_safe_redirect( $this->get_native_list_url() );
 	}
 
 	/**
@@ -583,47 +579,6 @@ class I18nly_Admin_Page {
 					</p>
 				</form>
 			</div>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Renders the edit translation page.
-	 *
-	 * @return void
-	 */
-	public function render_edit_translation_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$translation_id = 0;
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only lookup parameter.
-		if ( isset( $_GET['translation_id'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only lookup parameter.
-			$translation_id = absint( wp_unslash( $_GET['translation_id'] ) );
-		}
-
-		$translation = $this->get_translation( $translation_id );
-		?>
-		<div class="wrap">
-			<h1><?php echo esc_html__( 'Edit translation', 'i18nly' ); ?></h1>
-			<?php if ( ! is_array( $translation ) ) : ?>
-				<p><?php echo esc_html__( 'Translation not found.', 'i18nly' ); ?></p>
-			<?php else : ?>
-				<table class="form-table" role="presentation">
-					<tbody>
-						<tr>
-							<th scope="row"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></th>
-							<td><?php echo esc_html( (string) $translation['source_slug'] ); ?></td>
-						</tr>
-						<tr>
-							<th scope="row"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></th>
-							<td><?php echo esc_html( (string) $translation['target_language'] ); ?></td>
-						</tr>
-					</tbody>
-				</table>
-			<?php endif; ?>
 		</div>
 		<?php
 	}
