@@ -33,16 +33,16 @@ This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp
     * **Plugin-level:** Production dependencies (WP-CLI i18n components).
 
 ### 🚀 Current Implementation Status
-The first implementation step is now in place:
+The project is in active development.
 
-* A WordPress plugin bootstrap file exists at `plugin/i18nly.php`.
-* A top-level admin sidebar entry (**I18nly**) is registered.
-* The menu opens an initial blank workspace page intended for future workflow UI.
+Core plugin foundations are available, and the internal architecture is being built incrementally to support the complete i18n workflow.
+
+At this stage, interfaces, internal services, and workflows may evolve between iterations.
 
 ### 🔧 Local Activation (Development)
 1. Copy or symlink the `plugin/` directory into your WordPress `wp-content/plugins/` directory.
 2. Activate **I18nly** in the WordPress admin Plugins screen.
-3. Open **I18nly** from the left admin sidebar to access the starter workspace screen.
+3. Open the plugin entries from the WordPress admin sidebar to explore the currently available screens.
 
 ---
 *I18nly — Streamlining WordPress Localization.*
