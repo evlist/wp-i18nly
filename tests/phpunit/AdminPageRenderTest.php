@@ -75,6 +75,11 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( '>Created<', $html );
 		$this->assertStringContainsString( '>akismet/akismet.php<', $html );
 		$this->assertMatchesRegularExpression( '/admin\.php\?page=i18nly-edit-translation(?:&|&amp;)translation_id=42/', $html );
+		$this->assertStringContainsString( 'class="row-actions"', $html );
+		$this->assertStringContainsString( '>Edit<', $html );
+		$this->assertStringContainsString( '>Trash<', $html );
+		$this->assertStringContainsString( 'class="submitdelete"', $html );
+		$this->assertMatchesRegularExpression( '/admin-post\.php(?:\?|&amp;|&)action=i18nly_trash_translation(?:&|&amp;)translation_id=42/', $html );
 		$this->assertStringContainsString( '>2026-03-02 11:15:00<', $html );
 		$this->assertStringNotContainsString( '>No translations found.<', $html );
 	}

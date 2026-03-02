@@ -20,6 +20,11 @@ class I18nly_Admin_Page {
 	private const ADD_ACTION = 'i18nly_add_translation';
 
 	/**
+	 * Action used by Trash translation row action.
+	 */
+	private const TRASH_ACTION = 'i18nly_trash_translation';
+
+	/**
 	 * Translation post type.
 	 */
 	private const POST_TYPE = 'i18nly_translation';
@@ -180,6 +185,7 @@ class I18nly_Admin_Page {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_' . self::ADD_ACTION, array( $this, 'handle_add_translation_submission' ) );
+		add_action( 'admin_post_' . self::TRASH_ACTION, array( $this, 'handle_trash_translation_submission' ) );
 	}
 
 	/**
@@ -286,6 +292,41 @@ class I18nly_Admin_Page {
 		wp_safe_redirect(
 			$this->get_edit_translation_url( $translation_id )
 		);
+		exit;
+	}
+
+	/**
+	 * Handles Trash translation row action.
+	 *
+	 * @return void
+	 */
+	public function handle_trash_translation_submission() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$all_page_url = $this->get_admin_page_url( self::MENU_SLUG );
+
+		$translation_id = 0;
+		if ( isset( $_GET['translation_id'] ) ) {
+			$translation_id = absint( wp_unslash( $_GET['translation_id'] ) );
+		}
+
+		if ( $translation_id <= 0 ) {
+			wp_safe_redirect( $all_page_url );
+			exit;
+		}
+
+		check_admin_referer( self::TRASH_ACTION . '_' . $translation_id );
+
+		$translation_post = get_post( $translation_id );
+		if ( ! $translation_post || self::POST_TYPE !== $translation_post->post_type ) {
+			wp_safe_redirect( $all_page_url );
+			exit;
+		}
+
+		wp_trash_post( $translation_id );
+		wp_safe_redirect( $all_page_url );
 		exit;
 	}
 
@@ -413,6 +454,28 @@ class I18nly_Admin_Page {
 	}
 
 	/**
+	 * Returns the trash translation action URL for one translation.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return string
+	 */
+	private function get_trash_translation_url( $translation_id ) {
+		$trash_action_url = add_query_arg(
+			'action',
+			self::TRASH_ACTION,
+			admin_url( 'admin-post.php' )
+		);
+
+		$trash_action_url = add_query_arg(
+			'translation_id',
+			(string) $translation_id,
+			$trash_action_url
+		);
+
+		return wp_nonce_url( $trash_action_url, self::TRASH_ACTION . '_' . $translation_id );
+	}
+
+	/**
 	 * Renders the all translations page.
 	 *
 	 * @return void
@@ -443,7 +506,13 @@ class I18nly_Admin_Page {
 						<?php else : ?>
 							<?php foreach ( $translations as $translation ) : ?>
 								<tr>
-									<td class="column-primary"><strong><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html( (string) $translation['source_slug'] ); ?></a></strong></td>
+									<td class="column-primary has-row-actions">
+										<strong><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html( (string) $translation['source_slug'] ); ?></a></strong>
+										<div class="row-actions">
+											<span class="edit"><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html__( 'Edit', 'i18nly' ); ?></a> | </span>
+											<span class="trash"><a href="<?php echo esc_url( $this->get_trash_translation_url( (int) $translation['id'] ) ); ?>" class="submitdelete"><?php echo esc_html__( 'Trash', 'i18nly' ); ?></a></span>
+										</div>
+									</td>
 									<td><?php echo esc_html( (string) $translation['target_language'] ); ?></td>
 									<td><?php echo esc_html( (string) $translation['created_at'] ); ?></td>
 								</tr>

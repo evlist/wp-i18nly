@@ -343,6 +343,20 @@ if ( ! function_exists( 'add_query_arg' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_nonce_url' ) ) {
+	/**
+	 * Appends a nonce query arg to a URL in tests.
+	 *
+	 * @param string $action_url Action URL.
+	 * @param string $action Nonce action.
+	 * @param string $name Nonce arg name.
+	 * @return string
+	 */
+	function wp_nonce_url( $action_url, $action = -1, $name = '_wpnonce' ) {
+		return add_query_arg( $name, 'nonce-' . (string) $action, (string) $action_url );
+	}
+}
+
 if ( ! function_exists( 'wp_nonce_field' ) ) {
 	/**
 	 * Returns nonce field markup in tests.
@@ -390,6 +404,20 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 		unset( $value );
 
 		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_trash_post' ) ) {
+	/**
+	 * No-op post trash stub.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	function wp_trash_post( $post_id ) {
+		unset( $post_id );
+
+		return true;
 	}
 }
 
