@@ -22,6 +22,7 @@ $i18nly_test_posts                  = array();
 $i18nly_test_post_meta              = array();
 $i18nly_test_last_redirect_url      = '';
 $i18nly_test_last_updated_post      = array();
+$i18nly_test_options                = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -67,6 +68,17 @@ function i18nly_test_reset_last_updated_post() {
 	global $i18nly_test_last_updated_post;
 
 	$i18nly_test_last_updated_post = array();
+}
+
+/**
+ * Resets stored option values in test runtime.
+ *
+ * @return void
+ */
+function i18nly_test_reset_options() {
+	global $i18nly_test_options;
+
+	$i18nly_test_options = array();
 }
 
 /**
@@ -529,6 +541,45 @@ if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * Returns option value from test runtime.
+	 *
+	 * @param string $option Option key.
+	 * @param mixed  $default Default value.
+	 * @return mixed
+	 */
+	function get_option( $option, $default = false ) {
+		global $i18nly_test_options;
+
+		if ( ! array_key_exists( (string) $option, $i18nly_test_options ) ) {
+			return $default;
+		}
+
+		return $i18nly_test_options[ (string) $option ];
+	}
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+	/**
+	 * Stores option value in test runtime.
+	 *
+	 * @param string $option Option key.
+	 * @param mixed  $value Option value.
+	 * @param bool   $autoload Autoload flag.
+	 * @return bool
+	 */
+	function update_option( $option, $value, $autoload = null ) {
+		global $i18nly_test_options;
+
+		unset( $autoload );
+
+		$i18nly_test_options[ (string) $option ] = $value;
+
+		return true;
+	}
+}
+
 if ( ! function_exists( 'is_wp_error' ) ) {
 	/**
 	 * Returns whether a value is a WP_Error.
@@ -774,3 +825,6 @@ require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-temporary-storage.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-workspace-service.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-source-schema-manager.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-source-wpdb-repository.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-source-importer.php';

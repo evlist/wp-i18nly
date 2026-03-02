@@ -148,6 +148,22 @@ Core principles for this repository:
 3. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
 4. Repeat with the same loop: implement → validate → commit.
 
+## 11) POT Import Strategy Notes
+
+Planned import logic must eventually reconcile three potential inputs:
+
+- source POT data,
+- optional PO data shipped with the plugin,
+- entries already persisted in the database.
+
+Expected runtime scenarios include plugin upgrades with or without attached PO updates.
+
+Current MVP slice scope is intentionally narrower:
+
+- import and persist source entries from POT only,
+- postpone PO merge/conflict policies to later slices,
+- keep POT header persistence separate from translation post-meta when shared across multiple translations.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:

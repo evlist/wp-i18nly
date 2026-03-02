@@ -25,6 +25,9 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page.php
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-generator.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-temporary-storage.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-workspace-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-source-schema-manager.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-source-wpdb-repository.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-source-importer.php';
 
 /**
  * Loads plugin translations.
@@ -57,6 +60,9 @@ add_action( 'init', 'i18nly_load_textdomain' );
  * @return void
  */
 function i18nly_bootstrap() {
+	$schema_manager = new I18nly_Source_Schema_Manager();
+	$schema_manager->maybe_upgrade();
+
 	$admin_page = new I18nly_Admin_Page();
 	$admin_page->register();
 }
