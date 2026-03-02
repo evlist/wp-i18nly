@@ -246,11 +246,7 @@ class I18nly_Admin_Page {
 		}
 
 		wp_safe_redirect(
-			add_query_arg(
-				'translation_id',
-				(string) $translation_id,
-				$this->get_admin_page_url( self::EDIT_MENU_SLUG )
-			)
+			$this->get_edit_translation_url( $translation_id )
 		);
 		exit;
 	}
@@ -354,6 +350,20 @@ class I18nly_Admin_Page {
 	}
 
 	/**
+	 * Returns the edit translation page URL for one translation.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return string
+	 */
+	private function get_edit_translation_url( $translation_id ) {
+		return add_query_arg(
+			'translation_id',
+			(string) $translation_id,
+			$this->get_admin_page_url( self::EDIT_MENU_SLUG )
+		);
+	}
+
+	/**
 	 * Renders the all translations page.
 	 *
 	 * @return void
@@ -384,7 +394,7 @@ class I18nly_Admin_Page {
 						<?php else : ?>
 							<?php foreach ( $translations as $translation ) : ?>
 								<tr>
-									<td class="column-primary"><strong><?php echo esc_html( (string) $translation['source_slug'] ); ?></strong></td>
+									<td class="column-primary"><strong><a href="<?php echo esc_url( $this->get_edit_translation_url( (int) $translation['id'] ) ); ?>"><?php echo esc_html( (string) $translation['source_slug'] ); ?></a></strong></td>
 									<td><?php echo esc_html( (string) $translation['target_language'] ); ?></td>
 									<td><?php echo esc_html( (string) $translation['created_at'] ); ?></td>
 								</tr>

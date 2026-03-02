@@ -12,6 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/../../' );
 }
 
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
+}
+
+require_once __DIR__ . '/class-i18nly-test-wpdb.php';
+
 $i18nly_test_can_manage_options     = true;
 $i18nly_test_menu_pages             = array();
 $i18nly_test_submenu_pages          = array();
@@ -77,6 +83,23 @@ function i18nly_test_set_available_translations( array $translations ) {
 	global $i18nly_test_available_translations;
 
 	$i18nly_test_available_translations = $translations;
+}
+
+/**
+ * Sets translations returned by wpdb get_results/get_row stubs.
+ *
+ * @param array<int, array<string, mixed>> $translations Translation rows.
+ * @return void
+ */
+function i18nly_test_set_translations_rows( array $translations ) {
+	global $wpdb;
+
+	if ( ! $wpdb instanceof I18nly_Test_WPDB ) {
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Test bootstrap provides a wpdb stub.
+		$wpdb = new I18nly_Test_WPDB();
+	}
+
+	$wpdb->set_translations( $translations );
 }
 
 /**
@@ -274,6 +297,22 @@ if ( ! function_exists( 'admin_url' ) ) {
 	 */
 	function admin_url( $path = '' ) {
 		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * Adds one query argument to a URL in tests.
+	 *
+	 * @param string $key Query key.
+	 * @param string $value Query value.
+	 * @param string $url Base URL.
+	 * @return string
+	 */
+	function add_query_arg( $key, $value, $url ) {
+		$separator = false === strpos( (string) $url, '?' ) ? '?' : '&';
+
+		return (string) $url . $separator . rawurlencode( (string) $key ) . '=' . rawurlencode( (string) $value );
 	}
 }
 
