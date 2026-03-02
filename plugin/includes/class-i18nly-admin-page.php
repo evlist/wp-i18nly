@@ -210,6 +210,7 @@ class I18nly_Admin_Page {
 		$target_languages  = $this->get_target_language_options();
 		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
 		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
+		$is_locked         = '' !== $selected_source || '' !== $selected_language;
 
 		wp_nonce_field( 'i18nly_translation_meta_box', 'i18nly_translation_meta_box_nonce' );
 		?>
@@ -220,7 +221,7 @@ class I18nly_Admin_Page {
 						<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
 					</th>
 					<td>
-						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required>
+						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required<?php echo disabled( $is_locked, true, false ); ?>>
 							<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
 							<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
 								<option value="<?php echo esc_attr( $plugin_file ); ?>"<?php selected( $selected_source, (string) $plugin_file ); ?>><?php echo esc_html( $plugin_name ); ?></option>
@@ -233,7 +234,7 @@ class I18nly_Admin_Page {
 						<label for="i18nly-target-language-selector"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></label>
 					</th>
 					<td>
-						<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required>
+						<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required<?php echo disabled( $is_locked, true, false ); ?>>
 							<option value=""><?php echo esc_html__( 'Select a target language', 'i18nly' ); ?></option>
 							<?php foreach ( $target_languages as $target_language ) : ?>
 								<option value="<?php echo esc_attr( $target_language['value'] ); ?>"<?php echo disabled( true, (bool) $target_language['disabled'], false ); ?><?php selected( $selected_language, (string) $target_language['value'] ); ?>><?php echo esc_html( $target_language['label'] ); ?></option>
@@ -243,6 +244,9 @@ class I18nly_Admin_Page {
 				</tr>
 			</tbody>
 		</table>
+		<?php if ( $is_locked ) : ?>
+			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
+		<?php endif; ?>
 		<?php
 	}
 
@@ -274,13 +278,17 @@ class I18nly_Admin_Page {
 			return;
 		}
 
-		$source_slug = '';
-		if ( isset( $_POST['i18nly_plugin_selector'] ) ) {
+		$existing_source   = (string) get_post_meta( (int) $post_id, self::META_SOURCE_SLUG, true );
+		$existing_language = (string) get_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, true );
+		$is_locked         = '' !== $existing_source || '' !== $existing_language;
+
+		$source_slug = $existing_source;
+		if ( ! $is_locked && isset( $_POST['i18nly_plugin_selector'] ) ) {
 			$source_slug = sanitize_text_field( wp_unslash( $_POST['i18nly_plugin_selector'] ) );
 		}
 
-		$target_language = '';
-		if ( isset( $_POST['i18nly_target_language_selector'] ) ) {
+		$target_language = $existing_language;
+		if ( ! $is_locked && isset( $_POST['i18nly_target_language_selector'] ) ) {
 			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
 		}
 

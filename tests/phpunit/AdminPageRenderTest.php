@@ -195,6 +195,7 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( 'id="i18nly-plugin-selector"', $html );
 		$this->assertStringContainsString( 'id="i18nly-target-language-selector"', $html );
 		$this->assertStringContainsString( 'selected="selected"', $html );
+		$this->assertStringContainsString( 'disabled="disabled"', $html );
 	}
 
 	/**
@@ -257,6 +258,45 @@ class AdminPageRenderTest extends TestCase {
 		);
 
 		$this->assertSame( array(), i18nly_test_get_last_updated_post() );
+
+		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
+	}
+
+	/**
+	 * Does not allow plugin or language changes once set.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_keeps_existing_source_and_language_on_edit() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_plugin_selector']            = 'hello-dolly/hello.php';
+		$_POST['i18nly_target_language_selector']   = 'de_DE';
+
+		$page = new I18nly_Admin_Page();
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type'  => 'i18nly_translation',
+				'post_title' => 'Manual title',
+			),
+			true
+		);
+
+		$this->assertSame( 'akismet/akismet.php', get_post_meta( 42, '_i18nly_source_slug', true ) );
+		$this->assertSame( 'fr_FR', get_post_meta( 42, '_i18nly_target_language', true ) );
 
 		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
 	}
