@@ -54,6 +54,11 @@ WORKFLOWS_CI_TESTS = phpcs
 WORKFLOWS_CI_TESTS = phpunit,phpcs,wpcheck
 ```
 
+### Add custom options to wp plugin check
+```
+WORKFLOWS_CI_WPCHECK_OPTIONS = --exclude-directories=third-party
+```
+
 ### Include REUSE license lint
 ```
 WORKFLOWS_CI_TESTS = phpunit,phpcs,reuse

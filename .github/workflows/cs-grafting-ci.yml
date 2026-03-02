@@ -11,6 +11,7 @@ on:
   # - WORKFLOWS_CI_PLUGIN_DIR: "plugins-src/hello-world" (relative path)
   # - WORKFLOWS_CI_TESTS: "phpunit,wpcs,wpcheck,reuse" (comma-separated test suites)
   # - WORKFLOWS_CI_PHPUNIT_CONFIG: "phpunit.xml" (optional path relative to repo root)
+  # - WORKFLOWS_CI_WPCHECK_OPTIONS: "--exclude-directories=third-party" (optional extra args)
   
   push:
   pull_request:
@@ -23,6 +24,7 @@ env:
   WORKFLOWS_CI_TESTS_VAR: ${{ vars.WORKFLOWS_CI_TESTS || '' }}
   WORKFLOWS_CI_PHP_VERSION_VAR: ${{ vars.WORKFLOWS_CI_PHP_VERSION || '' }}
   WORKFLOWS_CI_PHPUNIT_CONFIG_VAR: ${{ vars.WORKFLOWS_CI_PHPUNIT_CONFIG || '' }}
+  WORKFLOWS_CI_WPCHECK_OPTIONS_VAR: ${{ vars.WORKFLOWS_CI_WPCHECK_OPTIONS || '' }}
 
 jobs:
   # Gate: Skip entire workflow if CI is disabled
@@ -36,6 +38,7 @@ jobs:
       tests_to_run: ${{ steps.check.outputs.tests_to_run }}
       php_version: ${{ steps.check.outputs.php_version }}
       phpunit_config: ${{ steps.check.outputs.phpunit_config }}
+      wpcheck_options: ${{ steps.check.outputs.wpcheck_options }}
     steps:
       - uses: actions/checkout@v3
 
@@ -93,6 +96,7 @@ jobs:
           tests_to_run="${WORKFLOWS_CI_TESTS_VAR:-${WORKFLOWS_CI_TESTS:-phpunit,wpcs,wpcheck,reuse}}"
           php_version="${WORKFLOWS_CI_PHP_VERSION_VAR:-${WORKFLOWS_CI_PHP_VERSION:-8.0}}"
           phpunit_config="${WORKFLOWS_CI_PHPUNIT_CONFIG_VAR:-${WORKFLOWS_CI_PHPUNIT_CONFIG:-}}"
+          wpcheck_options="${WORKFLOWS_CI_WPCHECK_OPTIONS_VAR:-${WORKFLOWS_CI_WPCHECK_OPTIONS:-}}"
 
           event_name="${{ github.event_name }}"
           current_branch="${{ github.ref_name }}"
@@ -133,6 +137,11 @@ jobs:
           echo "tests_to_run=$tests_to_run" >> "$GITHUB_OUTPUT"
           echo "php_version=$php_version" >> "$GITHUB_OUTPUT"
           echo "phpunit_config=$phpunit_config" >> "$GITHUB_OUTPUT"
+          {
+            echo "wpcheck_options<<EOF"
+            echo "$wpcheck_options"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   test:
     needs: check-enabled
@@ -248,6 +257,7 @@ jobs:
 
           plugin_dir="${{ needs.check-enabled.outputs.plugin_dir }}"
           plugin_slug="${{ needs.check-enabled.outputs.plugin_slug }}"
+          wpcheck_options="${{ needs.check-enabled.outputs.wpcheck_options }}"
           wp_root="$RUNNER_TEMP/wordpress"
 
           wp core download --path="$wp_root" --quiet
@@ -259,8 +269,12 @@ jobs:
           cp -a "$GITHUB_WORKSPACE/$plugin_dir/." "$wp_root/wp-content/plugins/$plugin_slug/"
           wp plugin activate "$plugin_slug" --path="$wp_root" --quiet
 
+          if [ -n "$wpcheck_options" ]; then
+            echo "Using additional wp plugin check options: $wpcheck_options"
+          fi
+
           set +e
-          wpcheck_output="$(wp plugin check "$plugin_slug" --path="$wp_root" --format=strict-json 2>&1)"
+          wpcheck_output="$(wp plugin check "$plugin_slug" --path="$wp_root" --format=strict-json $wpcheck_options 2>&1)"
           wpcheck_status=$?
           set -e
 
