@@ -198,6 +198,70 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Saves meta and auto-generates title when current title is empty.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_sets_meta_and_autogenerates_title_when_empty() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_reset_last_updated_post();
+
+		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_target_language_selector']   = 'fr_FR';
+
+		$page = new I18nly_Admin_Page();
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type'  => 'i18nly_translation',
+				'post_title' => '',
+			),
+			false
+		);
+
+		$this->assertSame( 'akismet/akismet.php', get_post_meta( 42, '_i18nly_source_slug', true ) );
+		$this->assertSame( 'fr_FR', get_post_meta( 42, '_i18nly_target_language', true ) );
+		$this->assertSame(
+			array(
+				'ID'         => 42,
+				'post_title' => 'akismet/akismet.php → fr_FR',
+			),
+			i18nly_test_get_last_updated_post()
+		);
+
+		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
+	}
+
+	/**
+	 * Does not override existing title on save.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_keeps_existing_title() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_reset_last_updated_post();
+
+		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_target_language_selector']   = 'fr_FR';
+
+		$page = new I18nly_Admin_Page();
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type'  => 'i18nly_translation',
+				'post_title' => 'Manual title',
+			),
+			true
+		);
+
+		$this->assertSame( array(), i18nly_test_get_last_updated_post() );
+
+		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void

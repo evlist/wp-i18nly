@@ -175,6 +175,7 @@ class I18nly_Admin_Page {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
 		add_filter( 'manage_edit-' . self::POST_TYPE . '_columns', array( $this, 'filter_translation_list_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_translation_list_column' ), 10, 2 );
@@ -209,6 +210,8 @@ class I18nly_Admin_Page {
 		$target_languages  = $this->get_target_language_options();
 		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
 		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
+
+		wp_nonce_field( 'i18nly_translation_meta_box', 'i18nly_translation_meta_box_nonce' );
 		?>
 		<table class="form-table" role="presentation">
 			<tbody>
@@ -241,6 +244,64 @@ class I18nly_Admin_Page {
 			</tbody>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Saves translation fields from native post editor.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param object $post Current post object.
+	 * @param bool   $update Whether this is an update.
+	 * @return void
+	 */
+	public function save_translation_meta_box( $post_id, $post, $update ) {
+		unset( $update );
+
+		if ( ! isset( $post->post_type ) || self::POST_TYPE !== (string) $post->post_type ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['i18nly_translation_meta_box_nonce'] ) ) {
+			return;
+		}
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['i18nly_translation_meta_box_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, 'i18nly_translation_meta_box' ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', (int) $post_id ) ) {
+			return;
+		}
+
+		$source_slug = '';
+		if ( isset( $_POST['i18nly_plugin_selector'] ) ) {
+			$source_slug = sanitize_text_field( wp_unslash( $_POST['i18nly_plugin_selector'] ) );
+		}
+
+		$target_language = '';
+		if ( isset( $_POST['i18nly_target_language_selector'] ) ) {
+			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
+		}
+
+		update_post_meta( (int) $post_id, self::META_SOURCE_SLUG, $source_slug );
+		update_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, $target_language );
+
+		$current_title = isset( $post->post_title ) ? (string) $post->post_title : '';
+		if ( '' !== trim( $current_title ) || '' === $source_slug || '' === $target_language ) {
+			return;
+		}
+
+		remove_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10 );
+
+		wp_update_post(
+			array(
+				'ID'         => (int) $post_id,
+				'post_title' => $source_slug . ' → ' . $target_language,
+			)
+		);
+
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 	}
 
 	/**

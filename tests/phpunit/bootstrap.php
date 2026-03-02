@@ -21,6 +21,7 @@ $i18nly_test_available_translations = array();
 $i18nly_test_posts                  = array();
 $i18nly_test_post_meta              = array();
 $i18nly_test_last_redirect_url      = '';
+$i18nly_test_last_updated_post      = array();
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -55,6 +56,28 @@ function i18nly_test_reset_last_redirect_url() {
 	global $i18nly_test_last_redirect_url;
 
 	$i18nly_test_last_redirect_url = '';
+}
+
+/**
+ * Resets captured wp_update_post payload.
+ *
+ * @return void
+ */
+function i18nly_test_reset_last_updated_post() {
+	global $i18nly_test_last_updated_post;
+
+	$i18nly_test_last_updated_post = array();
+}
+
+/**
+ * Returns captured wp_update_post payload.
+ *
+ * @return array<string, mixed>
+ */
+function i18nly_test_get_last_updated_post() {
+	global $i18nly_test_last_updated_post;
+
+	return $i18nly_test_last_updated_post;
 }
 
 /**
@@ -255,6 +278,37 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'remove_action' ) ) {
+	/**
+	 * No-op remove_action stub.
+	 *
+	 * @param string   $hook_name Hook name.
+	 * @param callable $callback Hook callback.
+	 * @param int      $priority Hook priority.
+	 * @return void
+	 */
+	function remove_action( $hook_name, $callback, $priority = 10 ) {
+		unset( $hook_name, $callback, $priority );
+	}
+}
+
+if ( ! function_exists( 'add_meta_box' ) ) {
+	/**
+	 * No-op add_meta_box stub.
+	 *
+	 * @param string   $id Meta box ID.
+	 * @param string   $title Meta box title.
+	 * @param callable $callback Render callback.
+	 * @param string   $screen Screen ID.
+	 * @param string   $context Context.
+	 * @param string   $priority Priority.
+	 * @return void
+	 */
+	function add_meta_box( $id, $title, $callback, $screen, $context = 'advanced', $priority = 'default' ) {
+		unset( $id, $title, $callback, $screen, $context, $priority );
+	}
+}
+
 if ( ! function_exists( 'add_filter' ) ) {
 	/**
 	 * No-op add_filter stub.
@@ -450,6 +504,31 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	/**
+	 * Returns sanitized text field in tests.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	function sanitize_text_field( $value ) {
+		return trim( (string) $value );
+	}
+}
+
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+	/**
+	 * Validates nonce in tests.
+	 *
+	 * @param string $nonce Nonce value.
+	 * @param string $action Nonce action.
+	 * @return bool
+	 */
+	function wp_verify_nonce( $nonce, $action ) {
+		return 'nonce-' . (string) $action === (string) $nonce;
+	}
+}
+
 if ( ! function_exists( 'is_wp_error' ) ) {
 	/**
 	 * Returns whether a value is a WP_Error.
@@ -607,6 +686,22 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 		);
 
 		return $post_id;
+	}
+}
+
+if ( ! function_exists( 'wp_update_post' ) ) {
+	/**
+	 * Captures updated post payload in tests.
+	 *
+	 * @param array<string, mixed> $postarr Post data.
+	 * @return int
+	 */
+	function wp_update_post( array $postarr ) {
+		global $i18nly_test_last_updated_post;
+
+		$i18nly_test_last_updated_post = $postarr;
+
+		return isset( $postarr['ID'] ) ? (int) $postarr['ID'] : 0;
 	}
 }
 
