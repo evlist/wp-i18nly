@@ -70,4 +70,33 @@ abstract class TestCase {
 	 * @return void
 	 */
 	public function assertStringNotContainsString( string $needle, string $haystack, string $message = '' ): void {}
+
+	/**
+	 * @param string $filename File path.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertFileExists( string $filename, string $message = '' ): void {}
+
+	/**
+	 * @param string $directory Directory path.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertDirectoryExists( string $directory, string $message = '' ): void {}
+
+	/**
+	 * @param string $directory Directory path.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertDirectoryDoesNotExist( string $directory, string $message = '' ): void {}
+
+	/**
+	 * @param string $suffix Expected suffix.
+	 * @param string $string Evaluated string.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertStringEndsWith( string $suffix, string $string, string $message = '' ): void {}
 }
