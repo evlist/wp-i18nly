@@ -1,0 +1,9 @@
+{
+  "upstream": "https://github.com/wp-cli/i18n-command",
+  "last_sync": "2026-03-02T16:04:52Z",
+  "commit": "7df61b36e342d1b73f50aef3847e5dae978e29f7",
+  "commit_short": "7df61b3",
+  "commit_date": "2026-02-15 13:09:06 +0100",
+  "commit_message": "Merge pull request #474 from retlehs/blade-component-props",
+  "notes": "Code copied from wp-cli/i18n-command/src"
+}

@@ -1,0 +1,13 @@
+version = 1
+
+[[annotations]]
+path = ["third-party/wp-cli/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2011-2026 WP-CLI Contributors <https://wp-cli.org>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["third-party/vendor/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Various upstream authors"
+SPDX-License-Identifier = "NOASSERTION"

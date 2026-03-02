@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>",
+    "SPDX-License-Identifier: GPL-3.0-or-later"
+  ],
+  "name": "evlist/wp-i18nly-plugin-runtime",
+  "description": "Runtime dependencies for the i18nly WordPress plugin.",
+  "type": "project",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "php": ">=8.0",
+    "gettext/gettext": "^5.7",
+    "mck89/peast": "^1.17"
+  },
+  "config": {
+    "vendor-dir": "third-party/vendor",
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/installers": true
+    }
+  }
+}
