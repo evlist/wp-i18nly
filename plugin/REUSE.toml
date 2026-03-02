@@ -10,4 +10,4 @@ SPDX-License-Identifier = "MIT"
 path = ["third-party/vendor/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Various upstream authors"
-SPDX-License-Identifier = "NOASSERTION"
+SPDX-License-Identifier = "BSD-3-Clause OR MIT"
