@@ -746,9 +746,11 @@ class I18nly_Admin_Page {
 		$header_overrides = $this->build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
 
 		$pot_workspace = new I18nly_Pot_Workspace_Service();
+		$pot_importer  = new I18nly_Pot_Source_Importer();
 
 		try {
-			$pot_file_path = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries, $header_overrides );
+			$pot_file_path  = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries, $header_overrides );
+			$import_summary = $pot_importer->import_file( $source_slug, $pot_file_path );
 		} catch ( RuntimeException $exception ) {
 			wp_send_json_error( array( 'message' => $exception->getMessage() ), 500 );
 			return;
@@ -758,6 +760,7 @@ class I18nly_Admin_Page {
 			array(
 				'translation_id' => $translation_id,
 				'entries_count'  => count( $entries ),
+				'import_summary' => $import_summary,
 				'pot_file_path'  => $pot_file_path,
 			)
 		);
@@ -835,15 +838,18 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function get_current_edit_translation_id() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
 		if ( ! isset( $_GET['post'], $_GET['action'] ) ) {
 			return 0;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
 		$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
 		if ( 'edit' !== $action ) {
 			return 0;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
 		$translation_id = absint( wp_unslash( $_GET['post'] ) );
 		if ( $translation_id <= 0 ) {
 			return 0;

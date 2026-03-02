@@ -127,7 +127,9 @@ class I18nly_Source_Schema_Manager {
 			KEY catalog_status (catalog_id, status)
 		) {$collation}";
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Schema DDL is built from internal constants/table names.
 		$this->wpdb->query( $catalogs_sql );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Schema DDL is built from internal constants/table names.
 		$this->wpdb->query( $entries_sql );
 	}
 

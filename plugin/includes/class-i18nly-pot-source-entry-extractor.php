@@ -48,6 +48,7 @@ class I18nly_Pot_Source_Entry_Extractor {
 		$entries_map      = array();
 
 		foreach ( $php_files as $file_path ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source file scan.
 			$code = file_get_contents( $file_path );
 			if ( false === $code ) {
 				continue;
@@ -81,7 +82,8 @@ class I18nly_Pot_Source_Entry_Extractor {
 					$function_name,
 					$parsed['args'],
 					$relative_path,
-					(int) $tokens[ $index ][2]
+					(int) $tokens[ $index ][2],
+					$this->extract_translator_comments_before_index( $tokens, $index )
 				);
 
 				if ( null === $entry ) {
@@ -101,6 +103,16 @@ class I18nly_Pot_Source_Entry_Extractor {
 					'file' => $relative_path,
 					'line' => (int) $tokens[ $index ][2],
 				);
+
+				if ( ! empty( $entry['comments'] ) ) {
+					$existing_comments = isset( $entries_map[ $key ]['comments'] ) && is_array( $entries_map[ $key ]['comments'] )
+						? $entries_map[ $key ]['comments']
+						: array();
+
+					$entries_map[ $key ]['comments'] = array_values(
+						array_unique( array_merge( $existing_comments, $entry['comments'] ) )
+					);
+				}
 			}
 		}
 
@@ -238,10 +250,10 @@ class I18nly_Pot_Source_Entry_Extractor {
 	 * @return array{args: array<int, array<int, mixed>>, close_index: int}|null
 	 */
 	private function parse_function_call_arguments( array $tokens, $open_parenthesis_index ) {
-		$depth         = 0;
-		$arguments     = array();
-		$current_arg   = array();
-		$token_count   = count( $tokens );
+		$depth       = 0;
+		$arguments   = array();
+		$current_arg = array();
+		$token_count = count( $tokens );
 
 		for ( $index = $open_parenthesis_index; $index < $token_count; $index++ ) {
 			$token = $tokens[ $index ];
@@ -251,12 +263,12 @@ class I18nly_Pot_Source_Entry_Extractor {
 					$current_arg[] = $token;
 				}
 
-				$depth++;
+				++$depth;
 				continue;
 			}
 
 			if ( ')' === $token ) {
-				$depth--;
+				--$depth;
 
 				if ( 0 === $depth ) {
 					$arguments[] = $current_arg;
@@ -288,13 +300,14 @@ class I18nly_Pot_Source_Entry_Extractor {
 	/**
 	 * Builds one normalized entry from one gettext function call.
 	 *
-	 * @param string                $function_name Function name.
+	 * @param string                        $function_name Function name.
 	 * @param array<int, array<int, mixed>> $args Parsed args.
-	 * @param string                $relative_path Relative reference file path.
-	 * @param int                   $line Source line.
+	 * @param string                        $relative_path Relative reference file path.
+	 * @param int                           $line Source line.
+	 * @param array<int, string>            $translator_comments Translator comments.
 	 * @return array<string, mixed>|null
 	 */
-	private function build_entry_from_function_call( $function_name, array $args, $relative_path, $line ) {
+	private function build_entry_from_function_call( $function_name, array $args, $relative_path, $line, array $translator_comments = array() ) {
 		$original = $this->token_argument_to_literal_string( $args, 0 );
 		if ( null === $original || '' === $original ) {
 			return null;
@@ -309,6 +322,10 @@ class I18nly_Pot_Source_Entry_Extractor {
 				),
 			),
 		);
+
+		if ( ! empty( $translator_comments ) ) {
+			$entry['comments'] = $translator_comments;
+		}
 
 		if ( in_array( $function_name, array( '_x', '_ex', 'esc_html_x', 'esc_attr_x' ), true ) ) {
 			$context = $this->token_argument_to_literal_string( $args, 1 );
@@ -332,6 +349,69 @@ class I18nly_Pot_Source_Entry_Extractor {
 		}
 
 		return $entry;
+	}
+
+	/**
+	 * Extracts translators comments found immediately before one gettext call.
+	 *
+	 * @param array<int, mixed> $tokens Token stream.
+	 * @param int               $index Current token index.
+	 * @return array<int, string>
+	 */
+	private function extract_translator_comments_before_index( array $tokens, $index ) {
+		$comments     = array();
+		$current_line = ( isset( $tokens[ $index ] ) && is_array( $tokens[ $index ] ) && isset( $tokens[ $index ][2] ) )
+			? (int) $tokens[ $index ][2]
+			: 0;
+
+		for ( $cursor = $index - 1; $cursor >= 0; $cursor-- ) {
+			$token = $tokens[ $cursor ];
+
+			if ( is_array( $token ) && T_WHITESPACE === $token[0] ) {
+				continue;
+			}
+
+			if ( is_array( $token ) && ( T_COMMENT === $token[0] || T_DOC_COMMENT === $token[0] ) ) {
+				$comment_line = isset( $token[2] ) ? (int) $token[2] : 0;
+
+				if ( $current_line > 0 && $comment_line > 0 && ( $current_line - $comment_line ) > 6 ) {
+					break;
+				}
+
+				$comment_block = (string) $token[1];
+				$lines         = preg_split( '/\r\n|\r|\n/', $comment_block );
+
+				if ( false === $lines ) {
+					continue;
+				}
+
+				foreach ( $lines as $line ) {
+					$normalized = trim( (string) $line );
+					$normalized = ltrim( $normalized, "/*# \t" );
+					$normalized = preg_replace( '/\*\/$/', '', $normalized );
+
+					if ( null === $normalized ) {
+						continue;
+					}
+
+					$normalized = trim( $normalized );
+
+					if ( 0 !== stripos( $normalized, 'translators:' ) ) {
+						continue;
+					}
+
+					$comments[] = trim( $normalized );
+				}
+
+				continue;
+			}
+
+			if ( ';' === $token || '}' === $token || '{' === $token ) {
+				break;
+			}
+		}
+
+		return array_values( array_unique( $comments ) );
 	}
 
 	/**

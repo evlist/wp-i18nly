@@ -29,7 +29,7 @@ class PotSourceEntryExtractorTest extends TestCase {
 		mkdir( $plugin_dir, 0755, true );
 		file_put_contents(
 			$main_file,
-			"<?php\n__( 'Hello world', 'sample-plugin' );\n_x( 'Open', 'verb', 'sample-plugin' );\n_n( '%s item', '%s items', 2, 'sample-plugin' );\n"
+			"<?php\n/* translators: Greeting shown on welcome panel. */\nprintf( __( 'Hello world', 'sample-plugin' ) );\n_x( 'Open', 'verb', 'sample-plugin' );\n_n( '%s item', '%s items', 2, 'sample-plugin' );\n"
 		);
 
 		$extractor = new I18nly_Pot_Source_Entry_Extractor( $plugins_root );
@@ -49,15 +49,22 @@ class PotSourceEntryExtractorTest extends TestCase {
 		$this->assertContains( '%s item', $originals );
 
 		$plural_entry = null;
+		$hello_entry  = null;
 		foreach ( $entries as $entry ) {
+			if ( 'Hello world' === $entry['original'] ) {
+				$hello_entry = $entry;
+			}
+
 			if ( '%s item' === $entry['original'] ) {
 				$plural_entry = $entry;
-				break;
 			}
 		}
 
 		$this->assertIsArray( $plural_entry );
 		$this->assertSame( '%s items', $plural_entry['plural'] );
+		$this->assertIsArray( $hello_entry );
+		$this->assertArrayHasKey( 'comments', $hello_entry );
+		$this->assertContains( 'translators: Greeting shown on welcome panel.', $hello_entry['comments'] );
 
 		unlink( $main_file );
 		rmdir( $plugin_dir );

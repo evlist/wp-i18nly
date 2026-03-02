@@ -10,7 +10,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-// phpcs:disable WordPress.WP.AlternativeFunctions
+// phpcs:disable WordPress.WP.AlternativeFunctions, Generic.Files.OneObjectStructurePerFile
 
 /**
  * Tests POT source import into source entries repository.
@@ -29,6 +29,7 @@ msgstr ""
 "X-Domain: sample-plugin\\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\\n"
 
+#. translators: Greeting message.
 #: plugin/file.php:10
 msgid "Hello world"
 msgstr ""
@@ -55,6 +56,24 @@ POT;
 		$this->assertSame( 0, $first_summary['updated'] );
 		$this->assertSame( 0, $first_summary['unchanged'] );
 		$this->assertCount( 3, $repository->entries );
+
+		$comments_found = false;
+		foreach ( $repository->entries as $entry ) {
+			if ( 'Hello world' !== $entry['msgid'] ) {
+				continue;
+			}
+
+			$comments = json_decode( (string) $entry['comments_json'], true );
+			if ( isset( $comments['comments'] ) && in_array( 'translators: Greeting message.', (array) $comments['comments'], true ) ) {
+				$comments_found = true;
+			}
+
+			if ( isset( $comments['extracted_comments'] ) && in_array( 'translators: Greeting message.', (array) $comments['extracted_comments'], true ) ) {
+				$comments_found = true;
+			}
+		}
+
+		$this->assertSame( true, $comments_found );
 
 		$second_summary = $importer->import_file( 'sample-plugin/sample.php', $temp_file );
 

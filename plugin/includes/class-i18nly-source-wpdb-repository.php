@@ -59,12 +59,14 @@ class I18nly_Source_Wpdb_Repository {
 	public function upsert_catalog( $plugin_slug, $domain, $headers_json, $now_gmt ) {
 		$table = $this->schema_manager->get_catalogs_table_name();
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
 		$catalog_id = (int) $this->wpdb->get_var(
 			$this->wpdb->prepare(
 				"SELECT id FROM {$table} WHERE plugin_slug = %s",
 				$plugin_slug
 			)
 		);
+		// phpcs:enable
 
 		if ( $catalog_id > 0 ) {
 			$this->wpdb->update(
@@ -116,6 +118,7 @@ class I18nly_Source_Wpdb_Repository {
 		$now_gmt = (string) $entry['updated_at_gmt'];
 
 		if ( $entry_id > 0 ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
 			$existing = $this->wpdb->get_row(
 				$this->wpdb->prepare(
 					"SELECT msgid_plural, comments_json, references_json, flags_json, status FROM {$table} WHERE id = %d",
@@ -123,6 +126,7 @@ class I18nly_Source_Wpdb_Repository {
 				),
 				ARRAY_A
 			);
+			// phpcs:enable
 
 			$unchanged = is_array( $existing )
 				&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
@@ -138,12 +142,12 @@ class I18nly_Source_Wpdb_Repository {
 			$this->wpdb->update(
 				$table,
 				array(
-					'msgid_plural'   => $entry['msgid_plural'],
-					'comments_json'  => $entry['comments_json'],
+					'msgid_plural'    => $entry['msgid_plural'],
+					'comments_json'   => $entry['comments_json'],
 					'references_json' => $entry['references_json'],
-					'flags_json'     => $entry['flags_json'],
-					'status'         => $entry['status'],
-					'updated_at_gmt' => $now_gmt,
+					'flags_json'      => $entry['flags_json'],
+					'status'          => $entry['status'],
+					'updated_at_gmt'  => $now_gmt,
 				),
 				array( 'id' => $entry_id ),
 				array( '%s', '%s', '%s', '%s', '%s', '%s' ),
@@ -187,6 +191,7 @@ class I18nly_Source_Wpdb_Repository {
 		$table = $this->schema_manager->get_entries_table_name();
 
 		if ( null === $msgctxt ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
 			return (int) $this->wpdb->get_var(
 				$this->wpdb->prepare(
 					"SELECT id FROM {$table} WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s AND plural_index = %d",
@@ -195,8 +200,10 @@ class I18nly_Source_Wpdb_Repository {
 					$plural_index
 				)
 			);
+			// phpcs:enable
 		}
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
 		return (int) $this->wpdb->get_var(
 			$this->wpdb->prepare(
 				"SELECT id FROM {$table} WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s AND plural_index = %d",
@@ -206,5 +213,6 @@ class I18nly_Source_Wpdb_Repository {
 				$plural_index
 			)
 		);
+		// phpcs:enable
 	}
 }

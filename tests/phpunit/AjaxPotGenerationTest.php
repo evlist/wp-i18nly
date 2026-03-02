@@ -94,6 +94,11 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertSame( 42, $response['data']['translation_id'] );
 		$this->assertArrayHasKey( 'entries_count', $response['data'] );
 		$this->assertSame( 0, $response['data']['entries_count'] );
+		$this->assertArrayHasKey( 'import_summary', $response['data'] );
+		$this->assertArrayHasKey( 'catalog_id', $response['data']['import_summary'] );
+		$this->assertArrayHasKey( 'inserted', $response['data']['import_summary'] );
+		$this->assertArrayHasKey( 'updated', $response['data']['import_summary'] );
+		$this->assertArrayHasKey( 'unchanged', $response['data']['import_summary'] );
 		$this->assertIsString( $response['data']['pot_file_path'] );
 		$this->assertFileExists( $response['data']['pot_file_path'] );
 

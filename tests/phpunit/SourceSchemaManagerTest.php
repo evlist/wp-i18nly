@@ -10,6 +10,8 @@
 
 use PHPUnit\Framework\TestCase;
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile
+
 /**
  * Tests source schema installation.
  */
@@ -73,3 +75,5 @@ class I18nly_Test_WPDB_Query_Stub {
 		return 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
 	}
 }
+
+// phpcs:enable

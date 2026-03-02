@@ -63,7 +63,7 @@ class I18nly_Pot_Source_Importer {
 		$translations = $loader->loadFile( $pot_file_path );
 		$headers      = $translations->getHeaders()->toArray();
 
-		$domain = isset( $headers['X-Domain'] ) ? (string) $headers['X-Domain'] : '';
+		$domain  = isset( $headers['X-Domain'] ) ? (string) $headers['X-Domain'] : '';
 		$now_gmt = gmdate( 'Y-m-d H:i:s' );
 
 		$catalog_id = (int) $this->repository->upsert_catalog(
@@ -73,13 +73,13 @@ class I18nly_Pot_Source_Importer {
 			$now_gmt
 		);
 
-		$plural_form = $translations->getHeaders()->getPluralForm();
+		$plural_form  = $translations->getHeaders()->getPluralForm();
 		$plural_count = is_array( $plural_form ) && isset( $plural_form[0] )
 			? max( 1, (int) $plural_form[0] )
 			: 2;
 
-		$inserted = 0;
-		$updated  = 0;
+		$inserted  = 0;
+		$updated   = 0;
 		$unchanged = 0;
 
 		foreach ( $translations as $translation ) {
@@ -153,7 +153,12 @@ class I18nly_Pot_Source_Importer {
 	 * @return string
 	 */
 	private function encode_json( $value ) {
-		$encoded = json_encode( $value );
+		if ( function_exists( 'wp_json_encode' ) ) {
+			$encoded = wp_json_encode( $value );
+		} else {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Used only as fallback outside WordPress runtime.
+			$encoded = json_encode( $value );
+		}
 
 		if ( false === $encoded ) {
 			return '{}';

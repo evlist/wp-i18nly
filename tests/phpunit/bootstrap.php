@@ -1,3 +1,4 @@
+// phpcs:ignoreFile
 <?php
 /**
  * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
@@ -8,8 +9,14 @@
  * @package I18nly
  */
 
+// phpcs:disable
+
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/../../' );
+}
+
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
 }
 
 $i18nly_test_can_manage_options     = true;
@@ -24,6 +31,241 @@ $i18nly_test_last_redirect_url      = '';
 $i18nly_test_last_updated_post      = array();
 $i18nly_test_options                = array();
 $i18nly_test_last_json_response     = array();
+
+/**
+ * Minimal in-memory wpdb stub for source import tests.
+ */
+class I18nly_Test_WPDB_Stub {
+	/**
+	 * Table prefix.
+	 *
+	 * @var string
+	 */
+	public $prefix = 'wp_';
+
+	/**
+	 * Last inserted ID.
+	 *
+	 * @var int
+	 */
+	public $insert_id = 0;
+
+	/**
+	 * Catalog rows.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private $catalogs = array();
+
+	/**
+	 * Entry rows.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private $entries = array();
+
+	/**
+	 * Executes SQL query.
+	 *
+	 * @param string $sql SQL query.
+	 * @return int
+	 */
+	public function query( $sql ) {
+		unset( $sql );
+
+		return 1;
+	}
+
+	/**
+	 * Returns charset collate fragment.
+	 *
+	 * @return string
+	 */
+	public function get_charset_collate() {
+		return '';
+	}
+
+	/**
+	 * Prepares SQL by interpolating values for tests.
+	 *
+	 * @param string $query Query template.
+	 * @param mixed  ...$args Query arguments.
+	 * @return string
+	 */
+	public function prepare( $query, ...$args ) {
+		$parts = explode( '%', (string) $query );
+		if ( count( $parts ) <= 1 ) {
+			return (string) $query;
+		}
+
+		$result = array_shift( $parts );
+		$index  = 0;
+
+		foreach ( $parts as $part ) {
+			$specifier = substr( $part, 0, 1 );
+			$tail      = substr( $part, 1 );
+			$arg       = isset( $args[ $index ] ) ? $args[ $index ] : '';
+
+			if ( 'd' === $specifier ) {
+				$result .= (string) (int) $arg;
+			} else {
+				$result .= "'" . addslashes( (string) $arg ) . "'";
+			}
+
+			$result .= $tail;
+			++$index;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Returns one scalar value from in-memory rows.
+	 *
+	 * @param string $query SQL query.
+	 * @return mixed
+	 */
+	public function get_var( $query ) {
+		$query = (string) $query;
+
+		if ( preg_match( "/FROM\\s+\\w+i18nly_source_catalogs\\s+WHERE\\s+plugin_slug\\s*=\\s*'([^']+)'/", $query, $matches ) ) {
+			$plugin_slug = stripslashes( $matches[1] );
+
+			foreach ( $this->catalogs as $catalog ) {
+				if ( $plugin_slug === (string) $catalog['plugin_slug'] ) {
+					return (int) $catalog['id'];
+				}
+			}
+		}
+
+		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s+IS\\s+NULL\\s+AND\\s+msgid\\s*=\\s*'([^']*)'\\s+AND\\s+plural_index\\s*=\\s*(\\d+)/", $query, $matches ) ) {
+			$catalog_id   = (int) $matches[1];
+			$msgid        = stripslashes( $matches[2] );
+			$plural_index = (int) $matches[3];
+
+			foreach ( $this->entries as $entry ) {
+				if ( $catalog_id === (int) $entry['catalog_id'] && null === $entry['msgctxt'] && $msgid === (string) $entry['msgid'] && $plural_index === (int) $entry['plural_index'] ) {
+					return (int) $entry['id'];
+				}
+			}
+		}
+
+		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s*=\\s*'([^']*)'\\s+AND\\s+msgid\\s*=\\s*'([^']*)'\\s+AND\\s+plural_index\\s*=\\s*(\\d+)/", $query, $matches ) ) {
+			$catalog_id   = (int) $matches[1];
+			$msgctxt      = stripslashes( $matches[2] );
+			$msgid        = stripslashes( $matches[3] );
+			$plural_index = (int) $matches[4];
+
+			foreach ( $this->entries as $entry ) {
+				if ( $catalog_id === (int) $entry['catalog_id'] && $msgctxt === (string) $entry['msgctxt'] && $msgid === (string) $entry['msgid'] && $plural_index === (int) $entry['plural_index'] ) {
+					return (int) $entry['id'];
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns one row from in-memory entries.
+	 *
+	 * @param string $query SQL query.
+	 * @param string $output Output type.
+	 * @return array<string, mixed>|null
+	 */
+	public function get_row( $query, $output = ARRAY_A ) {
+		unset( $output );
+
+		if ( preg_match( '/WHERE\\s+id\\s*=\\s*(\\d+)/', (string) $query, $matches ) ) {
+			$entry_id = (int) $matches[1];
+
+			foreach ( $this->entries as $entry ) {
+				if ( $entry_id === (int) $entry['id'] ) {
+					return array(
+						'msgid_plural'    => $entry['msgid_plural'],
+						'comments_json'   => $entry['comments_json'],
+						'references_json' => $entry['references_json'],
+						'flags_json'      => $entry['flags_json'],
+						'status'          => $entry['status'],
+					);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Inserts one row into in-memory tables.
+	 *
+	 * @param string               $table Table name.
+	 * @param array<string, mixed> $data Row data.
+	 * @param array<int, string>   $format Format list.
+	 * @return int|false
+	 */
+	public function insert( $table, $data, $format = null ) {
+		unset( $format );
+
+		if ( false !== strpos( (string) $table, 'i18nly_source_catalogs' ) ) {
+			$this->insert_id  = count( $this->catalogs ) + 1;
+			$data['id']       = $this->insert_id;
+			$this->catalogs[] = $data;
+
+			return 1;
+		}
+
+		if ( false !== strpos( (string) $table, 'i18nly_source_entries' ) ) {
+			$this->insert_id = count( $this->entries ) + 1;
+			$data['id']      = $this->insert_id;
+			$this->entries[] = $data;
+
+			return 1;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Updates one row in in-memory tables.
+	 *
+	 * @param string               $table Table name.
+	 * @param array<string, mixed> $data Data to update.
+	 * @param array<string, mixed> $where Match conditions.
+	 * @param array<int, string>   $format Data formats.
+	 * @param array<int, string>   $where_format Where formats.
+	 * @return int|false
+	 */
+	public function update( $table, $data, $where, $format = null, $where_format = null ) {
+		unset( $format, $where_format );
+
+		if ( false !== strpos( (string) $table, 'i18nly_source_catalogs' ) && isset( $where['id'] ) ) {
+			foreach ( $this->catalogs as $index => $row ) {
+				if ( (int) $row['id'] === (int) $where['id'] ) {
+					$this->catalogs[ $index ] = array_merge( $row, $data );
+					return 1;
+				}
+			}
+		}
+
+		if ( false !== strpos( (string) $table, 'i18nly_source_entries' ) && isset( $where['id'] ) ) {
+			foreach ( $this->entries as $index => $row ) {
+				if ( (int) $row['id'] === (int) $where['id'] ) {
+					$this->entries[ $index ] = array_merge( $row, $data );
+					return 1;
+				}
+			}
+		}
+
+		return false;
+	}
+}
+
+global $wpdb;
+
+if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+	// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Test bootstrap defines in-memory wpdb stub.
+	$wpdb = new I18nly_Test_WPDB_Stub();
+}
 
 /**
  * Sets capability state for current_user_can test stub.
@@ -637,19 +879,25 @@ if ( ! function_exists( 'get_option' ) ) {
 	 * Returns option value from test runtime.
 	 *
 	 * @param string $option Option key.
-	 * @param mixed  $default Default value.
+	 * @param mixed  $default_value Default value.
 	 * @return mixed
 	 */
-	function get_option( $option, $default = false ) {
+	function get_option( $option, $default_value = false ) {
 		global $i18nly_test_options;
 
+		if ( ! is_array( $i18nly_test_options ) ) {
+			$i18nly_test_options = array();
+		}
+
 		if ( ! array_key_exists( (string) $option, $i18nly_test_options ) ) {
-			return $default;
+			return $default_value;
 		}
 
 		return $i18nly_test_options[ (string) $option ];
 	}
 }
+
+// phpcs:enable
 
 if ( ! function_exists( 'update_option' ) ) {
 	/**
@@ -662,6 +910,10 @@ if ( ! function_exists( 'update_option' ) ) {
 	 */
 	function update_option( $option, $value, $autoload = null ) {
 		global $i18nly_test_options;
+
+		if ( ! is_array( $i18nly_test_options ) ) {
+			$i18nly_test_options = array();
+		}
 
 		unset( $autoload );
 
