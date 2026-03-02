@@ -58,6 +58,11 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( '<h1>Translations</h1>', $html );
 		$this->assertStringContainsString( 'id="i18nly-translations-list"', $html );
+		$this->assertStringContainsString( 'wp-list-table widefat fixed striped table-view-list', $html );
+		$this->assertStringContainsString( '>Source<', $html );
+		$this->assertStringContainsString( '>Target language<', $html );
+		$this->assertStringContainsString( '>Created<', $html );
+		$this->assertStringContainsString( '>No translations found.<', $html );
 	}
 
 	/**

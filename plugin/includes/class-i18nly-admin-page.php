@@ -314,6 +314,36 @@ class I18nly_Admin_Page {
 	}
 
 	/**
+	 * Returns translations for the all translations list.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_translations_for_list() {
+		global $wpdb;
+
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			return array();
+		}
+
+		$table_name = I18nly_Schema::translations_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$translations = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, source_slug, target_language, created_at FROM %i ORDER BY id DESC',
+				$table_name
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $translations ) ) {
+			return array();
+		}
+
+		return $translations;
+	}
+
+	/**
 	 * Returns an admin URL for one plugin page.
 	 *
 	 * @param string $page_slug Page slug.
@@ -332,10 +362,37 @@ class I18nly_Admin_Page {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
+
+		$translations = $this->get_translations_for_list();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'Translations', 'i18nly' ); ?></h1>
-			<div id="i18nly-translations-list" aria-live="polite"></div>
+			<div id="i18nly-translations-list" aria-live="polite">
+				<table class="wp-list-table widefat fixed striped table-view-list i18nly-translations-table">
+					<thead>
+						<tr>
+							<th scope="col" class="column-primary"><?php echo esc_html__( 'Source', 'i18nly' ); ?></th>
+							<th scope="col"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></th>
+							<th scope="col"><?php echo esc_html__( 'Created', 'i18nly' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php if ( empty( $translations ) ) : ?>
+							<tr>
+								<td colspan="3"><?php echo esc_html__( 'No translations found.', 'i18nly' ); ?></td>
+							</tr>
+						<?php else : ?>
+							<?php foreach ( $translations as $translation ) : ?>
+								<tr>
+									<td class="column-primary"><strong><?php echo esc_html( (string) $translation['source_slug'] ); ?></strong></td>
+									<td><?php echo esc_html( (string) $translation['target_language'] ); ?></td>
+									<td><?php echo esc_html( (string) $translation['created_at'] ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
 		</div>
 		<?php
 	}
