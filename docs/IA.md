@@ -170,6 +170,20 @@ Current MVP slice scope is intentionally narrower:
 	(for example `Language-Team`, `Last-Translator`, contact values),
 	while keeping template-specific placeholders when appropriate.
 
+## 12) Third-Party Dependency Governance Note
+
+Current project constraints include vendored third-party sources under `plugin/third-party/`
+that may be overwritten by update scripts.
+
+For security/compliance fixes affecting vendored upstream code, prefer this durable path:
+
+1. maintain fixes in upstream-friendly branches/forks,
+2. propose fixes as upstream PRs,
+3. consume pinned fork references when upstream is not yet released,
+4. rebase/merge upstream regularly to reduce long-term drift.
+
+Avoid relying on ad-hoc local edits in vendored code as a permanent strategy.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
