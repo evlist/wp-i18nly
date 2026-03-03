@@ -108,6 +108,9 @@ class I18nly_Test_WPDB_Stub {
 
 			if ( 'd' === $specifier ) {
 				$result .= (string) (int) $arg;
+			} elseif ( 'i' === $specifier ) {
+				$identifier = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $arg );
+				$result    .= '`' . (string) $identifier . '`';
 			} else {
 				$result .= "'" . addslashes( (string) $arg ) . "'";
 			}
@@ -260,6 +263,38 @@ class I18nly_Test_WPDB_Stub {
 	}
 }
 
+/**
+ * Minimal WP filesystem stub for tests.
+ */
+class I18nly_Test_WP_Filesystem_Stub {
+	/**
+	 * Recursively removes one directory.
+	 *
+	 * @param string $path Directory path.
+	 * @return bool
+	 */
+	public function rmdir( $path ) {
+		if ( ! is_dir( $path ) ) {
+			return false;
+		}
+
+		$children = glob( (string) $path . '/*' );
+
+		if ( false !== $children ) {
+			foreach ( $children as $child ) {
+				if ( is_dir( $child ) ) {
+					$this->rmdir( $child );
+					continue;
+				}
+
+				unlink( $child );
+			}
+		}
+
+		return rmdir( (string) $path );
+	}
+}
+
 global $wpdb;
 
 if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
@@ -322,6 +357,20 @@ function i18nly_test_reset_options() {
 	global $i18nly_test_options;
 
 	$i18nly_test_options = array();
+}
+
+/**
+ * Returns one GET query parameter in test runtime.
+ *
+ * @param string $key Query parameter key.
+ * @return string
+ */
+function i18nly_test_get_query_parameter( $key ) {
+	if ( ! isset( $_GET[ $key ] ) ) {
+		return '';
+	}
+
+	return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) );
 }
 
 /**
@@ -871,6 +920,65 @@ if ( ! function_exists( 'wp_send_json_error' ) ) {
 			'data'    => $value,
 			'status'  => $status_code,
 		);
+	}
+}
+
+if ( ! function_exists( 'WP_Filesystem' ) ) {
+	/**
+	 * Initializes test filesystem object.
+	 *
+	 * @return bool
+	 */
+	function WP_Filesystem() {
+		global $wp_filesystem;
+
+		$wp_filesystem = new I18nly_Test_WP_Filesystem_Stub();
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_mkdir_p' ) ) {
+	/**
+	 * Creates directory recursively in tests.
+	 *
+	 * @param string $target Directory path.
+	 * @return bool
+	 */
+	function wp_mkdir_p( $target ) {
+		if ( is_dir( $target ) ) {
+			return true;
+		}
+
+		return mkdir( (string) $target, 0755, true );
+	}
+}
+
+if ( ! function_exists( 'wp_delete_file' ) ) {
+	/**
+	 * Deletes one file in tests.
+	 *
+	 * @param string $file File path.
+	 * @return bool
+	 */
+	function wp_delete_file( $file ) {
+		if ( ! is_file( $file ) ) {
+			return false;
+		}
+
+		return unlink( (string) $file );
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	/**
+	 * Encodes one value as JSON in tests.
+	 *
+	 * @param mixed $value Value to encode.
+	 * @return string|false
+	 */
+	function wp_json_encode( $value ) {
+		return json_encode( $value );
 	}
 }
 

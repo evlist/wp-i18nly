@@ -838,19 +838,19 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function get_current_edit_translation_id() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
-		if ( ! isset( $_GET['post'], $_GET['action'] ) ) {
+		$action_raw = $this->get_query_parameter( 'action' );
+		$post_raw   = $this->get_query_parameter( 'post' );
+
+		if ( '' === $action_raw || '' === $post_raw ) {
 			return 0;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
-		$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+		$action = sanitize_text_field( wp_unslash( $action_raw ) );
 		if ( 'edit' !== $action ) {
 			return 0;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen context detection only.
-		$translation_id = absint( wp_unslash( $_GET['post'] ) );
+		$translation_id = absint( wp_unslash( $post_raw ) );
 		if ( $translation_id <= 0 ) {
 			return 0;
 		}
@@ -858,5 +858,21 @@ class I18nly_Admin_Page {
 		$translation = $this->get_translation( $translation_id );
 
 		return null === $translation ? 0 : $translation_id;
+	}
+
+	/**
+	 * Returns one GET query parameter.
+	 *
+	 * @param string $key Query parameter key.
+	 * @return string
+	 */
+	protected function get_query_parameter( $key ) {
+		$value = filter_input( INPUT_GET, (string) $key, FILTER_UNSAFE_RAW );
+
+		if ( is_string( $value ) ) {
+			return $value;
+		}
+
+		return '';
 	}
 }

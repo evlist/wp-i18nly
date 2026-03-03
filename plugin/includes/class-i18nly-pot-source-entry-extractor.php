@@ -48,9 +48,8 @@ class I18nly_Pot_Source_Entry_Extractor {
 		$entries_map      = array();
 
 		foreach ( $php_files as $file_path ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source file scan.
-			$code = file_get_contents( $file_path );
-			if ( false === $code ) {
+			$code = $this->read_php_file_contents( $file_path );
+			if ( '' === $code ) {
 				continue;
 			}
 
@@ -117,6 +116,27 @@ class I18nly_Pot_Source_Entry_Extractor {
 		}
 
 		return array_values( $entries_map );
+	}
+
+	/**
+	 * Reads PHP file content using SPL APIs.
+	 *
+	 * @param string $file_path Absolute file path.
+	 * @return string
+	 */
+	private function read_php_file_contents( $file_path ) {
+		if ( ! is_readable( $file_path ) ) {
+			return '';
+		}
+
+		$file_object = new SplFileObject( $file_path, 'r' );
+		$content     = '';
+
+		while ( ! $file_object->eof() ) {
+			$content .= (string) $file_object->fgets();
+		}
+
+		return $content;
 	}
 
 	/**

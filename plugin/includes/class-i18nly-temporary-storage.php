@@ -125,8 +125,7 @@ class I18nly_Temporary_Storage {
 			return;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Runtime service creates local temporary workspace directories.
-		if ( ! mkdir( $directory, 0755, true ) && ! is_dir( $directory ) ) {
+		if ( ! wp_mkdir_p( $directory ) && ! is_dir( $directory ) ) {
 			throw new RuntimeException( 'Unable to create temporary storage directory.' );
 		}
 	}
@@ -147,12 +146,18 @@ class I18nly_Temporary_Storage {
 					continue;
 				}
 
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Runtime cleanup of local temporary workspace file.
-				unlink( $child );
+				wp_delete_file( $child );
 			}
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Runtime cleanup of local temporary workspace directory.
-		rmdir( $directory );
+		global $wp_filesystem;
+
+		if ( ! is_object( $wp_filesystem ) && function_exists( 'WP_Filesystem' ) ) {
+			WP_Filesystem();
+		}
+
+		if ( is_object( $wp_filesystem ) && method_exists( $wp_filesystem, 'rmdir' ) ) {
+			$wp_filesystem->rmdir( $directory );
+		}
 	}
 }

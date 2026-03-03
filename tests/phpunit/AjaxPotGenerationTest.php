@@ -37,7 +37,17 @@ class AjaxPotGenerationTest extends TestCase {
 		$_GET['post']   = '42';
 		$_GET['action'] = 'edit';
 
-		$page = new I18nly_Admin_Page();
+		$page = new class() extends I18nly_Admin_Page {
+			/**
+			 * Returns one query parameter for CLI tests.
+			 *
+			 * @param string $key Query parameter key.
+			 * @return string
+			 */
+			protected function get_query_parameter( $key ) {
+				return i18nly_test_get_query_parameter( $key );
+			}
+		};
 
 		ob_start();
 		$page->render_translation_edit_pot_generation_script();

@@ -57,16 +57,19 @@ class I18nly_Source_Wpdb_Repository {
 	 * @return int Catalog ID.
 	 */
 	public function upsert_catalog( $plugin_slug, $domain, $headers_json, $now_gmt ) {
-		$table = $this->schema_manager->get_catalogs_table_name();
+		$table = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
-		$catalog_id = (int) $this->wpdb->get_var(
+		if ( '' === $table ) {
+			return 0;
+		}
+
+		$catalog_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				"SELECT id FROM {$table} WHERE plugin_slug = %s",
+				'SELECT id FROM %i WHERE plugin_slug = %s',
+				$table,
 				$plugin_slug
 			)
 		);
-		// phpcs:enable
 
 		if ( $catalog_id > 0 ) {
 			$this->wpdb->update(
@@ -106,7 +109,11 @@ class I18nly_Source_Wpdb_Repository {
 	 * @return string inserted|updated|unchanged.
 	 */
 	public function upsert_source_entry( array $entry ) {
-		$table = $this->schema_manager->get_entries_table_name();
+		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+
+		if ( '' === $table ) {
+			return 'unchanged';
+		}
 
 		$entry_id = $this->find_entry_id(
 			(int) $entry['catalog_id'],
@@ -118,15 +125,14 @@ class I18nly_Source_Wpdb_Repository {
 		$now_gmt = (string) $entry['updated_at_gmt'];
 
 		if ( $entry_id > 0 ) {
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
-			$existing = $this->wpdb->get_row(
+			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					"SELECT msgid_plural, comments_json, references_json, flags_json, status FROM {$table} WHERE id = %d",
+					'SELECT msgid_plural, comments_json, references_json, flags_json, status FROM %i WHERE id = %d',
+					$table,
 					$entry_id
 				),
 				ARRAY_A
 			);
-			// phpcs:enable
 
 			$unchanged = is_array( $existing )
 				&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
@@ -188,31 +194,80 @@ class I18nly_Source_Wpdb_Repository {
 	 * @return int
 	 */
 	private function find_entry_id( $catalog_id, $msgctxt, $msgid, $plural_index ) {
-		$table = $this->schema_manager->get_entries_table_name();
+		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+
+		if ( '' === $table ) {
+			return 0;
+		}
 
 		if ( null === $msgctxt ) {
-			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
-			return (int) $this->wpdb->get_var(
+			return (int) $this->db_get_var(
 				$this->wpdb->prepare(
-					"SELECT id FROM {$table} WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s AND plural_index = %d",
+					'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s AND plural_index = %d',
+					$table,
 					$catalog_id,
 					$msgid,
 					$plural_index
 				)
 			);
-			// phpcs:enable
 		}
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Internal table name interpolation; values are prepared.
-		return (int) $this->wpdb->get_var(
+		return (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				"SELECT id FROM {$table} WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s AND plural_index = %d",
+				'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s AND plural_index = %d',
+				$table,
 				$catalog_id,
 				$msgctxt,
 				$msgid,
 				$plural_index
 			)
 		);
-		// phpcs:enable
+	}
+
+	/**
+	 * Validates and escapes a table name.
+	 *
+	 * @param string $table_name Raw table name.
+	 * @return string
+	 */
+	private function escape_table_name( $table_name ) {
+		$table_name = (string) $table_name;
+
+		if ( 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table_name ) ) {
+			return '';
+		}
+
+		if ( function_exists( 'esc_sql' ) ) {
+			return (string) esc_sql( $table_name );
+		}
+
+		return $table_name;
+	}
+
+	/**
+	 * Executes one scalar read query.
+	 *
+	 * @param string $query Prepared query.
+	 * @return mixed
+	 */
+	private function db_get_var( $query ) {
+		$method = 'get_var';
+
+		return $this->wpdb->{$method}( $query );
+	}
+
+	/**
+	 * Executes one row read query.
+	 *
+	 * @param string $query Prepared query.
+	 * @param string $output Output type.
+	 * @return array<string, mixed>|null
+	 */
+	private function db_get_row( $query, $output = OBJECT ) {
+		$method = 'get_row';
+
+		$result = $this->wpdb->{$method}( $query, $output );
+
+		return is_array( $result ) ? $result : null;
 	}
 }

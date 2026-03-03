@@ -55,6 +55,43 @@ class I18nly_Test_WPDB_Query_Stub {
 	public $queries = array();
 
 	/**
+	 * Prepares SQL by interpolating values for tests.
+	 *
+	 * @param string $query Query template.
+	 * @param mixed  ...$args Query arguments.
+	 * @return string
+	 */
+	public function prepare( $query, ...$args ) {
+		$parts = explode( '%', (string) $query );
+		if ( count( $parts ) <= 1 ) {
+			return (string) $query;
+		}
+
+		$result = array_shift( $parts );
+		$index  = 0;
+
+		foreach ( $parts as $part ) {
+			$specifier = substr( $part, 0, 1 );
+			$tail      = substr( $part, 1 );
+			$arg       = isset( $args[ $index ] ) ? $args[ $index ] : '';
+
+			if ( 'i' === $specifier ) {
+				$identifier = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $arg );
+				$result    .= '`' . (string) $identifier . '`';
+			} elseif ( 'd' === $specifier ) {
+				$result .= (string) (int) $arg;
+			} else {
+				$result .= "'" . addslashes( (string) $arg ) . "'";
+			}
+
+			$result .= $tail;
+			++$index;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Captures executed query.
 	 *
 	 * @param string $sql SQL query.

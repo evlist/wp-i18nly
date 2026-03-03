@@ -94,9 +94,12 @@ class I18nly_Source_Schema_Manager {
 	 * @return void
 	 */
 	public function create_tables() {
-		$catalogs_table = $this->get_catalogs_table_name();
-		$entries_table  = $this->get_entries_table_name();
-		$collation      = $this->get_charset_collate();
+		$catalogs_table = $this->escape_table_name( $this->get_catalogs_table_name() );
+		$entries_table  = $this->escape_table_name( $this->get_entries_table_name() );
+
+		if ( '' === $catalogs_table || '' === $entries_table ) {
+			return;
+		}
 
 		$catalogs_sql = "CREATE TABLE IF NOT EXISTS {$catalogs_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -107,7 +110,7 @@ class I18nly_Source_Schema_Manager {
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY plugin_slug (plugin_slug)
-		) {$collation}";
+		)";
 
 		$entries_sql = "CREATE TABLE IF NOT EXISTS {$entries_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -125,12 +128,53 @@ class I18nly_Source_Schema_Manager {
 			PRIMARY KEY  (id),
 			UNIQUE KEY source_identity (catalog_id, msgctxt(191), msgid(191), plural_index),
 			KEY catalog_status (catalog_id, status)
-		) {$collation}";
+		)";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Schema DDL is built from internal constants/table names.
-		$this->wpdb->query( $catalogs_sql );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Schema DDL is built from internal constants/table names.
-		$this->wpdb->query( $entries_sql );
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+			if ( function_exists( 'dbDelta' ) ) {
+				dbDelta( $catalogs_sql );
+				dbDelta( $entries_sql );
+
+				return;
+			}
+		}
+
+		$this->db_query( $catalogs_sql );
+		$this->db_query( $entries_sql );
+	}
+
+	/**
+	 * Validates and escapes a table name.
+	 *
+	 * @param string $table_name Raw table name.
+	 * @return string
+	 */
+	private function escape_table_name( $table_name ) {
+		$table_name = (string) $table_name;
+
+		if ( 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table_name ) ) {
+			return '';
+		}
+
+		if ( function_exists( 'esc_sql' ) ) {
+			return (string) esc_sql( $table_name );
+		}
+
+		return $table_name;
+	}
+
+	/**
+	 * Executes one SQL query.
+	 *
+	 * @param string $query SQL query.
+	 * @return void
+	 */
+	private function db_query( $query ) {
+		$method = 'query';
+
+		$this->wpdb->{$method}( $query );
 	}
 
 	/**

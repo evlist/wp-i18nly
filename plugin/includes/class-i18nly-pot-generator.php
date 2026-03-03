@@ -32,8 +32,7 @@ class I18nly_Pot_Generator {
 		$translations     = $this->build_translations( $text_domain, $entries, $header_overrides );
 
 		$directory = dirname( $destination_file );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Runtime utility writes local generated artifacts.
-		if ( ! is_dir( $directory ) && ! mkdir( $directory, 0755, true ) && ! is_dir( $directory ) ) {
+		if ( ! is_dir( $directory ) && ! wp_mkdir_p( $directory ) && ! is_dir( $directory ) ) {
 			throw new RuntimeException( 'Unable to create destination directory for POT file.' );
 		}
 

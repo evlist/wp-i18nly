@@ -153,12 +153,7 @@ class I18nly_Pot_Source_Importer {
 	 * @return string
 	 */
 	private function encode_json( $value ) {
-		if ( function_exists( 'wp_json_encode' ) ) {
-			$encoded = wp_json_encode( $value );
-		} else {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Used only as fallback outside WordPress runtime.
-			$encoded = json_encode( $value );
-		}
+		$encoded = wp_json_encode( $value );
 
 		if ( false === $encoded ) {
 			return '{}';
