@@ -58,7 +58,12 @@ POT;
 		$this->assertCount( 3, $repository->entries );
 
 		$comments_found = false;
+		$context_found  = false;
 		foreach ( $repository->entries as $entry ) {
+			if ( '%s item' === $entry['msgid'] && 'list' === $entry['msgctxt'] ) {
+				$context_found = true;
+			}
+
 			if ( 'Hello world' !== $entry['msgid'] ) {
 				continue;
 			}
@@ -74,6 +79,7 @@ POT;
 		}
 
 		$this->assertSame( true, $comments_found );
+		$this->assertSame( true, $context_found );
 
 		$second_summary = $importer->import_file( 'sample-plugin/sample.php', $temp_file );
 

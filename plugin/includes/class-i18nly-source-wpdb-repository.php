@@ -15,6 +15,31 @@ defined( 'ABSPATH' ) || exit;
  */
 class I18nly_Source_Wpdb_Repository {
 	/**
+	 * Source entry identity columns.
+	 *
+	 * @var array<int, string>
+	 */
+	private const ENTRY_IDENTITY_COLUMNS = array(
+		'catalog_id',
+		'msgctxt',
+		'msgid',
+		'plural_index',
+	);
+
+	/**
+	 * Source entry content columns tracked for unchanged detection.
+	 *
+	 * @var array<int, string>
+	 */
+	private const ENTRY_CONTENT_COLUMNS = array(
+		'msgid_plural',
+		'comments_json',
+		'references_json',
+		'flags_json',
+		'status',
+	);
+
+	/**
 	 * WordPress database object.
 	 *
 	 * @var object
@@ -127,19 +152,14 @@ class I18nly_Source_Wpdb_Repository {
 		if ( $entry_id > 0 ) {
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					'SELECT msgid_plural, comments_json, references_json, flags_json, status FROM %i WHERE id = %d',
+					'SELECT catalog_id, msgctxt, msgid, plural_index, msgid_plural, comments_json, references_json, flags_json, status FROM %i WHERE id = %d',
 					$table,
 					$entry_id
 				),
 				ARRAY_A
 			);
 
-			$unchanged = is_array( $existing )
-				&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
-				&& (string) $existing['comments_json'] === (string) $entry['comments_json']
-				&& (string) $existing['references_json'] === (string) $entry['references_json']
-				&& (string) $existing['flags_json'] === (string) $entry['flags_json']
-				&& (string) $existing['status'] === (string) $entry['status'];
+			$unchanged = $this->entry_rows_are_equal( $existing, $entry );
 
 			if ( $unchanged ) {
 				return 'unchanged';
@@ -269,5 +289,29 @@ class I18nly_Source_Wpdb_Repository {
 		$result = $this->wpdb->{$method}( $query, $output );
 
 		return is_array( $result ) ? $result : null;
+	}
+
+	/**
+	 * Returns whether existing DB row and candidate entry are equivalent.
+	 *
+	 * @param array<string, mixed>|null $existing Existing DB row.
+	 * @param array<string, mixed>      $entry Candidate entry payload.
+	 * @return bool
+	 */
+	private function entry_rows_are_equal( $existing, array $entry ) {
+		if ( ! is_array( $existing ) ) {
+			return false;
+		}
+
+		foreach ( array_merge( self::ENTRY_IDENTITY_COLUMNS, self::ENTRY_CONTENT_COLUMNS ) as $column ) {
+			$existing_value = array_key_exists( $column, $existing ) ? $existing[ $column ] : null;
+			$entry_value    = array_key_exists( $column, $entry ) ? $entry[ $column ] : null;
+
+			if ( (string) $existing_value !== (string) $entry_value ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
