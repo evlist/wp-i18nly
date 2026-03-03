@@ -267,15 +267,14 @@ class I18nly_Test_InMemory_Source_Repository {
 			&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
 			&& (string) $existing['comments_json'] === (string) $entry['comments_json']
 			&& (string) $existing['references_json'] === (string) $entry['references_json']
-			&& (string) $existing['flags_json'] === (string) $entry['flags_json'];
+			&& (string) $existing['flags_json'] === (string) $entry['flags_json']
+			&& (string) $existing['status'] === (string) $entry['status'];
 
 		if ( $unchanged ) {
 			$this->entries[ $key ] = array_merge(
 				$existing,
 				array(
 					'last_seen_at_gmt' => $entry['last_seen_at_gmt'],
-					'updated_at_gmt'   => $entry['updated_at_gmt'],
-					'status'           => 'active',
 				)
 			);
 

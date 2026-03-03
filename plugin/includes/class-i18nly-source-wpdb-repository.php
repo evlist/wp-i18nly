@@ -36,6 +36,7 @@ class I18nly_Source_Wpdb_Repository {
 		'comments_json',
 		'references_json',
 		'flags_json',
+		'status',
 	);
 
 	/**
@@ -150,6 +151,8 @@ class I18nly_Source_Wpdb_Repository {
 		$last_seen_at_gmt = isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : $now_gmt;
 
 		if ( $entry_id > 0 ) {
+			$entry['status'] = 'active';
+
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
 					'SELECT catalog_id, msgctxt, msgid, plural_index, msgid_plural, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
@@ -166,11 +169,9 @@ class I18nly_Source_Wpdb_Repository {
 					$table,
 					array(
 						'last_seen_at_gmt' => $last_seen_at_gmt,
-						'updated_at_gmt'   => $now_gmt,
-						'status'           => 'active',
 					),
 					array( 'id' => $entry_id ),
-					array( '%s', '%s', '%s' ),
+					array( '%s' ),
 					array( '%d' )
 				);
 
