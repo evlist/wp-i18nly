@@ -55,6 +55,7 @@ POT;
 		$this->assertSame( 3, $first_summary['inserted'] );
 		$this->assertSame( 0, $first_summary['updated'] );
 		$this->assertSame( 0, $first_summary['unchanged'] );
+		$this->assertSame( 0, $first_summary['obsoleted'] );
 		$this->assertCount( 3, $repository->entries );
 
 		$comments_found = false;
@@ -86,9 +87,71 @@ POT;
 		$this->assertSame( 0, $second_summary['inserted'] );
 		$this->assertSame( 0, $second_summary['updated'] );
 		$this->assertSame( 3, $second_summary['unchanged'] );
+		$this->assertSame( 0, $second_summary['obsoleted'] );
 		$this->assertCount( 3, $repository->entries );
 
 		unlink( $temp_file );
+	}
+
+	/**
+	 * Marks missing entries as obsolete after a subsequent import.
+	 *
+	 * @return void
+	 */
+	public function test_import_file_marks_missing_entries_obsolete() {
+		$first_pot = <<<POT
+msgid ""
+msgstr ""
+"Project-Id-Version: i18nly\\n"
+"X-Domain: sample-plugin\\n"
+
+msgid "First"
+msgstr ""
+
+msgid "Second"
+msgstr ""
+POT;
+
+		$second_pot = <<<POT
+msgid ""
+msgstr ""
+"Project-Id-Version: i18nly\\n"
+"X-Domain: sample-plugin\\n"
+
+msgid "First"
+msgstr ""
+POT;
+
+		$temp_first  = sys_get_temp_dir() . '/i18nly-source-import-first-' . uniqid( '', true ) . '.pot';
+		$temp_second = sys_get_temp_dir() . '/i18nly-source-import-second-' . uniqid( '', true ) . '.pot';
+
+		file_put_contents( $temp_first, $first_pot );
+		file_put_contents( $temp_second, $second_pot );
+
+		$schema_stub = new I18nly_Test_Source_Schema_Manager_Stub();
+		$repository  = new I18nly_Test_InMemory_Source_Repository();
+		$importer    = new I18nly_Pot_Source_Importer( $schema_stub, $repository );
+
+		$importer->import_file( 'sample-plugin/sample.php', $temp_first );
+		$summary = $importer->import_file( 'sample-plugin/sample.php', $temp_second );
+
+		$this->assertSame( 1, $summary['obsoleted'] );
+
+		$obsolete_found = false;
+		foreach ( $repository->entries as $entry ) {
+			if ( 'Second' !== $entry['msgid'] ) {
+				continue;
+			}
+
+			if ( 'obsolete' === $entry['status'] ) {
+				$obsolete_found = true;
+			}
+		}
+
+		$this->assertSame( true, $obsolete_found );
+
+		unlink( $temp_first );
+		unlink( $temp_second );
 	}
 }
 
@@ -197,17 +260,83 @@ class I18nly_Test_InMemory_Source_Repository {
 
 		$existing = $this->entries[ $key ];
 
-		if ( (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
+		$unchanged = (string) $existing['catalog_id'] === (string) $entry['catalog_id']
+			&& (string) $existing['msgctxt'] === (string) $entry['msgctxt']
+			&& (string) $existing['msgid'] === (string) $entry['msgid']
+			&& (string) $existing['plural_index'] === (string) $entry['plural_index']
+			&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
 			&& (string) $existing['comments_json'] === (string) $entry['comments_json']
 			&& (string) $existing['references_json'] === (string) $entry['references_json']
-			&& (string) $existing['flags_json'] === (string) $entry['flags_json']
-			&& (string) $existing['status'] === (string) $entry['status'] ) {
+			&& (string) $existing['flags_json'] === (string) $entry['flags_json'];
+
+		if ( $unchanged ) {
+			$this->entries[ $key ] = array_merge(
+				$existing,
+				array(
+					'last_seen_at_gmt' => $entry['last_seen_at_gmt'],
+					'updated_at_gmt'   => $entry['updated_at_gmt'],
+					'status'           => 'active',
+				)
+			);
+
 			return 'unchanged';
 		}
 
+		$entry['status']       = 'active';
 		$this->entries[ $key ] = array_merge( $existing, $entry );
 
 		return 'updated';
+	}
+
+	/**
+	 * Marks active entries as obsolete when not seen in current import.
+	 *
+	 * @param int    $catalog_id Catalog ID.
+	 * @param string $now_gmt Update datetime.
+	 * @return int
+	 */
+	public function mark_obsolete_entries_not_seen( $catalog_id, $now_gmt ) {
+		$obsoleted = 0;
+
+		foreach ( $this->entries as $key => $entry ) {
+			if ( (int) $entry['catalog_id'] !== (int) $catalog_id ) {
+				continue;
+			}
+
+			if ( 'active' !== (string) $entry['status'] ) {
+				continue;
+			}
+
+			if ( isset( $entry['last_seen_at_gmt'] ) && '' !== (string) $entry['last_seen_at_gmt'] ) {
+				continue;
+			}
+
+			$this->entries[ $key ]['status']         = 'obsolete';
+			$this->entries[ $key ]['updated_at_gmt'] = (string) $now_gmt;
+			++$obsoleted;
+		}
+
+		return $obsoleted;
+	}
+
+	/**
+	 * Clears last_seen marker for active entries in one catalog.
+	 *
+	 * @param int $catalog_id Catalog ID.
+	 * @return void
+	 */
+	public function reset_last_seen_for_catalog( $catalog_id ) {
+		foreach ( $this->entries as $key => $entry ) {
+			if ( (int) $entry['catalog_id'] !== (int) $catalog_id ) {
+				continue;
+			}
+
+			if ( 'active' !== (string) $entry['status'] ) {
+				continue;
+			}
+
+			$this->entries[ $key ]['last_seen_at_gmt'] = null;
+		}
 	}
 }
 

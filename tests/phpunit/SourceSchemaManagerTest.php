@@ -32,7 +32,8 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertCount( 2, $wpdb_stub->queries );
 		$this->assertStringContainsString( 'i18nly_source_catalogs', $wpdb_stub->queries[0] );
 		$this->assertStringContainsString( 'i18nly_source_entries', $wpdb_stub->queries[1] );
-		$this->assertSame( '0.0.2', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertStringContainsString( 'last_seen_at_gmt', $wpdb_stub->queries[1] );
+		$this->assertSame( '0.0.3', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 

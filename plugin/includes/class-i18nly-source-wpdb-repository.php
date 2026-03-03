@@ -36,7 +36,6 @@ class I18nly_Source_Wpdb_Repository {
 		'comments_json',
 		'references_json',
 		'flags_json',
-		'status',
 	);
 
 	/**
@@ -147,12 +146,13 @@ class I18nly_Source_Wpdb_Repository {
 			(int) $entry['plural_index']
 		);
 
-		$now_gmt = (string) $entry['updated_at_gmt'];
+		$now_gmt          = (string) $entry['updated_at_gmt'];
+		$last_seen_at_gmt = isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : $now_gmt;
 
 		if ( $entry_id > 0 ) {
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					'SELECT catalog_id, msgctxt, msgid, plural_index, msgid_plural, comments_json, references_json, flags_json, status FROM %i WHERE id = %d',
+					'SELECT catalog_id, msgctxt, msgid, plural_index, msgid_plural, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
 					$table,
 					$entry_id
 				),
@@ -162,21 +162,34 @@ class I18nly_Source_Wpdb_Repository {
 			$unchanged = $this->entry_rows_are_equal( $existing, $entry );
 
 			if ( $unchanged ) {
+				$this->wpdb->update(
+					$table,
+					array(
+						'last_seen_at_gmt' => $last_seen_at_gmt,
+						'updated_at_gmt'   => $now_gmt,
+						'status'           => 'active',
+					),
+					array( 'id' => $entry_id ),
+					array( '%s', '%s', '%s' ),
+					array( '%d' )
+				);
+
 				return 'unchanged';
 			}
 
 			$this->wpdb->update(
 				$table,
 				array(
-					'msgid_plural'    => $entry['msgid_plural'],
-					'comments_json'   => $entry['comments_json'],
-					'references_json' => $entry['references_json'],
-					'flags_json'      => $entry['flags_json'],
-					'status'          => $entry['status'],
-					'updated_at_gmt'  => $now_gmt,
+					'msgid_plural'     => $entry['msgid_plural'],
+					'comments_json'    => $entry['comments_json'],
+					'references_json'  => $entry['references_json'],
+					'flags_json'       => $entry['flags_json'],
+					'status'           => 'active',
+					'last_seen_at_gmt' => $last_seen_at_gmt,
+					'updated_at_gmt'   => $now_gmt,
 				),
 				array( 'id' => $entry_id ),
-				array( '%s', '%s', '%s', '%s', '%s', '%s' ),
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 				array( '%d' )
 			);
 
@@ -186,19 +199,20 @@ class I18nly_Source_Wpdb_Repository {
 		$this->wpdb->insert(
 			$table,
 			array(
-				'catalog_id'      => $entry['catalog_id'],
-				'msgctxt'         => $entry['msgctxt'],
-				'msgid'           => $entry['msgid'],
-				'msgid_plural'    => $entry['msgid_plural'],
-				'plural_index'    => $entry['plural_index'],
-				'comments_json'   => $entry['comments_json'],
-				'references_json' => $entry['references_json'],
-				'flags_json'      => $entry['flags_json'],
-				'status'          => $entry['status'],
-				'created_at_gmt'  => $entry['created_at_gmt'],
-				'updated_at_gmt'  => $entry['updated_at_gmt'],
+				'catalog_id'       => $entry['catalog_id'],
+				'msgctxt'          => $entry['msgctxt'],
+				'msgid'            => $entry['msgid'],
+				'msgid_plural'     => $entry['msgid_plural'],
+				'plural_index'     => $entry['plural_index'],
+				'comments_json'    => $entry['comments_json'],
+				'references_json'  => $entry['references_json'],
+				'flags_json'       => $entry['flags_json'],
+				'status'           => 'active',
+				'last_seen_at_gmt' => $last_seen_at_gmt,
+				'created_at_gmt'   => $entry['created_at_gmt'],
+				'updated_at_gmt'   => $entry['updated_at_gmt'],
 			),
-			array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		return 'inserted';
@@ -242,6 +256,61 @@ class I18nly_Source_Wpdb_Repository {
 				$plural_index
 			)
 		);
+	}
+
+	/**
+	 * Marks as obsolete active entries not seen in current import.
+	 *
+	 * @param int    $catalog_id Catalog ID.
+	 * @param string $now_gmt Update datetime in GMT.
+	 * @return int Number of rows marked obsolete.
+	 */
+	public function mark_obsolete_entries_not_seen( $catalog_id, $now_gmt ) {
+		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+
+		if ( '' === $table ) {
+			return 0;
+		}
+
+		$query = $this->wpdb->prepare(
+			'UPDATE %i SET status = %s, updated_at_gmt = %s WHERE catalog_id = %d AND status = %s AND last_seen_at_gmt IS NULL',
+			$table,
+			'obsolete',
+			$now_gmt,
+			(int) $catalog_id,
+			'active'
+		);
+
+		$result = $this->db_query( $query );
+
+		if ( is_int( $result ) ) {
+			return $result;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Clears last_seen marker for active entries before one import.
+	 *
+	 * @param int $catalog_id Catalog ID.
+	 * @return void
+	 */
+	public function reset_last_seen_for_catalog( $catalog_id ) {
+		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+
+		if ( '' === $table ) {
+			return;
+		}
+
+		$query = $this->wpdb->prepare(
+			'UPDATE %i SET last_seen_at_gmt = NULL WHERE catalog_id = %d AND status = %s',
+			$table,
+			(int) $catalog_id,
+			'active'
+		);
+
+		$this->db_query( $query );
 	}
 
 	/**
@@ -289,6 +358,18 @@ class I18nly_Source_Wpdb_Repository {
 		$result = $this->wpdb->{$method}( $query, $output );
 
 		return is_array( $result ) ? $result : null;
+	}
+
+	/**
+	 * Executes one write query.
+	 *
+	 * @param string $query Prepared query.
+	 * @return int|false
+	 */
+	private function db_query( $query ) {
+		$method = 'query';
+
+		return $this->wpdb->{$method}( $query );
 	}
 
 	/**

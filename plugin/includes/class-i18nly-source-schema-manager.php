@@ -17,7 +17,7 @@ class I18nly_Source_Schema_Manager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.0.2';
+	private const SCHEMA_VERSION = '0.0.3';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -96,12 +96,13 @@ class I18nly_Source_Schema_Manager {
 	public function create_tables() {
 		$catalogs_table = $this->escape_table_name( $this->get_catalogs_table_name() );
 		$entries_table  = $this->escape_table_name( $this->get_entries_table_name() );
+		$collation      = $this->get_charset_collate();
 
 		if ( '' === $catalogs_table || '' === $entries_table ) {
 			return;
 		}
 
-		$catalogs_sql = "CREATE TABLE IF NOT EXISTS {$catalogs_table} (
+		$catalogs_sql = "CREATE TABLE {$catalogs_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			plugin_slug varchar(191) NOT NULL,
 			domain varchar(191) DEFAULT NULL,
@@ -110,9 +111,9 @@ class I18nly_Source_Schema_Manager {
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY plugin_slug (plugin_slug)
-		)";
+		) {$collation}";
 
-		$entries_sql = "CREATE TABLE IF NOT EXISTS {$entries_table} (
+		$entries_sql = "CREATE TABLE {$entries_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			catalog_id bigint(20) unsigned NOT NULL,
 			msgctxt text DEFAULT NULL,
@@ -123,12 +124,13 @@ class I18nly_Source_Schema_Manager {
 			references_json longtext DEFAULT NULL,
 			flags_json longtext DEFAULT NULL,
 			status varchar(20) NOT NULL DEFAULT 'active',
+			last_seen_at_gmt datetime DEFAULT NULL,
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY source_identity (catalog_id, msgctxt(191), msgid(191), plural_index),
 			KEY catalog_status (catalog_id, status)
-		)";
+		) {$collation}";
 
 		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';

@@ -81,6 +81,11 @@ class I18nly_Pot_Source_Importer {
 		$inserted  = 0;
 		$updated   = 0;
 		$unchanged = 0;
+		$obsoleted = 0;
+
+		if ( method_exists( $this->repository, 'reset_last_seen_for_catalog' ) ) {
+			$this->repository->reset_last_seen_for_catalog( $catalog_id );
+		}
 
 		foreach ( $translations as $translation ) {
 			$msgid = (string) $translation->getOriginal();
@@ -96,22 +101,23 @@ class I18nly_Pot_Source_Importer {
 			for ( $plural_index = 0; $plural_index < $entry_count; $plural_index++ ) {
 				$result = (string) $this->repository->upsert_source_entry(
 					array(
-						'catalog_id'      => $catalog_id,
-						'msgctxt'         => null !== $msgctxt ? (string) $msgctxt : null,
-						'msgid'           => $msgid,
-						'msgid_plural'    => null !== $msgid_plural ? (string) $msgid_plural : null,
-						'plural_index'    => $plural_index,
-						'comments_json'   => $this->encode_json(
+						'catalog_id'       => $catalog_id,
+						'msgctxt'          => null !== $msgctxt ? (string) $msgctxt : null,
+						'msgid'            => $msgid,
+						'msgid_plural'     => null !== $msgid_plural ? (string) $msgid_plural : null,
+						'plural_index'     => $plural_index,
+						'comments_json'    => $this->encode_json(
 							array(
 								'comments'           => $translation->getComments()->toArray(),
 								'extracted_comments' => $translation->getExtractedComments()->toArray(),
 							)
 						),
-						'references_json' => $this->encode_json( $translation->getReferences()->toArray() ),
-						'flags_json'      => $this->encode_json( $translation->getFlags()->toArray() ),
-						'status'          => 'active',
-						'created_at_gmt'  => $now_gmt,
-						'updated_at_gmt'  => $now_gmt,
+						'references_json'  => $this->encode_json( $translation->getReferences()->toArray() ),
+						'flags_json'       => $this->encode_json( $translation->getFlags()->toArray() ),
+						'status'           => 'active',
+						'last_seen_at_gmt' => $now_gmt,
+						'created_at_gmt'   => $now_gmt,
+						'updated_at_gmt'   => $now_gmt,
 					)
 				);
 
@@ -125,11 +131,16 @@ class I18nly_Pot_Source_Importer {
 			}
 		}
 
+		if ( method_exists( $this->repository, 'mark_obsolete_entries_not_seen' ) ) {
+			$obsoleted = (int) $this->repository->mark_obsolete_entries_not_seen( $catalog_id, $now_gmt );
+		}
+
 		return array(
 			'catalog_id' => $catalog_id,
 			'inserted'   => $inserted,
 			'updated'    => $updated,
 			'unchanged'  => $unchanged,
+			'obsoleted'  => $obsoleted,
 		);
 	}
 
