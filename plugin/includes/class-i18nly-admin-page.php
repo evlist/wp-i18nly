@@ -267,15 +267,9 @@ class I18nly_Admin_Page {
 	public function render_translation_meta_box( $post ) {
 		$plugin_options    = $this->get_plugin_options();
 		$target_languages  = $this->get_target_language_options();
-		$translation_id    = isset( $post->ID ) ? (int) $post->ID : 0;
 		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
 		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
 		$is_locked         = '' !== $selected_source || '' !== $selected_language;
-		$source_entries    = array();
-
-		if ( $translation_id > 0 && '' !== $selected_source ) {
-			$source_entries = $this->get_translation_source_entries( $translation_id, $selected_source );
-		}
 
 		wp_nonce_field( 'i18nly_translation_meta_box', 'i18nly_translation_meta_box_nonce' );
 		?>
@@ -315,7 +309,7 @@ class I18nly_Admin_Page {
 
 		<h3><?php echo esc_html__( 'Source entries', 'i18nly' ); ?></h3>
 		<div id="i18nly-source-entries-table">
-			<?php $this->render_translation_source_entries_table( $source_entries ); ?>
+			<p><?php echo esc_html__( 'Loading source entries…', 'i18nly' ); ?></p>
 		</div>
 		<?php
 	}
@@ -732,6 +726,8 @@ class I18nly_Admin_Page {
 				if (typeof window.fetch !== 'function') {
 					return;
 				}
+
+				refreshEntriesTable();
 
 				window.fetch('<?php echo esc_url( $ajax_url ); ?>', {
 					method: 'POST',

@@ -199,11 +199,11 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
-	 * Renders source entries table in translation meta box.
+	 * Renders loading placeholder for source entries in translation meta box.
 	 *
 	 * @return void
 	 */
-	public function test_render_translation_meta_box_outputs_source_entries_table() {
+	public function test_render_translation_meta_box_outputs_source_entries_loading_placeholder() {
 		i18nly_test_set_plugins(
 			array(
 				'akismet/akismet.php' => array(
@@ -231,36 +231,14 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$page = new class() extends I18nly_Admin_Page {
-			/**
-			 * Returns deterministic source entries in tests.
-			 *
-			 * @param int    $translation_id Translation ID.
-			 * @param string $source_slug Source slug.
-			 * @return array<int, array<string, mixed>>
-			 */
-			protected function get_translation_source_entries( $translation_id, $source_slug ) {
-				unset( $translation_id, $source_slug );
-
-				return array(
-					array(
-						'msgctxt'      => 'email',
-						'msgid'        => 'Hello world',
-						'msgid_plural' => '',
-						'status'       => 'active',
-					),
-				);
-			}
-		};
+		$page = new I18nly_Admin_Page();
 
 		ob_start();
 		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
 		$html = ob_get_clean();
 
 		$this->assertStringContainsString( 'id="i18nly-source-entries-table"', $html );
-		$this->assertStringContainsString( 'wp-list-table widefat fixed striped', $html );
-		$this->assertStringContainsString( 'Hello world', $html );
-		$this->assertStringContainsString( 'active', $html );
+		$this->assertStringContainsString( 'Loading source entries…', $html );
 	}
 
 	/**
