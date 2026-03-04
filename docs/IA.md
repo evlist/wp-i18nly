@@ -125,21 +125,32 @@ Core principles for this repository:
 	- implement one very small user-visible increment at a time,
 	- avoid speculative architecture or schema expansion.
 
-2. **Test-first or test-with-change**
-	- each slice must include the smallest relevant test or validation step,
-	- no large feature batches without intermediate checks.
+2. **Strict test-first (Red → Green → Refactor)**
+	- start by writing or strengthening one failing test that expresses the expected behavior,
+	- run tests before implementation and record the failing state (**Red**),
+	- implement the minimal code change to pass (**Green**),
+	- run a refactoring pass at constant behavior, then rerun tests (**Refactor**).
 
-3. **Validate continuously**
+3. **Behavior-oriented tests over implementation mirroring**
+	- prefer assertions on observable business outcomes/invariants,
+	- avoid tests that only mirror internal implementation details,
+	- include idempotence/regression checks when relevant to reduce shared reasoning errors.
+
+4. **Validate continuously**
 	- run focused checks first (lint/unit), then standards checks,
 	- do not defer validation to the end of a long sequence.
 
-4. **One step, one commit**
+5. **One step, one commit**
 	- each completed slice should be committed independently,
 	- commit messages should describe one behavior change only.
 
-5. **Prefer deletion over speculation**
+6. **Prefer deletion over speculation**
 	- remove temporary scaffolding that is not part of the current slice,
 	- keep docs and code aligned with what is actually implemented.
+
+7. **Session reporting discipline**
+	- explicitly report slice status as **Red**, **Green**, then **Refactor** before commit,
+	- if a step is skipped, state why and treat it as an exception.
 
 ## 9) Next Steps (XP Order)
 
