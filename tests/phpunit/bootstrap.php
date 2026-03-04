@@ -31,6 +31,8 @@ $i18nly_test_last_redirect_url      = '';
 $i18nly_test_last_updated_post      = array();
 $i18nly_test_options                = array();
 $i18nly_test_last_json_response     = array();
+$i18nly_test_enqueued_scripts       = array();
+$i18nly_test_inline_scripts         = array();
 
 /**
  * Minimal in-memory wpdb stub for source import tests.
@@ -393,6 +395,40 @@ function i18nly_test_get_last_json_response() {
 	global $i18nly_test_last_json_response;
 
 	return $i18nly_test_last_json_response;
+}
+
+/**
+ * Resets captured enqueued scripts.
+ *
+ * @return void
+ */
+function i18nly_test_reset_enqueued_scripts() {
+	global $i18nly_test_enqueued_scripts, $i18nly_test_inline_scripts;
+
+	$i18nly_test_enqueued_scripts = array();
+	$i18nly_test_inline_scripts   = array();
+}
+
+/**
+ * Returns captured enqueued scripts.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function i18nly_test_get_enqueued_scripts() {
+	global $i18nly_test_enqueued_scripts;
+
+	return $i18nly_test_enqueued_scripts;
+}
+
+/**
+ * Returns captured inline script blocks.
+ *
+ * @return array<string, array<int, array<string, string>>>
+ */
+function i18nly_test_get_inline_scripts() {
+	global $i18nly_test_inline_scripts;
+
+	return $i18nly_test_inline_scripts;
 }
 
 /**
@@ -773,6 +809,68 @@ if ( ! function_exists( 'admin_url' ) ) {
 	 */
 	function admin_url( $path = '' ) {
 		return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'plugin_dir_url' ) ) {
+	/**
+	 * Returns plugin directory URL in tests.
+	 *
+	 * @param string $path File path.
+	 * @return string
+	 */
+	function plugin_dir_url( $path ) {
+		unset( $path );
+
+		return 'https://example.test/wp-content/plugins/i18nly/';
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_script' ) ) {
+	/**
+	 * Captures enqueued scripts in tests.
+	 *
+	 * @param string               $handle Script handle.
+	 * @param string               $src Script URL.
+	 * @param array<int, string>   $deps Dependencies.
+	 * @param string|bool|null     $ver Version.
+	 * @param bool                 $in_footer In footer.
+	 * @return void
+	 */
+	function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $in_footer = false ) {
+		global $i18nly_test_enqueued_scripts;
+
+		$i18nly_test_enqueued_scripts[ (string) $handle ] = array(
+			'src'       => (string) $src,
+			'deps'      => is_array( $deps ) ? $deps : array(),
+			'ver'       => $ver,
+			'in_footer' => (bool) $in_footer,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_add_inline_script' ) ) {
+	/**
+	 * Captures inline script blocks in tests.
+	 *
+	 * @param string $handle Script handle.
+	 * @param string $data Inline script.
+	 * @param string $position Position.
+	 * @return bool
+	 */
+	function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+		global $i18nly_test_inline_scripts;
+
+		if ( ! isset( $i18nly_test_inline_scripts[ $handle ] ) ) {
+			$i18nly_test_inline_scripts[ $handle ] = array();
+		}
+
+		$i18nly_test_inline_scripts[ $handle ][] = array(
+			'data'     => (string) $data,
+			'position' => (string) $position,
+		);
+
+		return true;
 	}
 }
 

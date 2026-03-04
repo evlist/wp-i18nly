@@ -17,11 +17,11 @@ use PHPUnit\Framework\TestCase;
  */
 class AjaxPotGenerationTest extends TestCase {
 	/**
-	 * Renders edit-screen script that triggers generation AJAX request.
+	 * Enqueues edit-screen script and localizes AJAX config.
 	 *
 	 * @return void
 	 */
-	public function test_render_translation_edit_pot_generation_script_outputs_ajax_call() {
+	public function test_render_translation_edit_pot_generation_script_enqueues_external_script() {
 		i18nly_test_set_translations_rows(
 			array(
 				array(
@@ -33,6 +33,7 @@ class AjaxPotGenerationTest extends TestCase {
 				),
 			)
 		);
+		i18nly_test_reset_enqueued_scripts();
 
 		$_GET['post']   = '42';
 		$_GET['action'] = 'edit';
@@ -51,13 +52,20 @@ class AjaxPotGenerationTest extends TestCase {
 
 		ob_start();
 		$page->render_translation_edit_pot_generation_script();
-		$html = ob_get_clean();
+		$html    = ob_get_clean();
+		$scripts = i18nly_test_get_enqueued_scripts();
+		$inline  = i18nly_test_get_inline_scripts();
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( 'i18nly_generate_translation_pot', $html );
-		$this->assertStringContainsString( 'i18nly_get_translation_entries_table', $html );
-		$this->assertStringContainsString( 'translation_id=42', $html );
-		$this->assertStringContainsString( 'admin-ajax.php', $html );
+		$this->assertSame( '', $html );
+		$this->assertArrayHasKey( 'i18nly-translation-edit', $scripts );
+		$this->assertStringContainsString( 'assets/js/translation-edit.js', $scripts['i18nly-translation-edit']['src'] );
+		$this->assertArrayHasKey( 'i18nly-translation-edit', $inline );
+		$this->assertNotEmpty( $inline['i18nly-translation-edit'] );
+		$this->assertStringContainsString( 'window.i18nlyTranslationEditConfig', $inline['i18nly-translation-edit'][0]['data'] );
+		$this->assertStringContainsString( 'i18nly_generate_translation_pot', $inline['i18nly-translation-edit'][0]['data'] );
+		$this->assertStringContainsString( 'i18nly_get_translation_entries_table', $inline['i18nly-translation-edit'][0]['data'] );
+		$this->assertStringContainsString( 'admin-ajax.php', $inline['i18nly-translation-edit'][0]['data'] );
 
 		unset( $_GET['post'], $_GET['action'] );
 	}
