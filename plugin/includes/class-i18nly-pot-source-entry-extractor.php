@@ -44,7 +44,7 @@ class I18nly_Pot_Source_Entry_Extractor {
 		}
 
 		$plugin_directory = dirname( $main_file );
-		$php_files        = $this->list_php_files( $plugin_directory );
+		$php_files        = $this->list_source_php_files( $main_file, (string) $source_slug );
 		$entries_map      = array();
 
 		foreach ( $php_files as $file_path ) {
@@ -116,6 +116,24 @@ class I18nly_Pot_Source_Entry_Extractor {
 		}
 
 		return array_values( $entries_map );
+	}
+
+	/**
+	 * Lists PHP files to scan for one source slug.
+	 *
+	 * Root-level plugin files such as `hello.php` are scanned as a single file.
+	 * Directory-based plugins keep recursive scan behavior.
+	 *
+	 * @param string $main_file Resolved main plugin file.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, string>
+	 */
+	private function list_source_php_files( $main_file, $source_slug ) {
+		if ( false === strpos( $source_slug, '/' ) ) {
+			return array( $main_file );
+		}
+
+		return $this->list_php_files( dirname( $main_file ) );
 	}
 
 	/**

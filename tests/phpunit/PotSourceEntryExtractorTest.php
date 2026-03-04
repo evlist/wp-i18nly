@@ -70,6 +70,42 @@ class PotSourceEntryExtractorTest extends TestCase {
 		rmdir( $plugin_dir );
 		rmdir( $plugins_root );
 	}
+
+	/**
+	 * Extracting from a root-level plugin file must not scan sibling plugins.
+	 *
+	 * @return void
+	 */
+	public function test_extract_from_root_level_plugin_file_does_not_scan_plugins_root() {
+		$plugins_root       = sys_get_temp_dir() . '/i18nly-extractor-root-' . uniqid( '', true );
+		$root_plugin_file   = $plugins_root . '/hello.php';
+		$sibling_plugin_dir = $plugins_root . '/akismet';
+		$sibling_file       = $sibling_plugin_dir . '/akismet.php';
+
+		mkdir( $plugins_root, 0755, true );
+		mkdir( $sibling_plugin_dir, 0755, true );
+
+		file_put_contents(
+			$root_plugin_file,
+			"<?php\n__( 'Hello Dolly only', 'hello' );\n"
+		);
+
+		file_put_contents(
+			$sibling_file,
+			"<?php\n__( 'Akismet only', 'akismet' );\n"
+		);
+
+		$extractor = new I18nly_Pot_Source_Entry_Extractor( $plugins_root );
+		$entries   = $extractor->extract_from_source_slug( 'hello.php' );
+
+		$this->assertCount( 1, $entries );
+		$this->assertSame( 'Hello Dolly only', $entries[0]['original'] );
+
+		unlink( $sibling_file );
+		rmdir( $sibling_plugin_dir );
+		unlink( $root_plugin_file );
+		rmdir( $plugins_root );
+	}
 }
 
 // phpcs:enable
