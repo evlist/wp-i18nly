@@ -307,9 +307,9 @@ class I18nly_Admin_Page {
 			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
 		<?php endif; ?>
 
-		<h3><?php echo esc_html__( 'Source entries', 'i18nly' ); ?></h3>
+		<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
 		<div id="i18nly-source-entries-table">
-			<p><?php echo esc_html__( 'Loading source entries…', 'i18nly' ); ?></p>
+			<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
 		</div>
 		<?php
 	}
@@ -857,12 +857,19 @@ class I18nly_Admin_Page {
 	 * @return array<int, array<string, mixed>>
 	 */
 	protected function get_translation_source_entries( $translation_id, $source_slug ) {
-		unset( $translation_id );
-
 		$schema_manager = new I18nly_Source_Schema_Manager();
 		$schema_manager->maybe_upgrade();
 
 		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
+		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
+
+		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
+			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt );
+		}
+
+		if ( method_exists( $repository, 'list_translation_entries_by_plugin_slug' ) ) {
+			return $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug );
+		}
 
 		if ( ! method_exists( $repository, 'list_source_entries_by_plugin_slug' ) ) {
 			return array();
@@ -903,21 +910,25 @@ class I18nly_Admin_Page {
 				<tr>
 					<th scope="col"><?php echo esc_html__( 'Context', 'i18nly' ); ?></th>
 					<th scope="col"><?php echo esc_html__( 'Source string', 'i18nly' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Translation', 'i18nly' ); ?></th>
 					<th scope="col"><?php echo esc_html__( 'Plural', 'i18nly' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Plural translation', 'i18nly' ); ?></th>
 					<th scope="col"><?php echo esc_html__( 'Status', 'i18nly' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if ( empty( $source_entries ) ) : ?>
 					<tr>
-						<td colspan="4"><?php echo esc_html__( 'No source entries available yet.', 'i18nly' ); ?></td>
+						<td colspan="6"><?php echo esc_html__( 'No translation entries available yet.', 'i18nly' ); ?></td>
 					</tr>
 				<?php else : ?>
 					<?php foreach ( $source_entries as $entry ) : ?>
 						<tr>
 							<td><?php echo esc_html( isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '' ); ?></td>
 							<td><?php echo esc_html( isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '' ); ?></td>
+							<td><?php echo esc_html( isset( $entry['translation'] ) ? (string) $entry['translation'] : '' ); ?></td>
 							<td><?php echo esc_html( isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '' ); ?></td>
+							<td><?php echo esc_html( isset( $entry['translation_plural'] ) ? (string) $entry['translation_plural'] : '' ); ?></td>
 							<td><?php echo esc_html( isset( $entry['status'] ) ? (string) $entry['status'] : '' ); ?></td>
 						</tr>
 					<?php endforeach; ?>

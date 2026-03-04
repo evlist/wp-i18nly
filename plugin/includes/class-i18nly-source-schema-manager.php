@@ -17,7 +17,7 @@ class I18nly_Source_Schema_Manager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.0.3';
+	private const SCHEMA_VERSION = '0.0.5';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -89,16 +89,26 @@ class I18nly_Source_Schema_Manager {
 	}
 
 	/**
+	 * Returns translated entries table name.
+	 *
+	 * @return string
+	 */
+	public function get_translated_entries_table_name() {
+		return (string) $this->wpdb->prefix . 'i18nly_translated_entries';
+	}
+
+	/**
 	 * Creates source tables.
 	 *
 	 * @return void
 	 */
 	public function create_tables() {
-		$catalogs_table = $this->escape_table_name( $this->get_catalogs_table_name() );
-		$entries_table  = $this->escape_table_name( $this->get_entries_table_name() );
-		$collation      = $this->get_charset_collate();
+		$catalogs_table           = $this->escape_table_name( $this->get_catalogs_table_name() );
+		$entries_table            = $this->escape_table_name( $this->get_entries_table_name() );
+		$translated_entries_table = $this->escape_table_name( $this->get_translated_entries_table_name() );
+		$collation                = $this->get_charset_collate();
 
-		if ( '' === $catalogs_table || '' === $entries_table ) {
+		if ( '' === $catalogs_table || '' === $entries_table || '' === $translated_entries_table ) {
 			return;
 		}
 
@@ -132,12 +142,28 @@ class I18nly_Source_Schema_Manager {
 			KEY catalog_status (catalog_id, status)
 		) {$collation}";
 
+		$translated_entries_sql = "CREATE TABLE {$translated_entries_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			translation_id bigint(20) unsigned NOT NULL,
+			source_entry_id bigint(20) unsigned NOT NULL,
+			translation longtext DEFAULT NULL,
+			translation_plural longtext DEFAULT NULL,
+			comment text DEFAULT NULL,
+			created_at_gmt datetime NOT NULL,
+			updated_at_gmt datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY translation_source_entry (translation_id, source_entry_id),
+			KEY translation_lookup (translation_id),
+			KEY source_entry_lookup (source_entry_id)
+		) {$collation}";
+
 		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 			if ( function_exists( 'dbDelta' ) ) {
 				dbDelta( $catalogs_sql );
 				dbDelta( $entries_sql );
+				dbDelta( $translated_entries_sql );
 
 				return;
 			}
@@ -145,6 +171,7 @@ class I18nly_Source_Schema_Manager {
 
 		$this->db_query( $catalogs_sql );
 		$this->db_query( $entries_sql );
+		$this->db_query( $translated_entries_sql );
 	}
 
 	/**

@@ -238,7 +238,7 @@ class AdminPageRenderTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertStringContainsString( 'id="i18nly-source-entries-table"', $html );
-		$this->assertStringContainsString( 'Loading source entries…', $html );
+		$this->assertStringContainsString( 'Loading translation entries…', $html );
 	}
 
 	/**

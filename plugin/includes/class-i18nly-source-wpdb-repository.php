@@ -343,6 +343,80 @@ class I18nly_Source_Wpdb_Repository {
 	}
 
 	/**
+	 * Ensures translated rows exist for all source entries of one translation.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $plugin_slug Plugin slug.
+	 * @param string $now_gmt Current GMT datetime.
+	 * @return int Number of inserted rows.
+	 */
+	public function ensure_translated_entries_for_translation( $translation_id, $plugin_slug, $now_gmt ) {
+		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
+		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+
+		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
+			return 0;
+		}
+
+		$query = $this->wpdb->prepare(
+			'INSERT INTO %i (translation_id, source_entry_id, translation, translation_plural, comment, created_at_gmt, updated_at_gmt) SELECT %d, e.id, %s, %s, %s, %s, %s FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.translation_id = %d AND t.source_entry_id = e.id WHERE c.plugin_slug = %s AND t.id IS NULL',
+			$translated_entries_table,
+			(int) $translation_id,
+			'',
+			'',
+			'',
+			(string) $now_gmt,
+			(string) $now_gmt,
+			$entries_table,
+			$catalogs_table,
+			$translated_entries_table,
+			(int) $translation_id,
+			(string) $plugin_slug
+		);
+
+		$result = $this->db_query( $query );
+
+		if ( is_int( $result ) ) {
+			return $result;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Lists source entries joined with translated values for one translation.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $plugin_slug Plugin slug.
+	 * @param int    $limit Maximum row count.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function list_translation_entries_by_plugin_slug( $translation_id, $plugin_slug, $limit = 500 ) {
+		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
+		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+
+		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
+			return array();
+		}
+
+		$max_rows = max( 1, (int) $limit );
+
+		$query = $this->wpdb->prepare(
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.plural_index, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.translation, t.translation_plural, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id INNER JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.plural_index ASC LIMIT %d',
+			$entries_table,
+			$catalogs_table,
+			$translated_entries_table,
+			(int) $translation_id,
+			(string) $plugin_slug,
+			$max_rows
+		);
+
+		return $this->db_get_results( $query, ARRAY_A );
+	}
+
+	/**
 	 * Validates and escapes a table name.
 	 *
 	 * @param string $table_name Raw table name.

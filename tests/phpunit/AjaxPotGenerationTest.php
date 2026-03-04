@@ -168,10 +168,12 @@ class AjaxPotGenerationTest extends TestCase {
 
 				return array(
 					array(
-						'msgctxt'      => 'email',
-						'msgid'        => 'Welcome',
-						'msgid_plural' => 'Welcomes',
-						'status'       => 'active',
+						'msgctxt'            => 'email',
+						'msgid'              => 'Welcome',
+						'translation'        => 'Bienvenue',
+						'msgid_plural'       => 'Welcomes',
+						'translation_plural' => 'Bienvenues',
+						'status'             => 'active',
 					),
 				);
 			}
@@ -189,6 +191,10 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertIsString( $response['data']['html'] );
 		$this->assertStringContainsString( 'wp-list-table widefat fixed striped', $response['data']['html'] );
 		$this->assertStringContainsString( 'Welcome', $response['data']['html'] );
+		$this->assertStringContainsString( 'Translation', $response['data']['html'] );
+		$this->assertStringContainsString( 'Plural translation', $response['data']['html'] );
+		$this->assertStringContainsString( 'Bienvenue', $response['data']['html'] );
+		$this->assertStringContainsString( 'Bienvenues', $response['data']['html'] );
 		$this->assertStringContainsString( 'active', $response['data']['html'] );
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );

@@ -29,11 +29,14 @@ class SourceSchemaManagerTest extends TestCase {
 
 		$manager->maybe_upgrade();
 
-		$this->assertCount( 2, $wpdb_stub->queries );
+		$this->assertCount( 3, $wpdb_stub->queries );
 		$this->assertStringContainsString( 'i18nly_source_catalogs', $wpdb_stub->queries[0] );
 		$this->assertStringContainsString( 'i18nly_source_entries', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'last_seen_at_gmt', $wpdb_stub->queries[1] );
-		$this->assertSame( '0.0.3', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertStringContainsString( 'i18nly_translated_entries', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'translation_source_entry', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'translation_plural', $wpdb_stub->queries[2] );
+		$this->assertSame( '0.0.5', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 
