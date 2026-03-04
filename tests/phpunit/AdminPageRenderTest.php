@@ -199,6 +199,71 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Renders source entries table in translation meta box.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_meta_box_outputs_source_entries_table() {
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array(
+					'Name' => 'Akismet',
+				),
+			)
+		);
+		i18nly_test_set_available_languages( array( 'fr_FR' ) );
+		i18nly_test_set_available_translations(
+			array(
+				'fr_FR' => array(
+					'native_name' => 'Français',
+				),
+			)
+		);
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$page = new class() extends I18nly_Admin_Page {
+			/**
+			 * Returns deterministic source entries in tests.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $source_slug Source slug.
+			 * @return array<int, array<string, mixed>>
+			 */
+			protected function get_translation_source_entries( $translation_id, $source_slug ) {
+				unset( $translation_id, $source_slug );
+
+				return array(
+					array(
+						'msgctxt'      => 'email',
+						'msgid'        => 'Hello world',
+						'msgid_plural' => '',
+						'status'       => 'active',
+					),
+				);
+			}
+		};
+
+		ob_start();
+		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'id="i18nly-source-entries-table"', $html );
+		$this->assertStringContainsString( 'wp-list-table widefat fixed striped', $html );
+		$this->assertStringContainsString( 'Hello world', $html );
+		$this->assertStringContainsString( 'active', $html );
+	}
+
+	/**
 	 * Saves meta and auto-generates title when current title is empty.
 	 *
 	 * @return void

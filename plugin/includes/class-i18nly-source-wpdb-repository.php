@@ -315,6 +315,34 @@ class I18nly_Source_Wpdb_Repository {
 	}
 
 	/**
+	 * Lists source entries for one plugin slug.
+	 *
+	 * @param string $plugin_slug Plugin slug.
+	 * @param int    $limit Maximum row count.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function list_source_entries_by_plugin_slug( $plugin_slug, $limit = 500 ) {
+		$entries_table  = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$catalogs_table = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
+
+		if ( '' === $entries_table || '' === $catalogs_table ) {
+			return array();
+		}
+
+		$max_rows = max( 1, (int) $limit );
+
+		$query = $this->wpdb->prepare(
+			'SELECT e.msgctxt, e.msgid, e.msgid_plural, e.plural_index, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.plural_index ASC LIMIT %d',
+			$entries_table,
+			$catalogs_table,
+			(string) $plugin_slug,
+			$max_rows
+		);
+
+		return $this->db_get_results( $query, ARRAY_A );
+	}
+
+	/**
 	 * Validates and escapes a table name.
 	 *
 	 * @param string $table_name Raw table name.
@@ -359,6 +387,39 @@ class I18nly_Source_Wpdb_Repository {
 		$result = $this->wpdb->{$method}( $query, $output );
 
 		return is_array( $result ) ? $result : null;
+	}
+
+	/**
+	 * Executes one multi-row read query.
+	 *
+	 * @param string $query Prepared query.
+	 * @param string $output Output type.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function db_get_results( $query, $output = OBJECT ) {
+		$method = 'get_results';
+
+		if ( ! method_exists( $this->wpdb, $method ) ) {
+			return array();
+		}
+
+		$results = $this->wpdb->{$method}( $query, $output );
+
+		if ( ! is_array( $results ) ) {
+			return array();
+		}
+
+		$normalized = array();
+
+		foreach ( $results as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$normalized[] = $row;
+		}
+
+		return $normalized;
 	}
 
 	/**

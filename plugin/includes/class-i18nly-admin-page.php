@@ -176,6 +176,7 @@ class I18nly_Admin_Page {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_footer-post.php', array( $this, 'render_translation_edit_pot_generation_script' ) );
 		add_action( 'wp_ajax_i18nly_generate_translation_pot', array( $this, 'ajax_generate_translation_pot' ) );
+		add_action( 'wp_ajax_i18nly_get_translation_entries_table', array( $this, 'ajax_get_translation_entries_table' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
@@ -266,9 +267,15 @@ class I18nly_Admin_Page {
 	public function render_translation_meta_box( $post ) {
 		$plugin_options    = $this->get_plugin_options();
 		$target_languages  = $this->get_target_language_options();
+		$translation_id    = isset( $post->ID ) ? (int) $post->ID : 0;
 		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
 		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
 		$is_locked         = '' !== $selected_source || '' !== $selected_language;
+		$source_entries    = array();
+
+		if ( $translation_id > 0 && '' !== $selected_source ) {
+			$source_entries = $this->get_translation_source_entries( $translation_id, $selected_source );
+		}
 
 		wp_nonce_field( 'i18nly_translation_meta_box', 'i18nly_translation_meta_box_nonce' );
 		?>
@@ -305,6 +312,11 @@ class I18nly_Admin_Page {
 		<?php if ( $is_locked ) : ?>
 			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
 		<?php endif; ?>
+
+		<h3><?php echo esc_html__( 'Source entries', 'i18nly' ); ?></h3>
+		<div id="i18nly-source-entries-table">
+			<?php $this->render_translation_source_entries_table( $source_entries ); ?>
+		</div>
 		<?php
 	}
 
@@ -674,8 +686,9 @@ class I18nly_Admin_Page {
 			return;
 		}
 
-		$nonce    = wp_create_nonce( 'i18nly_generate_translation_pot_' . $translation_id );
-		$ajax_url = admin_url( 'admin-ajax.php' );
+		$nonce         = wp_create_nonce( 'i18nly_generate_translation_pot_' . $translation_id );
+		$entries_nonce = wp_create_nonce( 'i18nly_get_translation_entries_table_' . $translation_id );
+		$ajax_url      = admin_url( 'admin-ajax.php' );
 		?>
 		<script>
 			(function () {
@@ -685,7 +698,36 @@ class I18nly_Admin_Page {
 
 				window.i18nlyPotInitDone = true;
 
-				var body = 'action=i18nly_generate_translation_pot&translation_id=<?php echo (int) $translation_id; ?>&nonce=<?php echo rawurlencode( (string) $nonce ); ?>';
+				var generateBody = 'action=i18nly_generate_translation_pot&translation_id=<?php echo (int) $translation_id; ?>&nonce=<?php echo rawurlencode( (string) $nonce ); ?>';
+				var refreshBody = 'action=i18nly_get_translation_entries_table&translation_id=<?php echo (int) $translation_id; ?>&nonce=<?php echo rawurlencode( (string) $entries_nonce ); ?>';
+
+				function refreshEntriesTable() {
+					window.fetch('<?php echo esc_url( $ajax_url ); ?>', {
+						method: 'POST',
+						credentials: 'same-origin',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+						},
+						body: refreshBody
+					})
+						.then(function (response) {
+							return response.json();
+						})
+						.then(function (payload) {
+							var container;
+
+							if (!payload || !payload.success || !payload.data || 'string' !== typeof payload.data.html) {
+								return;
+							}
+
+							container = document.getElementById('i18nly-source-entries-table');
+							if (!container) {
+								return;
+							}
+
+							container.innerHTML = payload.data.html;
+						});
+				}
 
 				if (typeof window.fetch !== 'function') {
 					return;
@@ -697,7 +739,15 @@ class I18nly_Admin_Page {
 					headers: {
 						'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
 					},
-					body: body
+					body: generateBody
+				})
+					.then(function (response) {
+						return response.json();
+					})
+					.then(function (payload) {
+						if (payload && payload.success) {
+							refreshEntriesTable();
+						}
 				});
 			})();
 		</script>
@@ -764,6 +814,131 @@ class I18nly_Admin_Page {
 				'pot_file_path'  => $pot_file_path,
 			)
 		);
+	}
+
+	/**
+	 * Handles AJAX request to fetch source entries table HTML.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_translation_entries_table() {
+		if ( ! isset( $_POST['translation_id'], $_POST['nonce'] ) ) {
+			wp_send_json_error( array( 'message' => 'Missing parameters.' ), 400 );
+			return;
+		}
+
+		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
+		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+
+		if ( $translation_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $translation_id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
+			return;
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'i18nly_get_translation_entries_table_' . $translation_id ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
+			return;
+		}
+
+		$translation = $this->get_translation( $translation_id );
+		if ( null === $translation || empty( $translation['source_slug'] ) ) {
+			wp_send_json_error( array( 'message' => 'Translation source is missing.' ), 400 );
+			return;
+		}
+
+		$source_slug    = (string) $translation['source_slug'];
+		$source_entries = $this->get_translation_source_entries( $translation_id, $source_slug );
+
+		wp_send_json_success(
+			array(
+				'translation_id' => $translation_id,
+				'entries_count'  => count( $source_entries ),
+				'html'           => $this->render_translation_source_entries_table_markup( $source_entries ),
+			)
+		);
+	}
+
+	/**
+	 * Returns source entries rows for one translation.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected function get_translation_source_entries( $translation_id, $source_slug ) {
+		unset( $translation_id );
+
+		$schema_manager = new I18nly_Source_Schema_Manager();
+		$schema_manager->maybe_upgrade();
+
+		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
+
+		if ( ! method_exists( $repository, 'list_source_entries_by_plugin_slug' ) ) {
+			return array();
+		}
+
+		return $repository->list_source_entries_by_plugin_slug( $source_slug );
+	}
+
+	/**
+	 * Renders source entries table markup.
+	 *
+	 * @param array<int, array<string, mixed>> $source_entries Source entries rows.
+	 * @return string
+	 */
+	private function render_translation_source_entries_table_markup( array $source_entries ) {
+		ob_start();
+		$this->render_translation_source_entries_table( $source_entries );
+
+		$html = ob_get_clean();
+
+		if ( ! is_string( $html ) ) {
+			return '';
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Outputs source entries table markup.
+	 *
+	 * @param array<int, array<string, mixed>> $source_entries Source entries rows.
+	 * @return void
+	 */
+	private function render_translation_source_entries_table( array $source_entries ) {
+		?>
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th scope="col"><?php echo esc_html__( 'Context', 'i18nly' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Source string', 'i18nly' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Plural', 'i18nly' ); ?></th>
+					<th scope="col"><?php echo esc_html__( 'Status', 'i18nly' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if ( empty( $source_entries ) ) : ?>
+					<tr>
+						<td colspan="4"><?php echo esc_html__( 'No source entries available yet.', 'i18nly' ); ?></td>
+					</tr>
+				<?php else : ?>
+					<?php foreach ( $source_entries as $entry ) : ?>
+						<tr>
+							<td><?php echo esc_html( isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '' ); ?></td>
+							<td><?php echo esc_html( isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '' ); ?></td>
+							<td><?php echo esc_html( isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '' ); ?></td>
+							<td><?php echo esc_html( isset( $entry['status'] ) ? (string) $entry['status'] : '' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
+		<?php
 	}
 
 	/**
