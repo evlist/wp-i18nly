@@ -561,6 +561,22 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( '_x' ) ) {
+	/**
+	 * Returns untranslated contextual string in tests.
+	 *
+	 * @param string $text Text value.
+	 * @param string $context Translation context.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function _x( $text, $context, $domain ) {
+		unset( $context, $domain );
+
+		return (string) $text;
+	}
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
 	/**
 	 * Returns untranslated escaped HTML string in tests.

@@ -124,8 +124,14 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 			return esc_html( $singular );
 		}
 
-		$singular_marker = $this->render_form_marker( '1', __( 'Singular form', 'i18nly' ) );
-		$plural_marker   = $this->render_form_marker( 'n', __( 'Plural form', 'i18nly' ) );
+		$singular_marker = $this->render_form_marker(
+			_x( '1', 'grammar form marker for singular translation row', 'i18nly' ),
+			_x( 'Singular form', 'tooltip for singular translation form marker', 'i18nly' )
+		);
+		$plural_marker   = $this->render_form_marker(
+			_x( 'n', 'grammar form marker for plural translation row', 'i18nly' ),
+			_x( 'Plural form', 'tooltip for plural translation form marker', 'i18nly' )
+		);
 
 		return sprintf(
 			'<p class="i18nly-form-line">%1$s %2$s</p><p class="i18nly-form-line">%3$s %4$s</p>',
