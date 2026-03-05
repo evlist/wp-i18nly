@@ -88,4 +88,65 @@ class TranslationEntriesListTableTest extends TestCase {
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );
 	}
+
+	/**
+	 * Keeps compact rendering when entry has no plural value.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_renders_compact_cells_without_plural_values() {
+		$list_table = new I18nly_Translation_Entries_List_Table(
+			array(
+				array(
+					'msgctxt'            => '',
+					'msgid'              => 'Hello',
+					'translation'        => 'Bonjour',
+					'msgid_plural'       => '',
+					'translation_plural' => '',
+					'status'             => 'active',
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'Hello', $html );
+		$this->assertStringContainsString( 'Bonjour', $html );
+		$this->assertStringNotContainsString( '<strong>Singular:</strong>', $html );
+		$this->assertStringNotContainsString( '<strong>Plural:</strong>', $html );
+	}
+
+	/**
+	 * Uses source plural presence to decide stacked translation rendering.
+	 *
+	 * @return void
+	 */
+	public function test_translation_column_uses_source_plural_to_enable_stacked_rendering() {
+		$list_table = new I18nly_Translation_Entries_List_Table(
+			array(
+				array(
+					'msgctxt'            => '',
+					'msgid'              => '%s item',
+					'translation'        => '%s article',
+					'msgid_plural'       => '%s items',
+					'translation_plural' => '',
+					'status'             => 'active',
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( '<strong>Singular:</strong>', $html );
+		$this->assertStringContainsString( '<strong>Plural:</strong>', $html );
+		$this->assertStringContainsString( '%s article', $html );
+	}
 }

@@ -61,10 +61,11 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 * @return string
 	 */
 	public function column_msgid( $item ) {
-		$singular = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
-		$plural   = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
+		$singular   = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
+		$plural     = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
+		$has_plural = '' !== trim( $plural );
 
-		return $this->render_stacked_text_pair( $singular, $plural );
+		return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
 	}
 
 	/**
@@ -74,10 +75,12 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 * @return string
 	 */
 	public function column_translation( $item ) {
-		$singular = isset( $item['translation'] ) ? (string) $item['translation'] : '';
-		$plural   = isset( $item['translation_plural'] ) ? (string) $item['translation_plural'] : '';
+		$singular      = isset( $item['translation'] ) ? (string) $item['translation'] : '';
+		$plural        = isset( $item['translation_plural'] ) ? (string) $item['translation_plural'] : '';
+		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
+		$has_plural    = '' !== trim( $source_plural );
 
-		return $this->render_stacked_text_pair( $singular, $plural );
+		return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
 	}
 
 	/**
@@ -113,9 +116,14 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 *
 	 * @param string $singular Singular value.
 	 * @param string $plural Plural value.
+	 * @param bool   $has_plural Whether source has plural form.
 	 * @return string
 	 */
-	private function render_stacked_text_pair( $singular, $plural ) {
+	private function render_stacked_text_pair( $singular, $plural, $has_plural ) {
+		if ( ! $has_plural ) {
+			return esc_html( $singular );
+		}
+
 		return sprintf(
 			'<p><strong>%1$s:</strong> %2$s</p><p><strong>%3$s:</strong> %4$s</p>',
 			esc_html__( 'Singular', 'i18nly' ),
