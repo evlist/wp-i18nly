@@ -904,38 +904,9 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	private function render_translation_source_entries_table( array $source_entries ) {
-		?>
-		<table class="wp-list-table widefat fixed striped">
-			<thead>
-				<tr>
-					<th scope="col"><?php echo esc_html__( 'Context', 'i18nly' ); ?></th>
-					<th scope="col"><?php echo esc_html__( 'Source string', 'i18nly' ); ?></th>
-					<th scope="col"><?php echo esc_html__( 'Translation', 'i18nly' ); ?></th>
-					<th scope="col"><?php echo esc_html__( 'Plural', 'i18nly' ); ?></th>
-					<th scope="col"><?php echo esc_html__( 'Plural translation', 'i18nly' ); ?></th>
-					<th scope="col"><?php echo esc_html__( 'Status', 'i18nly' ); ?></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if ( empty( $source_entries ) ) : ?>
-					<tr>
-						<td colspan="6"><?php echo esc_html__( 'No translation entries available yet.', 'i18nly' ); ?></td>
-					</tr>
-				<?php else : ?>
-					<?php foreach ( $source_entries as $entry ) : ?>
-						<tr>
-							<td><?php echo esc_html( isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '' ); ?></td>
-							<td><?php echo esc_html( isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '' ); ?></td>
-							<td><?php echo esc_html( isset( $entry['translation'] ) ? (string) $entry['translation'] : '' ); ?></td>
-							<td><?php echo esc_html( isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '' ); ?></td>
-							<td><?php echo esc_html( isset( $entry['translation_plural'] ) ? (string) $entry['translation_plural'] : '' ); ?></td>
-							<td><?php echo esc_html( isset( $entry['status'] ) ? (string) $entry['status'] : '' ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</tbody>
-		</table>
-		<?php
+		$list_table = new I18nly_Translation_Entries_List_Table( $source_entries );
+		$list_table->prepare_items();
+		$list_table->display();
 	}
 
 	/**

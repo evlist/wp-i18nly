@@ -1370,7 +1370,88 @@ if ( ! function_exists( 'selected' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_List_Table', false ) ) {
+	/**
+	 * Minimal WP_List_Table fallback for PHPUnit bootstrap.
+	 */
+	abstract class WP_List_Table {
+		/**
+		 * Current list table rows.
+		 *
+		 * @var array<int, array<string, mixed>>
+		 */
+		public $items = array();
+
+		/**
+		 * Column headers tuple.
+		 *
+		 * @var array<int, mixed>
+		 */
+		protected $_column_headers = array();
+
+		/**
+		 * Constructor.
+		 *
+		 * @param array<string, mixed> $args Constructor args.
+		 */
+		public function __construct( array $args = array() ) {
+			unset( $args );
+		}
+
+		/**
+		 * Displays minimal list table markup.
+		 *
+		 * @return void
+		 */
+		public function display() {
+			if ( method_exists( $this, 'prepare_items' ) ) {
+				$this->prepare_items();
+			}
+
+			$columns = method_exists( $this, 'get_columns' ) ? (array) $this->get_columns() : array();
+
+			echo '<div class="tablenav top"></div>';
+			echo '<table class="wp-list-table widefat fixed striped">';
+			echo '<thead><tr>';
+
+			foreach ( $columns as $label ) {
+				echo '<th scope="col">' . esc_html( (string) $label ) . '</th>';
+			}
+
+			echo '</tr></thead>';
+			echo '<tbody>';
+
+			if ( empty( $this->items ) ) {
+				echo '<tr><td colspan="' . esc_attr( (string) max( 1, count( $columns ) ) ) . '">';
+				if ( method_exists( $this, 'no_items' ) ) {
+					$this->no_items();
+				}
+				echo '</td></tr>';
+			} else {
+				foreach ( $this->items as $item ) {
+					echo '<tr>';
+
+					foreach ( array_keys( $columns ) as $column_name ) {
+						echo '<td>';
+						if ( method_exists( $this, 'column_default' ) ) {
+							echo $this->column_default( (array) $item, (string) $column_name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaping is delegated to column rendering.
+						}
+						echo '</td>';
+					}
+
+					echo '</tr>';
+				}
+			}
+
+			echo '</tbody>';
+			echo '</table>';
+			echo '<div class="tablenav bottom"></div>';
+		}
+	}
+}
+
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-translation-entries-list-table.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-source-entry-extractor.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-temporary-storage.php';
