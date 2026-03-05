@@ -40,11 +40,6 @@ class I18nly_Admin_Page {
 	private const SOURCE_LOCALE = 'en_US';
 
 	/**
-	 * The top-level menu slug.
-	 */
-	private const MENU_SLUG = 'i18nly-translations';
-
-	/**
 	 * Native WordPress new translation screen slug.
 	 */
 	private const NEW_SCREEN_SLUG = 'post-new.php?post_type=i18nly_translation';
@@ -55,24 +50,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, string>
 	 */
 	private function get_plugin_options() {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-
-		$plugins = get_plugins();
-		$options = array();
-
-		foreach ( $plugins as $plugin_file => $plugin_data ) {
-			if ( empty( $plugin_data['Name'] ) ) {
-				continue;
-			}
-
-			$options[ $plugin_file ] = (string) $plugin_data['Name'];
-		}
-
-		asort( $options );
-
-		return $options;
+		return I18nly_Admin_Page_Helper::get_plugin_options();
 	}
 
 	/**
@@ -84,86 +62,7 @@ class I18nly_Admin_Page {
 	 * @return array<int, array{value: string, label: string, disabled: bool}>
 	 */
 	private function get_target_language_options() {
-		$source_locale     = self::SOURCE_LOCALE;
-		$installed_locales = array();
-		$all_translations  = array();
-		$preferred_options = array();
-		$remaining_options = array();
-		$ordered_options   = array();
-
-		if ( ! function_exists( 'wp_get_available_translations' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/translation-install.php';
-		}
-
-		if ( function_exists( 'get_available_languages' ) ) {
-			$installed_locales = get_available_languages();
-		}
-
-		if ( function_exists( 'wp_get_available_translations' ) ) {
-			$all_translations = wp_get_available_translations();
-		}
-
-		foreach ( $installed_locales as $locale ) {
-			if ( $source_locale === $locale ) {
-				continue;
-			}
-
-			$preferred_options[ $locale ] = $this->get_locale_label( $locale, $all_translations );
-		}
-
-		asort( $preferred_options );
-
-		foreach ( $all_translations as $locale => $translation ) {
-			if ( $source_locale === $locale || isset( $preferred_options[ $locale ] ) ) {
-				continue;
-			}
-
-			unset( $translation );
-			$remaining_options[ $locale ] = $this->get_locale_label( $locale, $all_translations );
-		}
-
-		asort( $remaining_options );
-
-		foreach ( $preferred_options as $locale => $label ) {
-			$ordered_options[] = array(
-				'value'    => (string) $locale,
-				'label'    => (string) $label,
-				'disabled' => false,
-			);
-		}
-
-		if ( ! empty( $preferred_options ) && ! empty( $remaining_options ) ) {
-			$ordered_options[] = array(
-				'value'    => '',
-				'label'    => '──────────',
-				'disabled' => true,
-			);
-		}
-
-		foreach ( $remaining_options as $locale => $label ) {
-			$ordered_options[] = array(
-				'value'    => (string) $locale,
-				'label'    => (string) $label,
-				'disabled' => false,
-			);
-		}
-
-		return $ordered_options;
-	}
-
-	/**
-	 * Returns a human-readable locale label.
-	 *
-	 * @param string                              $locale Locale code.
-	 * @param array<string, array<string, mixed>> $all_translations Available translations.
-	 * @return string
-	 */
-	private function get_locale_label( $locale, array $all_translations ) {
-		if ( isset( $all_translations[ $locale ]['native_name'] ) && '' !== (string) $all_translations[ $locale ]['native_name'] ) {
-			return (string) $all_translations[ $locale ]['native_name'];
-		}
-
-		return (string) $locale;
+		return I18nly_Admin_Page_Helper::get_target_language_options( self::SOURCE_LOCALE );
 	}
 
 	/**
@@ -195,21 +94,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, array<int, string>>
 	 */
 	public function filter_translation_post_updated_messages( array $messages ) {
-		$messages[ self::POST_TYPE ] = array(
-			0  => '',
-			1  => __( 'Translation updated.', 'i18nly' ),
-			2  => __( 'Custom field updated.', 'i18nly' ),
-			3  => __( 'Custom field deleted.', 'i18nly' ),
-			4  => __( 'Translation updated.', 'i18nly' ),
-			5  => __( 'Translation restored to revision.', 'i18nly' ),
-			6  => __( 'Translation published.', 'i18nly' ),
-			7  => __( 'Translation saved.', 'i18nly' ),
-			8  => __( 'Translation submitted.', 'i18nly' ),
-			9  => __( 'Translation scheduled.', 'i18nly' ),
-			10 => __( 'Translation draft updated.', 'i18nly' ),
-		);
-
-		return $messages;
+		return I18nly_Admin_Page_Helper::filter_translation_post_updated_messages( $messages, self::POST_TYPE );
 	}
 
 	/**
@@ -220,26 +105,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, array<string, string>>
 	 */
 	public function filter_translation_bulk_updated_messages( array $bulk_messages, array $bulk_counts ) {
-		$updated_count   = isset( $bulk_counts['updated'] ) ? (int) $bulk_counts['updated'] : 0;
-		$locked_count    = isset( $bulk_counts['locked'] ) ? (int) $bulk_counts['locked'] : 0;
-		$deleted_count   = isset( $bulk_counts['deleted'] ) ? (int) $bulk_counts['deleted'] : 0;
-		$trashed_count   = isset( $bulk_counts['trashed'] ) ? (int) $bulk_counts['trashed'] : 0;
-		$untrashed_count = isset( $bulk_counts['untrashed'] ) ? (int) $bulk_counts['untrashed'] : 0;
-
-		$bulk_messages[ self::POST_TYPE ] = array(
-			/* translators: %s: Number of translations. */
-			'updated'   => sprintf( _n( '%s translation updated.', '%s translations updated.', $updated_count, 'i18nly' ), number_format_i18n( $updated_count ) ),
-			/* translators: %s: Number of translations. */
-			'locked'    => sprintf( _n( '%s translation not updated, somebody is editing it.', '%s translations not updated, somebody is editing them.', $locked_count, 'i18nly' ), number_format_i18n( $locked_count ) ),
-			/* translators: %s: Number of translations. */
-			'deleted'   => sprintf( _n( '%s translation permanently deleted.', '%s translations permanently deleted.', $deleted_count, 'i18nly' ), number_format_i18n( $deleted_count ) ),
-			/* translators: %s: Number of translations. */
-			'trashed'   => sprintf( _n( '%s translation moved to the Trash.', '%s translations moved to the Trash.', $trashed_count, 'i18nly' ), number_format_i18n( $trashed_count ) ),
-			/* translators: %s: Number of translations. */
-			'untrashed' => sprintf( _n( '%s translation restored from the Trash.', '%s translations restored from the Trash.', $untrashed_count, 'i18nly' ), number_format_i18n( $untrashed_count ) ),
-		);
-
-		return $bulk_messages;
+		return I18nly_Admin_Page_Helper::filter_translation_bulk_updated_messages( $bulk_messages, $bulk_counts, self::POST_TYPE );
 	}
 
 	/**
@@ -383,28 +249,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_list_columns( array $columns ) {
-		$filtered_columns = array();
-
-		foreach ( $columns as $column_key => $column_label ) {
-			$filtered_columns[ $column_key ] = $column_label;
-
-			if ( 'title' !== $column_key ) {
-				continue;
-			}
-
-			$filtered_columns['source_slug']     = __( 'Source', 'i18nly' );
-			$filtered_columns['target_language'] = __( 'Target language', 'i18nly' );
-		}
-
-		if ( ! isset( $filtered_columns['source_slug'] ) ) {
-			$filtered_columns['source_slug'] = __( 'Source', 'i18nly' );
-		}
-
-		if ( ! isset( $filtered_columns['target_language'] ) ) {
-			$filtered_columns['target_language'] = __( 'Target language', 'i18nly' );
-		}
-
-		return $filtered_columns;
+		return I18nly_Admin_Page_Helper::filter_translation_list_columns( $columns );
 	}
 
 	/**
@@ -415,15 +260,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function render_translation_list_column( $column_name, $post_id ) {
-		if ( 'source_slug' === $column_name ) {
-			echo esc_html( (string) get_post_meta( (int) $post_id, self::META_SOURCE_SLUG, true ) );
-
-			return;
-		}
-
-		if ( 'target_language' === $column_name ) {
-			echo esc_html( (string) get_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, true ) );
-		}
+		echo esc_html( I18nly_Admin_Page_Helper::get_translation_list_column_value( $column_name, $post_id, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE ) );
 	}
 
 	/**
@@ -433,10 +270,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_sortable_columns( array $columns ) {
-		$columns['source_slug']     = 'source_slug';
-		$columns['target_language'] = 'target_language';
-
-		return $columns;
+		return I18nly_Admin_Page_Helper::filter_translation_sortable_columns( $columns );
 	}
 
 	/**
@@ -446,30 +280,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function apply_translation_sorting( $query ) {
-		if ( ! is_object( $query ) || ! method_exists( $query, 'get' ) || ! method_exists( $query, 'set' ) ) {
-			return;
-		}
-
-		if ( method_exists( $query, 'is_main_query' ) && ! $query->is_main_query() ) {
-			return;
-		}
-
-		$post_type = (string) $query->get( 'post_type' );
-		if ( self::POST_TYPE !== $post_type ) {
-			return;
-		}
-
-		$orderby = (string) $query->get( 'orderby' );
-
-		if ( 'source_slug' === $orderby ) {
-			$query->set( 'meta_key', self::META_SOURCE_SLUG );
-			$query->set( 'orderby', 'meta_value' );
-		}
-
-		if ( 'target_language' === $orderby ) {
-			$query->set( 'meta_key', self::META_TARGET_LANGUAGE );
-			$query->set( 'orderby', 'meta_value' );
-		}
+		I18nly_Admin_Page_Helper::apply_translation_sorting( $query, self::POST_TYPE, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE );
 	}
 
 	/**
@@ -478,40 +289,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function register_post_type() {
-		register_post_type(
-			self::POST_TYPE,
-			array(
-				'label'        => __( 'Translations', 'i18nly' ),
-				'labels'       => array(
-					'name'                  => __( 'Translations', 'i18nly' ),
-					'singular_name'         => __( 'Translation', 'i18nly' ),
-					'add_new'               => __( 'Add translation', 'i18nly' ),
-					'add_new_item'          => __( 'Add translation', 'i18nly' ),
-					'edit_item'             => __( 'Edit translation', 'i18nly' ),
-					'new_item'              => __( 'Translation', 'i18nly' ),
-					'view_item'             => __( 'View translation', 'i18nly' ),
-					'view_items'            => __( 'View translations', 'i18nly' ),
-					'search_items'          => __( 'Search translations', 'i18nly' ),
-					'not_found'             => __( 'No translations found.', 'i18nly' ),
-					'not_found_in_trash'    => __( 'No translations found in Trash.', 'i18nly' ),
-					'all_items'             => __( 'All translations', 'i18nly' ),
-					'archives'              => __( 'Translation archives', 'i18nly' ),
-					'attributes'            => __( 'Translation attributes', 'i18nly' ),
-					'insert_into_item'      => __( 'Insert into translation', 'i18nly' ),
-					'uploaded_to_this_item' => __( 'Uploaded to this translation', 'i18nly' ),
-					'filter_items_list'     => __( 'Filter translations list', 'i18nly' ),
-					'items_list_navigation' => __( 'Translations list navigation', 'i18nly' ),
-					'items_list'            => __( 'Translations list', 'i18nly' ),
-					'item_published'        => __( 'Translation published.', 'i18nly' ),
-					'item_updated'          => __( 'Translation updated.', 'i18nly' ),
-				),
-				'public'       => false,
-				'show_ui'      => true,
-				'show_in_menu' => false,
-				'supports'     => array( 'title' ),
-				'map_meta_cap' => true,
-			)
-		);
+		I18nly_Admin_Page_Helper::register_post_type( self::POST_TYPE );
 	}
 
 	/**
@@ -520,31 +298,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function register_menu() {
-		add_menu_page(
-			__( 'Translations', 'i18nly' ),
-			__( 'Translations', 'i18nly' ),
-			'manage_options',
-			self::LIST_SCREEN_SLUG,
-			'',
-			'dashicons-translation',
-			58
-		);
-
-		add_submenu_page(
-			self::LIST_SCREEN_SLUG,
-			__( 'All translations', 'i18nly' ),
-			__( 'All translations', 'i18nly' ),
-			'manage_options',
-			self::LIST_SCREEN_SLUG
-		);
-
-		add_submenu_page(
-			self::LIST_SCREEN_SLUG,
-			__( 'Add translation', 'i18nly' ),
-			__( 'Add translation', 'i18nly' ),
-			'manage_options',
-			self::NEW_SCREEN_SLUG
-		);
+		I18nly_Admin_Page_Helper::register_menu( self::LIST_SCREEN_SLUG, self::NEW_SCREEN_SLUG );
 	}
 
 	/**
@@ -555,13 +309,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_row_actions( array $actions, $post ) {
-		if ( ! isset( $post->post_type ) || self::POST_TYPE !== (string) $post->post_type ) {
-			return $actions;
-		}
-
-		unset( $actions['inline hide-if-no-js'] );
-
-		return $actions;
+		return I18nly_Admin_Page_Helper::filter_translation_row_actions( $actions, $post, self::POST_TYPE );
 	}
 
 	/**
@@ -572,28 +320,13 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function create_translation( $source_slug, $target_language ) {
-		$created_at_local = current_time( 'mysql' );
-		$created_at_gmt   = current_time( 'mysql', true );
-
-		$translation_post_id = wp_insert_post(
-			array(
-				'post_type'     => self::POST_TYPE,
-				'post_status'   => 'draft',
-				'post_title'    => $source_slug . ' → ' . $target_language,
-				'post_date'     => $created_at_local,
-				'post_date_gmt' => $created_at_gmt,
-			),
-			true
+		return I18nly_Admin_Page_Helper::create_translation(
+			$source_slug,
+			$target_language,
+			self::POST_TYPE,
+			self::META_SOURCE_SLUG,
+			self::META_TARGET_LANGUAGE
 		);
-
-		if ( is_wp_error( $translation_post_id ) || $translation_post_id <= 0 ) {
-			return 0;
-		}
-
-		update_post_meta( $translation_post_id, self::META_SOURCE_SLUG, $source_slug );
-		update_post_meta( $translation_post_id, self::META_TARGET_LANGUAGE, $target_language );
-
-		return (int) $translation_post_id;
 	}
 
 	/**
@@ -603,47 +336,12 @@ class I18nly_Admin_Page {
 	 * @return array<string, mixed>|null
 	 */
 	private function get_translation( $translation_id ) {
-		$translation_post = get_post( (int) $translation_id );
-		if ( ! $translation_post || self::POST_TYPE !== $translation_post->post_type ) {
-			return null;
-		}
-
-		return array(
-			'id'              => (int) $translation_post->ID,
-			'source_slug'     => (string) get_post_meta( (int) $translation_post->ID, self::META_SOURCE_SLUG, true ),
-			'target_language' => (string) get_post_meta( (int) $translation_post->ID, self::META_TARGET_LANGUAGE, true ),
-			'created_at'      => $this->get_post_created_at( $translation_post ),
+		return I18nly_Admin_Page_Helper::get_translation(
+			$translation_id,
+			self::POST_TYPE,
+			self::META_SOURCE_SLUG,
+			self::META_TARGET_LANGUAGE
 		);
-	}
-
-	/**
-	 * Returns a stable creation date for one post.
-	 *
-	 * Draft posts can keep `post_date_gmt` to zero in WordPress internals,
-	 * so we fall back to `post_date` when needed.
-	 *
-	 * @param object $translation_post Translation post object.
-	 * @return string
-	 */
-	private function get_post_created_at( $translation_post ) {
-		$post_date_gmt = isset( $translation_post->post_date_gmt ) ? (string) $translation_post->post_date_gmt : '';
-		if ( '' !== $post_date_gmt && '0000-00-00 00:00:00' !== $post_date_gmt ) {
-			return $post_date_gmt;
-		}
-
-		return isset( $translation_post->post_date ) ? (string) $translation_post->post_date : '';
-	}
-
-	/**
-	 * Returns the standard WordPress edit post URL for one translation.
-	 *
-	 * @param int $translation_id Translation ID.
-	 * @return string
-	 */
-	private function get_standard_edit_translation_url( $translation_id ) {
-		$edit_url = add_query_arg( 'post', (string) $translation_id, admin_url( 'post.php' ) );
-
-		return add_query_arg( 'action', 'edit', $edit_url );
 	}
 
 	/**
@@ -652,7 +350,7 @@ class I18nly_Admin_Page {
 	 * @return string
 	 */
 	private function get_native_list_url() {
-		return admin_url( self::LIST_SCREEN_SLUG );
+		return I18nly_Admin_Page_Helper::get_native_list_url( self::LIST_SCREEN_SLUG );
 	}
 
 	/**
@@ -722,11 +420,7 @@ class I18nly_Admin_Page {
 	 * @return string
 	 */
 	private function get_translation_edit_script_url() {
-		if ( defined( 'I18NLY_PLUGIN_FILE' ) && function_exists( 'plugin_dir_url' ) ) {
-			return plugin_dir_url( I18NLY_PLUGIN_FILE ) . 'assets/js/translation-edit.js';
-		}
-
-		return 'assets/js/translation-edit.js';
+		return I18nly_Admin_Page_Helper::get_translation_edit_script_url();
 	}
 
 	/**
@@ -735,11 +429,7 @@ class I18nly_Admin_Page {
 	 * @return string
 	 */
 	private function get_translation_edit_style_url() {
-		if ( defined( 'I18NLY_PLUGIN_FILE' ) && function_exists( 'plugin_dir_url' ) ) {
-			return plugin_dir_url( I18NLY_PLUGIN_FILE ) . 'assets/css/translation-edit.css';
-		}
-
-		return 'assets/css/translation-edit.css';
+		return I18nly_Admin_Page_Helper::get_translation_edit_style_url();
 	}
 
 	/**
@@ -749,16 +439,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, mixed>
 	 */
 	private function build_translation_edit_script_config( $translation_id ) {
-		return array(
-			'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
-			'translationId'     => (int) $translation_id,
-			'generateAction'    => 'i18nly_generate_translation_pot',
-			'generateNonce'     => wp_create_nonce( 'i18nly_generate_translation_pot_' . (int) $translation_id ),
-			'refreshAction'     => 'i18nly_get_translation_entries_table',
-			'refreshNonce'      => wp_create_nonce( 'i18nly_get_translation_entries_table_' . (int) $translation_id ),
-			'tableContainerId'  => 'i18nly-source-entries-table',
-			'contentTypeHeader' => 'application/x-www-form-urlencoded; charset=UTF-8',
-		);
+		return I18nly_Admin_Page_Helper::build_translation_edit_script_config( $translation_id );
 	}
 
 	/**
@@ -937,13 +618,7 @@ class I18nly_Admin_Page {
 	 * @return string
 	 */
 	private function infer_text_domain_from_source_slug( $source_slug ) {
-		$parts = explode( '/', trim( (string) $source_slug, '/\\' ) );
-
-		if ( empty( $parts[0] ) ) {
-			return 'i18nly';
-		}
-
-		return sanitize_text_field( (string) $parts[0] );
+		return I18nly_Admin_Page_Helper::infer_text_domain_from_source_slug( $source_slug );
 	}
 
 	/**
@@ -954,46 +629,7 @@ class I18nly_Admin_Page {
 	 * @return array<string, string>
 	 */
 	private function build_pot_header_overrides_from_source_slug( $source_slug, $text_domain ) {
-		$plugin_data = $this->get_source_plugin_data( $source_slug );
-
-		$project_id_version = $text_domain;
-		if ( ! empty( $plugin_data['Name'] ) && ! empty( $plugin_data['Version'] ) ) {
-			$project_id_version = sanitize_text_field( $plugin_data['Name'] . ' ' . $plugin_data['Version'] );
-		} elseif ( ! empty( $plugin_data['Version'] ) ) {
-			$project_id_version = sanitize_text_field( $text_domain . ' ' . $plugin_data['Version'] );
-		}
-
-		$bugs_url = '';
-		if ( ! empty( $plugin_data['PluginURI'] ) ) {
-			$bugs_url = esc_url_raw( (string) $plugin_data['PluginURI'] );
-		} elseif ( ! empty( $plugin_data['AuthorURI'] ) ) {
-			$bugs_url = esc_url_raw( (string) $plugin_data['AuthorURI'] );
-		}
-
-		return array(
-			'Project-Id-Version'   => (string) $project_id_version,
-			'Report-Msgid-Bugs-To' => (string) $bugs_url,
-		);
-	}
-
-	/**
-	 * Returns source plugin metadata from installed plugins list.
-	 *
-	 * @param string $source_slug Source slug.
-	 * @return array<string, string>
-	 */
-	private function get_source_plugin_data( $source_slug ) {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-
-		$plugins = get_plugins();
-
-		if ( isset( $plugins[ $source_slug ] ) && is_array( $plugins[ $source_slug ] ) ) {
-			return array_map( 'strval', $plugins[ $source_slug ] );
-		}
-
-		return array();
+		return I18nly_Admin_Page_Helper::build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
 	}
 
 	/**
@@ -1002,26 +638,14 @@ class I18nly_Admin_Page {
 	 * @return int
 	 */
 	private function get_current_edit_translation_id() {
-		$action_raw = $this->get_query_parameter( 'action' );
-		$post_raw   = $this->get_query_parameter( 'post' );
-
-		if ( '' === $action_raw || '' === $post_raw ) {
-			return 0;
-		}
-
-		$action = sanitize_text_field( wp_unslash( $action_raw ) );
-		if ( 'edit' !== $action ) {
-			return 0;
-		}
-
-		$translation_id = absint( wp_unslash( $post_raw ) );
-		if ( $translation_id <= 0 ) {
-			return 0;
-		}
-
-		$translation = $this->get_translation( $translation_id );
-
-		return null === $translation ? 0 : $translation_id;
+		return I18nly_Admin_Page_Helper::get_current_edit_translation_id(
+			function ( $key ) {
+				return $this->get_query_parameter( $key );
+			},
+			function ( $translation_id ) {
+				return $this->get_translation( $translation_id );
+			}
+		);
 	}
 
 	/**

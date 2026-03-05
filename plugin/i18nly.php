@@ -30,6 +30,7 @@ define( 'I18NLY_VERSION', '0.1.0' );
 define( 'I18NLY_PLUGIN_FILE', __FILE__ );
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page-helper.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-translation-entries-list-table.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-generator.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-source-entry-extractor.php';

@@ -1507,6 +1507,7 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 }
 
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page-helper.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-translation-entries-list-table.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-source-entry-extractor.php';
