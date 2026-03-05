@@ -345,6 +345,76 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Persists translation entry inputs sent from edit form.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_passes_translation_entries_payload_to_persistence() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_translation_entries']        = array(
+			'101' => array(
+				'translation'        => 'Bienvenue',
+				'translation_plural' => 'Bienvenues',
+			),
+		);
+
+		$page = new class() extends I18nly_Admin_Page {
+			/**
+			 * Captured save payload.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured_payload = array();
+
+			/**
+			 * Captures persistence arguments.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $source_slug Source slug.
+			 * @param array  $entries_payload Posted entries payload.
+			 * @return void
+			 */
+			protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+				$this->captured_payload = array(
+					'translation_id'  => (int) $translation_id,
+					'source_slug'     => (string) $source_slug,
+					'entries_payload' => $entries_payload,
+				);
+			}
+		};
+
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type'  => 'i18nly_translation',
+				'post_title' => 'Manual title',
+			),
+			true
+		);
+
+		$this->assertSame( 42, $page->captured_payload['translation_id'] );
+		$this->assertSame( 'akismet/akismet.php', $page->captured_payload['source_slug'] );
+		$this->assertArrayHasKey( '101', $page->captured_payload['entries_payload'] );
+		$this->assertSame( 'Bienvenue', $page->captured_payload['entries_payload']['101']['translation'] );
+		$this->assertSame( 'Bienvenues', $page->captured_payload['entries_payload']['101']['translation_plural'] );
+
+		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_translation_entries'] );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void

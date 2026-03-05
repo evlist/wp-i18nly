@@ -79,8 +79,70 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		$plural        = isset( $item['translation_plural'] ) ? (string) $item['translation_plural'] : '';
 		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural    = '' !== trim( $source_plural );
+		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
 
-		return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
+		if ( $source_entry <= 0 ) {
+			return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
+		}
+
+		$singular_input_name = sprintf( 'i18nly_translation_entries[%d][translation]', $source_entry );
+		$singular_input_id   = sprintf( 'i18nly-translation-%d', $source_entry );
+		$plural_input_name   = sprintf( 'i18nly_translation_entries[%d][translation_plural]', $source_entry );
+		$plural_input_id     = sprintf( 'i18nly-translation-plural-%d', $source_entry );
+
+		$singular_input = $this->render_translation_input(
+			$singular_input_name,
+			$singular_input_id,
+			$singular,
+			_x( 'Singular translation', 'input label for singular translation', 'i18nly' )
+		);
+
+		$plural_input = $this->render_translation_input(
+			$plural_input_name,
+			$plural_input_id,
+			$plural,
+			_x( 'Plural translation', 'input label for plural translation', 'i18nly' )
+		);
+
+		if ( ! $has_plural ) {
+			return $singular_input;
+		}
+
+		$singular_marker = $this->render_form_marker(
+			_x( '1', 'grammar form marker for singular translation row', 'i18nly' ),
+			_x( 'Singular form', 'tooltip for singular translation form marker', 'i18nly' )
+		);
+		$plural_marker   = $this->render_form_marker(
+			_x( 'n', 'grammar form marker for plural translation row', 'i18nly' ),
+			_x( 'Plural form', 'tooltip for plural translation form marker', 'i18nly' )
+		);
+
+		return sprintf(
+			'<p class="i18nly-form-line">%1$s %2$s</p><p class="i18nly-form-line">%3$s %4$s</p>',
+			$singular_marker,
+			$singular_input,
+			$plural_marker,
+			$plural_input
+		);
+	}
+
+	/**
+	 * Renders one translation text input.
+	 *
+	 * @param string $input_name Input name.
+	 * @param string $input_id Input ID.
+	 * @param string $input_value Input value.
+	 * @param string $input_label Accessible label.
+	 * @return string
+	 */
+	private function render_translation_input( $input_name, $input_id, $input_value, $input_label ) {
+		return sprintf(
+			'<input type="text" class="regular-text i18nly-translation-input" name="%1$s" id="%2$s" value="%3$s" aria-label="%4$s"/>',
+			esc_attr( $input_name ),
+			esc_attr( $input_id ),
+			esc_attr( $input_value ),
+			esc_attr( $input_label )
+		);
 	}
 
 	/**

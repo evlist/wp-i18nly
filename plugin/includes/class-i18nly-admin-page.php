@@ -225,6 +225,14 @@ class I18nly_Admin_Page {
 		update_post_meta( (int) $post_id, self::META_SOURCE_SLUG, $source_slug );
 		update_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, $target_language );
 
+		if ( '' !== $source_slug && isset( $_POST['i18nly_translation_entries'] ) ) {
+			$entries_payload = map_deep( wp_unslash( $_POST['i18nly_translation_entries'] ), 'sanitize_text_field' );
+
+			if ( is_array( $entries_payload ) ) {
+				$this->persist_translation_entries( (int) $post_id, $source_slug, $entries_payload );
+			}
+		}
+
 		$current_title = isset( $post->post_title ) ? (string) $post->post_title : '';
 		if ( '' !== trim( $current_title ) || '' === $source_slug || '' === $target_language ) {
 			return;
@@ -240,6 +248,18 @@ class I18nly_Admin_Page {
 		);
 
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
+	}
+
+	/**
+	 * Persists translation entry values.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $source_slug Source slug.
+	 * @param array  $entries_payload Posted entries payload.
+	 * @return void
+	 */
+	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+		I18nly_Admin_Page_Helper::persist_translation_entries( (int) $translation_id, (string) $source_slug, $entries_payload );
 	}
 
 	/**

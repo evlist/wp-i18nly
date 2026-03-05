@@ -28,3 +28,7 @@
 .i18nly-form-line + .i18nly-form-line {
 	margin-top: 0.2rem;
 }
+
+.i18nly-translation-input {
+	width: min(100%, 28rem);
+}

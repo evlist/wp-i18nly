@@ -1221,6 +1221,37 @@ if ( ! function_exists( 'absint' ) ) {
 	}
 }
 
+if ( ! function_exists( 'map_deep' ) ) {
+	/**
+	 * Recursively maps values for arrays/objects.
+	 *
+	 * @param mixed    $value Input value.
+	 * @param callable $callback Mapping callback.
+	 * @return mixed
+	 */
+	function map_deep( $value, $callback ) {
+		if ( is_array( $value ) ) {
+			$mapped = array();
+
+			foreach ( $value as $key => $item ) {
+				$mapped[ $key ] = map_deep( $item, $callback );
+			}
+
+			return $mapped;
+		}
+
+		if ( is_object( $value ) ) {
+			foreach ( $value as $property => $item ) {
+				$value->{$property} = map_deep( $item, $callback );
+			}
+
+			return $value;
+		}
+
+		return call_user_func( $callback, $value );
+	}
+}
+
 if ( ! function_exists( 'get_plugins' ) ) {
 	/**
 	 * Returns plugin list from test runtime.

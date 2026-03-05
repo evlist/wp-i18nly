@@ -417,6 +417,65 @@ class I18nly_Source_Wpdb_Repository {
 	}
 
 	/**
+	 * Upserts one translated entry value row.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param int    $source_entry_id Source entry ID.
+	 * @param string $translation Singular translation value.
+	 * @param string $translation_plural Plural translation value.
+	 * @param string $now_gmt Current GMT datetime.
+	 * @return bool
+	 */
+	public function upsert_translated_entry( $translation_id, $source_entry_id, $translation, $translation_plural, $now_gmt ) {
+		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+
+		if ( '' === $translated_entries_table ) {
+			return false;
+		}
+
+		$translated_entry_id = (int) $this->db_get_var(
+			$this->wpdb->prepare(
+				'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d',
+				$translated_entries_table,
+				(int) $translation_id,
+				(int) $source_entry_id
+			)
+		);
+
+		if ( $translated_entry_id > 0 ) {
+			$result = $this->wpdb->update(
+				$translated_entries_table,
+				array(
+					'translation'        => (string) $translation,
+					'translation_plural' => (string) $translation_plural,
+					'updated_at_gmt'     => (string) $now_gmt,
+				),
+				array( 'id' => (int) $translated_entry_id ),
+				array( '%s', '%s', '%s' ),
+				array( '%d' )
+			);
+
+			return false !== $result;
+		}
+
+		$result = $this->wpdb->insert(
+			$translated_entries_table,
+			array(
+				'translation_id'      => (int) $translation_id,
+				'source_entry_id'     => (int) $source_entry_id,
+				'translation'         => (string) $translation,
+				'translation_plural'  => (string) $translation_plural,
+				'comment'             => '',
+				'created_at_gmt'      => (string) $now_gmt,
+				'updated_at_gmt'      => (string) $now_gmt,
+			),
+			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
 	 * Validates and escapes a table name.
 	 *
 	 * @param string $table_name Raw table name.

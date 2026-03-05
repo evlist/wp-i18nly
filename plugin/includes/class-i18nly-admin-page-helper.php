@@ -616,4 +616,54 @@ class I18nly_Admin_Page_Helper {
 	public static function get_native_list_url( $list_screen_slug ) {
 		return admin_url( $list_screen_slug );
 	}
+
+	/**
+	 * Persists translation entry values.
+	 *
+	 * @param int                                     $translation_id Translation ID.
+	 * @param string                                  $source_slug Source slug.
+	 * @param array<int|string, array<string, mixed>> $entries_payload Posted entries payload.
+	 * @return void
+	 */
+	public static function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+		$schema_manager = new I18nly_Source_Schema_Manager();
+		$schema_manager->maybe_upgrade();
+
+		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
+		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
+
+		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
+			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt );
+		}
+
+		if ( ! method_exists( $repository, 'upsert_translated_entry' ) ) {
+			return;
+		}
+
+		foreach ( $entries_payload as $source_entry_id => $entry_payload ) {
+			if ( ! is_array( $entry_payload ) ) {
+				continue;
+			}
+
+			$normalized_source_entry_id = absint( $source_entry_id );
+			if ( $normalized_source_entry_id <= 0 ) {
+				continue;
+			}
+
+			$translation        = isset( $entry_payload['translation'] )
+				? sanitize_text_field( (string) $entry_payload['translation'] )
+				: '';
+			$translation_plural = isset( $entry_payload['translation_plural'] )
+				? sanitize_text_field( (string) $entry_payload['translation_plural'] )
+				: '';
+
+			$repository->upsert_translated_entry(
+				(int) $translation_id,
+				$normalized_source_entry_id,
+				$translation,
+				$translation_plural,
+				$now_gmt
+			);
+		}
+	}
 }
