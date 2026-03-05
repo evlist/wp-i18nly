@@ -25,6 +25,7 @@ SPDX-License-Identifier: GPL-3.0-or-later OR MIT
   </rule>
 
   <rule ref="./.vscode/phpcs-standard/I18nly/Sniffs/Files/FileLengthSniff.php">
+    <exclude-pattern>*/tests/*</exclude-pattern>
     <properties>
       <property name="lineLimit" value="400"/>
       <property name="absoluteLineLimit" value="700"/>
