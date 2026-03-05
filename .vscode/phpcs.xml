@@ -18,4 +18,11 @@ SPDX-License-Identifier: GPL-3.0-or-later OR MIT
   <exclude-pattern>*/languages/*</exclude-pattern>
 
   <rule ref="WordPress"/>
+
+  <rule ref="./.vscode/phpcs-standard/I18nly/Sniffs/Files/FileLengthSniff.php">
+    <properties>
+      <property name="lineLimit" value="400"/>
+      <property name="absoluteLineLimit" value="700"/>
+    </properties>
+  </rule>
 </ruleset>
