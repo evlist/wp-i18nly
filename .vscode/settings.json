@@ -28,6 +28,7 @@
   "phpsab.debug": true,
   "chat.tools.terminal.autoApprove": {
     "phpunit": true,
-    "phpcs": true
+    "phpcs": true,
+    "phpcbf": true
   }
 }
