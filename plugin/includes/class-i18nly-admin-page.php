@@ -137,49 +137,22 @@ class I18nly_Admin_Page {
 		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
 		$is_locked         = '' !== $selected_source || '' !== $selected_language;
 
-		wp_nonce_field( 'i18nly_translation_meta_box', 'i18nly_translation_meta_box_nonce' );
-		?>
-		<table class="form-table" role="presentation">
-			<tbody>
-				<tr>
-					<th scope="row">
-						<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
-					</th>
-					<td>
-						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required<?php echo disabled( $is_locked, true, false ); ?>>
-							<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
-							<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
-								<option value="<?php echo esc_attr( $plugin_file ); ?>"<?php selected( $selected_source, (string) $plugin_file ); ?>><?php echo esc_html( $plugin_name ); ?></option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="i18nly-target-language-selector"><?php echo esc_html__( 'Target language', 'i18nly' ); ?></label>
-					</th>
-					<td>
-						<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required<?php echo disabled( $is_locked, true, false ); ?>>
-							<option value=""><?php echo esc_html__( 'Select a target language', 'i18nly' ); ?></option>
-							<?php foreach ( $target_languages as $target_language ) : ?>
-								<option value="<?php echo esc_attr( $target_language['value'] ); ?>"<?php echo disabled( true, (bool) $target_language['disabled'], false ); ?><?php selected( $selected_language, (string) $target_language['value'] ); ?>><?php echo esc_html( $target_language['label'] ); ?></option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-		<?php if ( $is_locked ) : ?>
-			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
-		<?php endif; ?>
+		$this->get_meta_box_renderer()->render_translation_meta_box(
+			$plugin_options,
+			$target_languages,
+			$selected_source,
+			$selected_language,
+			$is_locked
+		);
+	}
 
-		<?php if ( $is_locked ) : ?>
-			<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
-			<div id="i18nly-source-entries-table">
-				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
-			</div>
-		<?php endif; ?>
-		<?php
+	/**
+	 * Returns translation meta box renderer.
+	 *
+	 * @return I18nly_Translation_Meta_Box_Renderer
+	 */
+	protected function get_meta_box_renderer() {
+		return new I18nly_Translation_Meta_Box_Renderer();
 	}
 
 	/**
@@ -538,7 +511,7 @@ class I18nly_Admin_Page {
 				return $this->get_translation_source_entries( $translation_id, $source_slug );
 			},
 			function ( array $source_entries ) {
-				return $this->render_translation_source_entries_table_markup( $source_entries );
+				return $this->get_meta_box_renderer()->render_source_entries_table_markup( $source_entries );
 			}
 		);
 	}
@@ -570,37 +543,6 @@ class I18nly_Admin_Page {
 		}
 
 		return $repository->list_source_entries_by_plugin_slug( $source_slug );
-	}
-
-	/**
-	 * Renders source entries table markup.
-	 *
-	 * @param array<int, array<string, mixed>> $source_entries Source entries rows.
-	 * @return string
-	 */
-	private function render_translation_source_entries_table_markup( array $source_entries ) {
-		ob_start();
-		$this->render_translation_source_entries_table( $source_entries );
-
-		$html = ob_get_clean();
-
-		if ( ! is_string( $html ) ) {
-			return '';
-		}
-
-		return $html;
-	}
-
-	/**
-	 * Outputs source entries table markup.
-	 *
-	 * @param array<int, array<string, mixed>> $source_entries Source entries rows.
-	 * @return void
-	 */
-	private function render_translation_source_entries_table( array $source_entries ) {
-		$list_table = new I18nly_Translation_Entries_List_Table( $source_entries );
-		$list_table->prepare_items();
-		$list_table->display();
 	}
 
 	/**

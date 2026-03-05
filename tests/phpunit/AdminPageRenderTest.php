@@ -801,6 +801,124 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Delegates translation meta box rendering to dedicated renderer.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_meta_box_delegates_to_meta_box_renderer() {
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array(
+					'Name' => 'Akismet',
+				),
+			)
+		);
+		i18nly_test_set_available_languages( array( 'fr_FR' ) );
+		i18nly_test_set_available_translations(
+			array(
+				'fr_FR' => array(
+					'native_name' => 'Francais',
+				),
+			)
+		);
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$renderer = new class() {
+			/**
+			 * Whether render was called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured render payload.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured = array();
+
+			/**
+			 * Captures meta box rendering call.
+			 *
+			 * @param array<string, string>                                           $plugin_options Plugin options.
+			 * @param array<int, array{value: string, label: string, disabled: bool}> $target_languages Target language options.
+			 * @param string                                                          $selected_source Selected source.
+			 * @param string                                                          $selected_language Selected language.
+			 * @param bool                                                            $is_locked Lock flag.
+			 * @return void
+			 */
+			public function render_translation_meta_box( array $plugin_options, array $target_languages, $selected_source, $selected_language, $is_locked ) {
+				$this->called   = true;
+				$this->captured = array(
+					'plugin_options'    => $plugin_options,
+					'target_languages'  => $target_languages,
+					'selected_source'   => (string) $selected_source,
+					'selected_language' => (string) $selected_language,
+					'is_locked'         => (bool) $is_locked,
+				);
+			}
+
+			/**
+			 * Returns placeholder table markup in test double.
+			 *
+			 * @param array<int, array<string, mixed>> $source_entries Source entries.
+			 * @return string
+			 */
+			public function render_source_entries_table_markup( array $source_entries ) {
+				unset( $source_entries );
+
+				return '';
+			}
+		};
+
+		$page = new class( $renderer ) extends I18nly_Admin_Page {
+			/**
+			 * Renderer test double.
+			 *
+			 * @var object
+			 */
+			private $test_renderer;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_renderer Renderer test double.
+			 */
+			public function __construct( $test_renderer ) {
+				$this->test_renderer = $test_renderer;
+			}
+
+			/**
+			 * Returns renderer test double.
+			 *
+			 * @return object
+			 */
+			protected function get_meta_box_renderer() {
+				return $this->test_renderer;
+			}
+		};
+
+		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
+
+		$this->assertTrue( $renderer->called );
+		$this->assertArrayHasKey( 'akismet/akismet.php', $renderer->captured['plugin_options'] );
+		$this->assertSame( 'akismet/akismet.php', $renderer->captured['selected_source'] );
+		$this->assertSame( 'fr_FR', $renderer->captured['selected_language'] );
+		$this->assertSame( true, $renderer->captured['is_locked'] );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void
