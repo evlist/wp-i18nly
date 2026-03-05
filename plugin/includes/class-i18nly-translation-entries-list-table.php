@@ -124,12 +124,30 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 			return esc_html( $singular );
 		}
 
+		$singular_marker = $this->render_form_marker( '1', __( 'Singular form', 'i18nly' ) );
+		$plural_marker   = $this->render_form_marker( 'n', __( 'Plural form', 'i18nly' ) );
+
 		return sprintf(
-			'<p><strong>%1$s:</strong> %2$s</p><p><strong>%3$s:</strong> %4$s</p>',
-			esc_html__( 'Singular', 'i18nly' ),
+			'<p>%1$s %2$s</p><p>%3$s %4$s</p>',
+			$singular_marker,
 			esc_html( $singular ),
-			esc_html__( 'Plural', 'i18nly' ),
+			$plural_marker,
 			esc_html( $plural )
+		);
+	}
+
+	/**
+	 * Renders one compact grammar form marker.
+	 *
+	 * @param string $symbol Marker symbol.
+	 * @param string $label Accessible label and tooltip.
+	 * @return string
+	 */
+	private function render_form_marker( $symbol, $label ) {
+		return sprintf(
+			'<span class="i18nly-form-marker" title="%1$s" aria-label="%1$s">%2$s</span><span class="screen-reader-text">%1$s</span>',
+			esc_attr( $label ),
+			esc_html( $symbol )
 		);
 	}
 

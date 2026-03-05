@@ -116,8 +116,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'Hello', $html );
 		$this->assertStringContainsString( 'Bonjour', $html );
-		$this->assertStringNotContainsString( '<strong>Singular:</strong>', $html );
-		$this->assertStringNotContainsString( '<strong>Plural:</strong>', $html );
+		$this->assertStringNotContainsString( 'i18nly-form-marker', $html );
 	}
 
 	/**
@@ -145,8 +144,11 @@ class TranslationEntriesListTableTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( '<strong>Singular:</strong>', $html );
-		$this->assertStringContainsString( '<strong>Plural:</strong>', $html );
+		$this->assertStringContainsString( 'class="i18nly-form-marker"', $html );
+		$this->assertStringContainsString( 'title="Singular form"', $html );
+		$this->assertStringContainsString( 'title="Plural form"', $html );
+		$this->assertStringContainsString( '>1</span>', $html );
+		$this->assertStringContainsString( '>n</span>', $html );
 		$this->assertStringContainsString( '%s article', $html );
 	}
 }
