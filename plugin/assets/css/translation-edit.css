@@ -33,7 +33,9 @@
 }
 
 .i18nly-translation-input {
-	flex: 1 1 auto;
-	min-width: 14rem;
-	max-width: 28rem;
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 }
