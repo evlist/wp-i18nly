@@ -144,26 +144,24 @@ class I18nly_Test_WPDB_Stub {
 			}
 		}
 
-		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s+IS\\s+NULL\\s+AND\\s+msgid\\s*=\\s*'([^']*)'\\s+AND\\s+plural_index\\s*=\\s*(\\d+)/", $query, $matches ) ) {
-			$catalog_id   = (int) $matches[1];
-			$msgid        = stripslashes( $matches[2] );
-			$plural_index = (int) $matches[3];
+		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s+IS\\s+NULL\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
+			$catalog_id = (int) $matches[1];
+			$msgid      = stripslashes( $matches[2] );
 
 			foreach ( $this->entries as $entry ) {
-				if ( $catalog_id === (int) $entry['catalog_id'] && null === $entry['msgctxt'] && $msgid === (string) $entry['msgid'] && $plural_index === (int) $entry['plural_index'] ) {
+				if ( $catalog_id === (int) $entry['catalog_id'] && null === $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
 					return (int) $entry['id'];
 				}
 			}
 		}
 
-		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s*=\\s*'([^']*)'\\s+AND\\s+msgid\\s*=\\s*'([^']*)'\\s+AND\\s+plural_index\\s*=\\s*(\\d+)/", $query, $matches ) ) {
-			$catalog_id   = (int) $matches[1];
-			$msgctxt      = stripslashes( $matches[2] );
-			$msgid        = stripslashes( $matches[3] );
-			$plural_index = (int) $matches[4];
+		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s*=\\s*'([^']*)'\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
+			$catalog_id = (int) $matches[1];
+			$msgctxt    = stripslashes( $matches[2] );
+			$msgid      = stripslashes( $matches[3] );
 
 			foreach ( $this->entries as $entry ) {
-				if ( $catalog_id === (int) $entry['catalog_id'] && $msgctxt === (string) $entry['msgctxt'] && $msgid === (string) $entry['msgid'] && $plural_index === (int) $entry['plural_index'] ) {
+				if ( $catalog_id === (int) $entry['catalog_id'] && $msgctxt === (string) $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
 					return (int) $entry['id'];
 				}
 			}

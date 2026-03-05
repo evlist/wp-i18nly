@@ -527,13 +527,13 @@ class I18nly_Admin_Page {
 		$schema_manager = new I18nly_Source_Schema_Manager();
 		$schema_manager->maybe_upgrade();
 
-		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
-		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
+		$repository  = new I18nly_Source_Wpdb_Repository( $schema_manager );
+		$now_gmt     = gmdate( 'Y-m-d H:i:s' );
 		$translation = $this->get_translation( $translation_id );
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
 			? (string) $translation['target_language']
 			: '';
-		$form_count = I18nly_Admin_Page_Helper::get_plural_forms_count_for_locale( $locale );
+		$form_count  = I18nly_Admin_Page_Helper::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
 			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
