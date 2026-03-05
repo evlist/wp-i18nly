@@ -508,6 +508,73 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Prevents duplicate translation creation for same source and language.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_prevents_duplicate_translation_creation() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 100,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 00:00:00',
+					'created_at_local' => '2026-03-02 00:00:00',
+				),
+			)
+		);
+
+		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_target_language_selector']   = 'fr_FR';
+
+		$page = new class() extends I18nly_Admin_Page {
+			/**
+			 * Captured duplicate payload.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured_duplicate = array();
+
+			/**
+			 * Captures duplicate handling call.
+			 *
+			 * @param int    $new_post_id New post ID.
+			 * @param int    $existing_translation_id Existing translation ID.
+			 * @param string $source_slug Source slug.
+			 * @param string $target_language Target language.
+			 * @return void
+			 */
+			protected function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
+				$this->captured_duplicate = array(
+					'new_post_id'              => (int) $new_post_id,
+					'existing_translation_id'  => (int) $existing_translation_id,
+					'source_slug'              => (string) $source_slug,
+					'target_language'          => (string) $target_language,
+				);
+			}
+		};
+
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type'  => 'i18nly_translation',
+				'post_title' => '',
+			),
+			false
+		);
+
+		$this->assertSame( 42, $page->captured_duplicate['new_post_id'] );
+		$this->assertSame( 100, $page->captured_duplicate['existing_translation_id'] );
+		$this->assertSame( 'akismet/akismet.php', $page->captured_duplicate['source_slug'] );
+		$this->assertSame( 'fr_FR', $page->captured_duplicate['target_language'] );
+
+		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void

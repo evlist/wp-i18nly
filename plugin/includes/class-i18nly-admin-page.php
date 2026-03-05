@@ -224,6 +224,15 @@ class I18nly_Admin_Page {
 			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
 		}
 
+		if ( ! $is_locked && '' !== $source_slug && '' !== $target_language ) {
+			$existing_translation_id = $this->find_duplicate_translation_id( $source_slug, $target_language, (int) $post_id );
+
+			if ( $existing_translation_id > 0 ) {
+				$this->handle_duplicate_translation_creation( (int) $post_id, $existing_translation_id, $source_slug, $target_language );
+				return;
+			}
+		}
+
 		update_post_meta( (int) $post_id, self::META_SOURCE_SLUG, $source_slug );
 		update_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, $target_language );
 
@@ -275,6 +284,78 @@ class I18nly_Admin_Page {
 	 */
 	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
 		I18nly_Admin_Page_Helper::persist_translation_entries( (int) $translation_id, (string) $source_slug, $entries_payload );
+	}
+
+	/**
+	 * Finds existing translation with same source and target language.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @param string $target_language Target language.
+	 * @param int    $current_post_id Current post ID.
+	 * @return int
+	 */
+	protected function find_duplicate_translation_id( $source_slug, $target_language, $current_post_id ) {
+		$posts = get_posts(
+			array(
+				'post_type'   => self::POST_TYPE,
+				'post_status' => 'any',
+				'numberposts' => -1,
+			)
+		);
+
+		foreach ( $posts as $post ) {
+			if ( ! is_object( $post ) || ! isset( $post->ID, $post->post_type ) ) {
+				continue;
+			}
+
+			if ( self::POST_TYPE !== (string) $post->post_type ) {
+				continue;
+			}
+
+			$post_id = (int) $post->ID;
+			if ( $post_id <= 0 || $post_id === (int) $current_post_id ) {
+				continue;
+			}
+
+			if (
+				(string) get_post_meta( $post_id, self::META_SOURCE_SLUG, true ) === $source_slug
+				&& (string) get_post_meta( $post_id, self::META_TARGET_LANGUAGE, true ) === $target_language
+			) {
+				return $post_id;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Handles duplicate translation creation attempt.
+	 *
+	 * @param int    $new_post_id New post ID.
+	 * @param int    $existing_translation_id Existing translation ID.
+	 * @param string $source_slug Source slug.
+	 * @param string $target_language Target language.
+	 * @return void
+	 */
+	protected function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
+		wp_trash_post( (int) $new_post_id );
+
+		$open_url   = I18nly_Admin_Page_Helper::get_standard_edit_translation_url( (int) $existing_translation_id );
+		$cancel_url = admin_url( self::NEW_SCREEN_SLUG );
+
+		$message = sprintf(
+			/* translators: 1: source slug, 2: target language. */
+			__( 'A translation already exists for %1$s in %2$s.', 'i18nly' ),
+			esc_html( $source_slug ),
+			esc_html( $target_language )
+		);
+
+		$message .= '<p>';
+		$message .= '<a class="button button-primary" href="' . esc_url( $open_url ) . '">' . esc_html__( 'Open existing translation', 'i18nly' ) . '</a> ';
+		$message .= '<a class="button" href="' . esc_url( $cancel_url ) . '">' . esc_html__( 'Cancel', 'i18nly' ) . '</a>';
+		$message .= '</p>';
+
+		wp_die( wp_kses_post( $message ), esc_html__( 'Duplicate translation', 'i18nly' ), array( 'response' => 409 ) );
 	}
 
 	/**
