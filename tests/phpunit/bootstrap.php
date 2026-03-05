@@ -1453,6 +1453,18 @@ if ( ! function_exists( 'selected' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+	/**
+	 * Sanitizes textarea-like string value in tests.
+	 *
+	 * @param string $value Raw value.
+	 * @return string
+	 */
+	function sanitize_textarea_field( $value ) {
+		return sanitize_text_field( $value );
+	}
+}
+
 if ( ! class_exists( 'WP_List_Table', false ) ) {
 	/**
 	 * Minimal WP_List_Table fallback for PHPUnit bootstrap.

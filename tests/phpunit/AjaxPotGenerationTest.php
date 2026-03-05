@@ -199,10 +199,13 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'i18nly-form-marker', $response['data']['html'] );
 		$this->assertStringContainsString( 'Singular form', $response['data']['html'] );
 		$this->assertStringContainsString( 'Plural form', $response['data']['html'] );
-		$this->assertStringContainsString( 'name="i18nly_translation_entries[99][translation]"', $response['data']['html'] );
-		$this->assertStringContainsString( 'name="i18nly_translation_entries[99][translation_plural]"', $response['data']['html'] );
+		$this->assertStringContainsString( 'data-i18nly-source-entry-id="99"', $response['data']['html'] );
+		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $response['data']['html'] );
+		$this->assertStringContainsString( 'data-i18nly-entry-field="translation_plural"', $response['data']['html'] );
 		$this->assertStringContainsString( 'value="Bienvenue"', $response['data']['html'] );
 		$this->assertStringContainsString( 'value="Bienvenues"', $response['data']['html'] );
+		$this->assertStringNotContainsString( 'name="_wpnonce"', $response['data']['html'] );
+		$this->assertStringNotContainsString( 'name="_wp_http_referer"', $response['data']['html'] );
 		$this->assertStringContainsString( 'active', $response['data']['html'] );
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );

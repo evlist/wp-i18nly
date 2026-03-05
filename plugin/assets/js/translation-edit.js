@@ -68,11 +68,83 @@
 				}
 
 				container.innerHTML = payload.data.html;
+				installEntriesPayloadCompaction();
 			}
 		);
 	}
 
+	function installEntriesPayloadCompaction() {
+		var form = document.getElementById( 'post' );
+		var translationInputs;
+		var hiddenField;
+
+		function rebuildPayload() {
+			var payload = {};
+			var index = 0;
+			var inputsCount = translationInputs.length;
+
+			for (index = 0; index < inputsCount; index++) {
+				var input = translationInputs[index];
+				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
+				var entryField = input.getAttribute( 'data-i18nly-entry-field' );
+
+				if ( ! sourceEntryId || ! entryField) {
+					continue;
+				}
+
+				if ( ! payload[sourceEntryId]) {
+					payload[sourceEntryId] = {};
+				}
+
+				payload[sourceEntryId][entryField] = input.value;
+			}
+
+			hiddenField.value = JSON.stringify( payload );
+		}
+
+		if ( ! form) {
+			return;
+		}
+
+		translationInputs = form.querySelectorAll( '.i18nly-translation-input' );
+		if (0 === translationInputs.length) {
+			return;
+		}
+
+		hiddenField = form.querySelector( 'input[name="i18nly_translation_entries_payload"]' );
+		if ( ! hiddenField) {
+			hiddenField = document.createElement( 'input' );
+			hiddenField.type = 'hidden';
+			hiddenField.name = 'i18nly_translation_entries_payload';
+			form.appendChild( hiddenField );
+		}
+
+		translationInputs.forEach(
+			function (input) {
+				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
+				var entryField = input.getAttribute( 'data-i18nly-entry-field' );
+
+				if ( ! sourceEntryId || ! entryField) {
+					return;
+				}
+
+				input.addEventListener( 'input', rebuildPayload );
+			}
+		);
+
+		rebuildPayload();
+
+		form.addEventListener(
+			'submit',
+			function () {
+				rebuildPayload();
+			},
+			{ once: true }
+		);
+	}
+
 	refreshEntriesTable();
+	installEntriesPayloadCompaction();
 
 	postForm(
 		toFormBody(

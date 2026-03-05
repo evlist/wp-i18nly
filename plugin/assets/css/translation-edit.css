@@ -23,6 +23,9 @@
 
 .i18nly-form-line {
 	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
 }
 
 .i18nly-form-line + .i18nly-form-line {
@@ -30,5 +33,7 @@
 }
 
 .i18nly-translation-input {
-	width: min(100%, 28rem);
+	flex: 1 1 auto;
+	min-width: 14rem;
+	max-width: 28rem;
 }

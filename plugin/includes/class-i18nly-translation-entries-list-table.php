@@ -85,21 +85,21 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 			return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
 		}
 
-		$singular_input_name = sprintf( 'i18nly_translation_entries[%d][translation]', $source_entry );
-		$singular_input_id   = sprintf( 'i18nly-translation-%d', $source_entry );
-		$plural_input_name   = sprintf( 'i18nly_translation_entries[%d][translation_plural]', $source_entry );
-		$plural_input_id     = sprintf( 'i18nly-translation-plural-%d', $source_entry );
+		$singular_input_id = sprintf( 'i18nly-translation-%d', $source_entry );
+		$plural_input_id   = sprintf( 'i18nly-translation-plural-%d', $source_entry );
 
 		$singular_input = $this->render_translation_input(
-			$singular_input_name,
 			$singular_input_id,
+			$source_entry,
+			'translation',
 			$singular,
 			_x( 'Singular translation', 'input label for singular translation', 'i18nly' )
 		);
 
 		$plural_input = $this->render_translation_input(
-			$plural_input_name,
 			$plural_input_id,
+			$source_entry,
+			'translation_plural',
 			$plural,
 			_x( 'Plural translation', 'input label for plural translation', 'i18nly' )
 		);
@@ -129,18 +129,20 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	/**
 	 * Renders one translation text input.
 	 *
-	 * @param string $input_name Input name.
 	 * @param string $input_id Input ID.
+	 * @param int    $source_entry Source entry ID.
+	 * @param string $entry_field Entry field key.
 	 * @param string $input_value Input value.
 	 * @param string $input_label Accessible label.
 	 * @return string
 	 */
-	private function render_translation_input( $input_name, $input_id, $input_value, $input_label ) {
+	private function render_translation_input( $input_id, $source_entry, $entry_field, $input_value, $input_label ) {
 		return sprintf(
-			'<input type="text" class="regular-text i18nly-translation-input" name="%1$s" id="%2$s" value="%3$s" aria-label="%4$s"/>',
-			esc_attr( $input_name ),
+			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-entry-field="%4$s" aria-label="%5$s"/>',
 			esc_attr( $input_id ),
 			esc_attr( $input_value ),
+			(int) $source_entry,
+			esc_attr( $entry_field ),
 			esc_attr( $input_label )
 		);
 	}
@@ -226,5 +228,18 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 */
 	public function no_items() {
 		echo esc_html__( 'No translation entries available yet.', 'i18nly' );
+	}
+
+	/**
+	 * Displays lightweight table navigation wrapper.
+	 *
+	 * Avoids injecting `_wpnonce` and `_wp_http_referer` hidden fields inside
+	 * the post edit form, which can override WordPress core post nonce values.
+	 *
+	 * @param string $which Table nav location.
+	 * @return void
+	 */
+	protected function display_tablenav( $which ) {
+		echo '<div class="tablenav ' . esc_attr( (string) $which ) . '"></div>';
 	}
 }

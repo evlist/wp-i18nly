@@ -666,4 +666,27 @@ class I18nly_Admin_Page_Helper {
 			);
 		}
 	}
+
+	/**
+	 * Normalizes translation entries payload rows.
+	 *
+	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
+	 * @return array<int|string, array<string, string>>
+	 */
+	public static function normalize_translation_entries_payload( array $entries_payload ) {
+		$normalized_payload = array();
+
+		foreach ( $entries_payload as $source_entry_id => $entry_payload ) {
+			if ( ! is_array( $entry_payload ) ) {
+				continue;
+			}
+
+			$normalized_payload[ $source_entry_id ] = array(
+				'translation'        => isset( $entry_payload['translation'] ) ? sanitize_text_field( (string) $entry_payload['translation'] ) : '',
+				'translation_plural' => isset( $entry_payload['translation_plural'] ) ? sanitize_text_field( (string) $entry_payload['translation_plural'] ) : '',
+			);
+		}
+
+		return $normalized_payload;
+	}
 }

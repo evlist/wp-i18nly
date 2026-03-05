@@ -225,11 +225,24 @@ class I18nly_Admin_Page {
 		update_post_meta( (int) $post_id, self::META_SOURCE_SLUG, $source_slug );
 		update_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, $target_language );
 
-		if ( '' !== $source_slug && isset( $_POST['i18nly_translation_entries'] ) ) {
-			$entries_payload = map_deep( wp_unslash( $_POST['i18nly_translation_entries'] ), 'sanitize_text_field' );
+		if ( '' !== $source_slug ) {
+			$entries_payload = array();
+			$payload_json    = filter_input( INPUT_POST, 'i18nly_translation_entries_payload', FILTER_UNSAFE_RAW );
 
-			if ( is_array( $entries_payload ) ) {
-				$this->persist_translation_entries( (int) $post_id, $source_slug, $entries_payload );
+			if ( ! is_string( $payload_json ) && isset( $_POST['i18nly_translation_entries_payload'] ) ) {
+				$payload_json = sanitize_textarea_field( wp_unslash( $_POST['i18nly_translation_entries_payload'] ) );
+			}
+
+			if ( is_string( $payload_json ) && '' !== $payload_json ) {
+				$decoded_payload = json_decode( wp_unslash( $payload_json ), true );
+
+				if ( is_array( $decoded_payload ) ) {
+					$entries_payload = $decoded_payload;
+				}
+			}
+
+			if ( ! empty( $entries_payload ) ) {
+				$this->persist_translation_entries( (int) $post_id, $source_slug, I18nly_Admin_Page_Helper::normalize_translation_entries_payload( $entries_payload ) );
 			}
 		}
 
@@ -251,11 +264,11 @@ class I18nly_Admin_Page {
 	}
 
 	/**
-	 * Persists translation entry values.
+	 * Persists translation entries payload.
 	 *
 	 * @param int    $translation_id Translation ID.
 	 * @param string $source_slug Source slug.
-	 * @param array  $entries_payload Posted entries payload.
+	 * @param array  $entries_payload Entries payload.
 	 * @return void
 	 */
 	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {

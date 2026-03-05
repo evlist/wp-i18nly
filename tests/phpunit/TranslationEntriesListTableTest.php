@@ -117,7 +117,8 @@ class TranslationEntriesListTableTest extends TestCase {
 
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'Hello', $html );
-		$this->assertStringContainsString( 'name="i18nly_translation_entries[21][translation]"', $html );
+		$this->assertStringContainsString( 'data-i18nly-source-entry-id="21"', $html );
+		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $html );
 		$this->assertStringContainsString( 'value="Bonjour"', $html );
 		$this->assertStringNotContainsString( 'i18nly-form-marker', $html );
 	}
@@ -153,8 +154,9 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'title="Plural form"', $html );
 		$this->assertStringContainsString( '>1</span>', $html );
 		$this->assertStringContainsString( '>n</span>', $html );
-		$this->assertStringContainsString( 'name="i18nly_translation_entries[31][translation]"', $html );
-		$this->assertStringContainsString( 'name="i18nly_translation_entries[31][translation_plural]"', $html );
+		$this->assertStringContainsString( 'data-i18nly-source-entry-id="31"', $html );
+		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $html );
+		$this->assertStringContainsString( 'data-i18nly-entry-field="translation_plural"', $html );
 		$this->assertStringContainsString( 'value="%s article"', $html );
 	}
 }
