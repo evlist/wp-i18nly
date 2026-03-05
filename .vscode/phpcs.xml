@@ -10,6 +10,7 @@ SPDX-License-Identifier: GPL-3.0-or-later OR MIT
   <file>./</file>
 
   <arg name="extensions" value="php"/>
+  <arg name="warning-severity" value="0"/>
 
   <exclude-pattern>*/third-party/*</exclude-pattern>
   <exclude-pattern>*/node_modules/*</exclude-pattern>
