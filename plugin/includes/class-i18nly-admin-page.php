@@ -149,7 +149,7 @@ class I18nly_Admin_Page {
 	/**
 	 * Returns translation meta box renderer.
 	 *
-	 * @return I18nly_Translation_Meta_Box_Renderer
+	 * @return I18nly_Translation_Meta_Box_Renderer_Interface
 	 */
 	protected function get_meta_box_renderer() {
 		return new I18nly_Translation_Meta_Box_Renderer();
@@ -494,7 +494,7 @@ class I18nly_Admin_Page {
 	/**
 	 * Returns translation AJAX controller.
 	 *
-	 * @return I18nly_Translation_Ajax_Controller
+	 * @return I18nly_Translation_Ajax_Controller_Interface
 	 */
 	protected function get_ajax_controller() {
 		return new I18nly_Translation_Ajax_Controller(

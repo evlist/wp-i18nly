@@ -210,6 +210,132 @@ class AjaxPotGenerationTest extends TestCase {
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );
 	}
+
+	/**
+	 * Returns an error when POT generation nonce is invalid.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_generate_translation_pot_returns_error_when_nonce_is_invalid() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 11:15:00',
+					'created_at_local' => '2026-03-02 12:15:00',
+				),
+			)
+		);
+		i18nly_test_reset_last_json_response();
+
+		$_POST['translation_id'] = '42';
+		$_POST['nonce']          = 'invalid';
+
+		$page = new I18nly_Admin_Page();
+		$page->ajax_generate_translation_pot();
+
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertSame( false, $response['success'] );
+		$this->assertSame( 403, $response['status'] );
+		$this->assertSame( 'Invalid nonce.', $response['data']['message'] );
+
+		unset( $_POST['translation_id'], $_POST['nonce'] );
+	}
+
+	/**
+	 * Returns an error when current user cannot edit translation.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_generate_translation_pot_returns_error_when_user_cannot_edit_post() {
+		i18nly_test_set_can_manage_options( false );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => 'akismet/akismet.php',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 11:15:00',
+					'created_at_local' => '2026-03-02 12:15:00',
+				),
+			)
+		);
+		i18nly_test_reset_last_json_response();
+
+		$_POST['translation_id'] = '42';
+		$_POST['nonce']          = 'nonce-i18nly_generate_translation_pot_42';
+
+		$page = new I18nly_Admin_Page();
+		$page->ajax_generate_translation_pot();
+
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertSame( false, $response['success'] );
+		$this->assertSame( 403, $response['status'] );
+		$this->assertSame( 'Insufficient permissions.', $response['data']['message'] );
+
+		unset( $_POST['translation_id'], $_POST['nonce'] );
+	}
+
+	/**
+	 * Returns an error when translation has no source slug.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_generate_translation_pot_returns_error_when_source_slug_is_missing() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'               => 42,
+					'source_slug'      => '',
+					'target_language'  => 'fr_FR',
+					'created_at_gmt'   => '2026-03-02 11:15:00',
+					'created_at_local' => '2026-03-02 12:15:00',
+				),
+			)
+		);
+		i18nly_test_reset_last_json_response();
+
+		$_POST['translation_id'] = '42';
+		$_POST['nonce']          = 'nonce-i18nly_generate_translation_pot_42';
+
+		$page = new I18nly_Admin_Page();
+		$page->ajax_generate_translation_pot();
+
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertSame( false, $response['success'] );
+		$this->assertSame( 400, $response['status'] );
+		$this->assertSame( 'Translation source is missing.', $response['data']['message'] );
+
+		unset( $_POST['translation_id'], $_POST['nonce'] );
+	}
+
+	/**
+	 * Returns an error when entries table AJAX parameters are missing.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_get_translation_entries_table_returns_error_when_parameters_are_missing() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_reset_last_json_response();
+
+		unset( $_POST['translation_id'], $_POST['nonce'] );
+
+		$page = new I18nly_Admin_Page();
+		$page->ajax_get_translation_entries_table();
+
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertSame( false, $response['success'] );
+		$this->assertSame( 400, $response['status'] );
+		$this->assertSame( 'Missing parameters.', $response['data']['message'] );
+	}
 }
 
 // phpcs:enable

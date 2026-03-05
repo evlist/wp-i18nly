@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Renders translation meta box and entries table markup.
  */
-class I18nly_Translation_Meta_Box_Renderer {
+class I18nly_Translation_Meta_Box_Renderer implements I18nly_Translation_Meta_Box_Renderer_Interface {
 	/**
 	 * Renders translation meta box fields.
 	 *
