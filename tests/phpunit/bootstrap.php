@@ -32,6 +32,7 @@ $i18nly_test_last_updated_post      = array();
 $i18nly_test_options                = array();
 $i18nly_test_last_json_response     = array();
 $i18nly_test_enqueued_scripts       = array();
+$i18nly_test_enqueued_styles        = array();
 $i18nly_test_inline_scripts         = array();
 
 /**
@@ -403,9 +404,10 @@ function i18nly_test_get_last_json_response() {
  * @return void
  */
 function i18nly_test_reset_enqueued_scripts() {
-	global $i18nly_test_enqueued_scripts, $i18nly_test_inline_scripts;
+	global $i18nly_test_enqueued_scripts, $i18nly_test_enqueued_styles, $i18nly_test_inline_scripts;
 
 	$i18nly_test_enqueued_scripts = array();
+	$i18nly_test_enqueued_styles  = array();
 	$i18nly_test_inline_scripts   = array();
 }
 
@@ -418,6 +420,17 @@ function i18nly_test_get_enqueued_scripts() {
 	global $i18nly_test_enqueued_scripts;
 
 	return $i18nly_test_enqueued_scripts;
+}
+
+/**
+ * Returns captured enqueued styles.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function i18nly_test_get_enqueued_styles() {
+	global $i18nly_test_enqueued_styles;
+
+	return $i18nly_test_enqueued_styles;
 }
 
 /**
@@ -861,6 +874,29 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 			'deps'      => is_array( $deps ) ? $deps : array(),
 			'ver'       => $ver,
 			'in_footer' => (bool) $in_footer,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_enqueue_style' ) ) {
+	/**
+	 * Captures enqueued styles in tests.
+	 *
+	 * @param string             $handle Style handle.
+	 * @param string             $src Style URL.
+	 * @param array<int, string> $deps Dependencies.
+	 * @param string|bool|null   $ver Version.
+	 * @param string             $media Media.
+	 * @return void
+	 */
+	function wp_enqueue_style( $handle, $src = '', $deps = array(), $ver = false, $media = 'all' ) {
+		global $i18nly_test_enqueued_styles;
+
+		$i18nly_test_enqueued_styles[ (string) $handle ] = array(
+			'src'   => (string) $src,
+			'deps'  => is_array( $deps ) ? $deps : array(),
+			'ver'   => $ver,
+			'media' => (string) $media,
 		);
 	}
 }

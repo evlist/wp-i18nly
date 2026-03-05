@@ -686,6 +686,14 @@ class I18nly_Admin_Page {
 		}
 
 		$script_handle = 'i18nly-translation-edit';
+		$style_handle  = 'i18nly-translation-edit-style';
+
+		wp_enqueue_style(
+			$style_handle,
+			$this->get_translation_edit_style_url(),
+			array(),
+			defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '0.1.0'
+		);
 
 		wp_enqueue_script(
 			$script_handle,
@@ -719,6 +727,19 @@ class I18nly_Admin_Page {
 		}
 
 		return 'assets/js/translation-edit.js';
+	}
+
+	/**
+	 * Returns translation edit style URL.
+	 *
+	 * @return string
+	 */
+	private function get_translation_edit_style_url() {
+		if ( defined( 'I18NLY_PLUGIN_FILE' ) && function_exists( 'plugin_dir_url' ) ) {
+			return plugin_dir_url( I18NLY_PLUGIN_FILE ) . 'assets/css/translation-edit.css';
+		}
+
+		return 'assets/css/translation-edit.css';
 	}
 
 	/**
@@ -904,48 +925,9 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	private function render_translation_source_entries_table( array $source_entries ) {
-		$this->render_translation_entries_table_styles();
-
 		$list_table = new I18nly_Translation_Entries_List_Table( $source_entries );
 		$list_table->prepare_items();
 		$list_table->display();
-	}
-
-	/**
-	 * Outputs lightweight visual styles for translation form markers.
-	 *
-	 * @return void
-	 */
-	private function render_translation_entries_table_styles() {
-		?>
-		<style>
-			.i18nly-form-marker {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				width: 1.2rem;
-				height: 1.2rem;
-				margin-right: 0.35rem;
-				border: 1px solid #8c8f94;
-				border-radius: 999px;
-				background: #f0f0f1;
-				color: #1d2327;
-				font-size: 0.72rem;
-				font-weight: 700;
-				line-height: 1;
-				vertical-align: middle;
-				cursor: help;
-			}
-
-			.i18nly-form-line {
-				margin: 0;
-			}
-
-			.i18nly-form-line + .i18nly-form-line {
-				margin-top: 0.2rem;
-			}
-		</style>
-		<?php
 	}
 
 	/**

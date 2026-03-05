@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+.i18nly-form-marker {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.2rem;
+	height: 1.2rem;
+	margin-right: 0.35rem;
+	border: 1px solid #8c8f94;
+	border-radius: 999px;
+	background: #f0f0f1;
+	color: #1d2327;
+	font-size: 0.72rem;
+	font-weight: 700;
+	line-height: 1;
+	vertical-align: middle;
+	cursor: help;
+}
+
+.i18nly-form-line {
+	margin: 0;
+}
+
+.i18nly-form-line + .i18nly-form-line {
+	margin-top: 0.2rem;
+}

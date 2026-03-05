@@ -54,10 +54,13 @@ class AjaxPotGenerationTest extends TestCase {
 		$page->render_translation_edit_pot_generation_script();
 		$html    = ob_get_clean();
 		$scripts = i18nly_test_get_enqueued_scripts();
+		$styles  = i18nly_test_get_enqueued_styles();
 		$inline  = i18nly_test_get_inline_scripts();
 
 		$this->assertIsString( $html );
 		$this->assertSame( '', $html );
+		$this->assertArrayHasKey( 'i18nly-translation-edit-style', $styles );
+		$this->assertStringContainsString( 'assets/css/translation-edit.css', $styles['i18nly-translation-edit-style']['src'] );
 		$this->assertArrayHasKey( 'i18nly-translation-edit', $scripts );
 		$this->assertStringContainsString( 'assets/js/translation-edit.js', $scripts['i18nly-translation-edit']['src'] );
 		$this->assertArrayHasKey( 'i18nly-translation-edit', $inline );
