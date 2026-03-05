@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Add aliases to be used in codespace terminals
-alias phpcs="phpcs --standard=.vscode/phpcs.xml --warning-severity=1"
+echo 'alias phpcs="phpcs --standard=.vscode/phpcs.xml --warning-severity=1"' >> ~/.bash_aliases
