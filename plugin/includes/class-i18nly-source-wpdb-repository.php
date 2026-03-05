@@ -461,13 +461,13 @@ class I18nly_Source_Wpdb_Repository {
 		$result = $this->wpdb->insert(
 			$translated_entries_table,
 			array(
-				'translation_id'      => (int) $translation_id,
-				'source_entry_id'     => (int) $source_entry_id,
-				'translation'         => (string) $translation,
-				'translation_plural'  => (string) $translation_plural,
-				'comment'             => '',
-				'created_at_gmt'      => (string) $now_gmt,
-				'updated_at_gmt'      => (string) $now_gmt,
+				'translation_id'     => (int) $translation_id,
+				'source_entry_id'    => (int) $source_entry_id,
+				'translation'        => (string) $translation,
+				'translation_plural' => (string) $translation_plural,
+				'comment'            => '',
+				'created_at_gmt'     => (string) $now_gmt,
+				'updated_at_gmt'     => (string) $now_gmt,
 			),
 			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
 		);

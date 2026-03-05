@@ -429,12 +429,11 @@ class I18nly_Admin_Page_Helper {
 	/**
 	 * Registers translation post type.
 	 *
-	 * @param string $post_type Post type slug.
 	 * @return void
 	 */
-	public static function register_post_type( $post_type ) {
+	public static function register_post_type() {
 		register_post_type(
-			$post_type,
+			'i18nly_translation',
 			array(
 				'label'        => __( 'Translations', 'i18nly' ),
 				'labels'       => array(

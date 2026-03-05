@@ -67,7 +67,7 @@ class TranslationEntriesListTableTest extends TestCase {
 
 				return array(
 					array(
-						'source_entry_id'      => 11,
+						'source_entry_id'    => 11,
 						'msgctxt'            => 'email',
 						'msgid'              => 'Welcome',
 						'translation'        => 'Bienvenue',
@@ -99,7 +99,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$list_table = new I18nly_Translation_Entries_List_Table(
 			array(
 				array(
-					'source_entry_id'      => 21,
+					'source_entry_id'    => 21,
 					'msgctxt'            => '',
 					'msgid'              => 'Hello',
 					'translation'        => 'Bonjour',
@@ -132,7 +132,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$list_table = new I18nly_Translation_Entries_List_Table(
 			array(
 				array(
-					'source_entry_id'      => 31,
+					'source_entry_id'    => 31,
 					'msgctxt'            => '',
 					'msgid'              => '%s item',
 					'translation'        => '%s article',

@@ -461,8 +461,8 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$_POST['i18nly_translation_meta_box_nonce']      = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_translation_entries_payload']     = '{"101":{"translation":"Bienvenue","translation_plural":"Bienvenues"}}';
+		$_POST['i18nly_translation_meta_box_nonce']  = 'nonce-i18nly_translation_meta_box';
+		$_POST['i18nly_translation_entries_payload'] = '{"101":{"translation":"Bienvenue","translation_plural":"Bienvenues"}}';
 
 		$page = new class() extends I18nly_Admin_Page {
 			/**
@@ -549,10 +549,10 @@ class AdminPageRenderTest extends TestCase {
 			 */
 			protected function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
 				$this->captured_duplicate = array(
-					'new_post_id'              => (int) $new_post_id,
-					'existing_translation_id'  => (int) $existing_translation_id,
-					'source_slug'              => (string) $source_slug,
-					'target_language'          => (string) $target_language,
+					'new_post_id'             => (int) $new_post_id,
+					'existing_translation_id' => (int) $existing_translation_id,
+					'source_slug'             => (string) $source_slug,
+					'target_language'         => (string) $target_language,
 				);
 			}
 		};
@@ -572,6 +572,86 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 'fr_FR', $page->captured_duplicate['target_language'] );
 
 		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
+	}
+
+	/**
+	 * Delegates translation save flow to dedicated save handler.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_delegates_to_save_handler() {
+		$handler = new class() {
+			/**
+			 * Whether handler was called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured arguments.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured = array();
+
+			/**
+			 * Captures save call.
+			 *
+			 * @param int    $post_id Post ID.
+			 * @param object $post Post object.
+			 * @param bool   $update Update flag.
+			 * @return void
+			 */
+			public function handle_save( $post_id, $post, $update ) {
+				$this->called   = true;
+				$this->captured = array(
+					'post_id' => (int) $post_id,
+					'update'  => (bool) $update,
+					'type'    => isset( $post->post_type ) ? (string) $post->post_type : '',
+				);
+			}
+		};
+
+		$page = new class( $handler ) extends I18nly_Admin_Page {
+			/**
+			 * Save handler test double.
+			 *
+			 * @var object
+			 */
+			private $test_handler;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_handler Save handler test double.
+			 */
+			public function __construct( $test_handler ) {
+				$this->test_handler = $test_handler;
+			}
+
+			/**
+			 * Returns save handler.
+			 *
+			 * @return object
+			 */
+			protected function get_save_handler() {
+				return $this->test_handler;
+			}
+		};
+
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type' => 'i18nly_translation',
+			),
+			true
+		);
+
+		$this->assertTrue( $handler->called );
+		$this->assertSame( 42, $handler->captured['post_id'] );
+		$this->assertSame( true, $handler->captured['update'] );
+		$this->assertSame( 'i18nly_translation', $handler->captured['type'] );
 	}
 
 	/**

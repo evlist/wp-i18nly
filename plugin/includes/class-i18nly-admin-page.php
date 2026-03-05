@@ -191,87 +191,29 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function save_translation_meta_box( $post_id, $post, $update ) {
-		unset( $update );
+		$this->get_save_handler()->handle_save( (int) $post_id, $post, (bool) $update );
+	}
 
-		if ( ! isset( $post->post_type ) || self::POST_TYPE !== (string) $post->post_type ) {
-			return;
-		}
-
-		if ( ! isset( $_POST['i18nly_translation_meta_box_nonce'] ) ) {
-			return;
-		}
-
-		$nonce = sanitize_text_field( wp_unslash( $_POST['i18nly_translation_meta_box_nonce'] ) );
-		if ( ! wp_verify_nonce( $nonce, 'i18nly_translation_meta_box' ) ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', (int) $post_id ) ) {
-			return;
-		}
-
-		$existing_source   = (string) get_post_meta( (int) $post_id, self::META_SOURCE_SLUG, true );
-		$existing_language = (string) get_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, true );
-		$is_locked         = '' !== $existing_source || '' !== $existing_language;
-
-		$source_slug = $existing_source;
-		if ( ! $is_locked && isset( $_POST['i18nly_plugin_selector'] ) ) {
-			$source_slug = sanitize_text_field( wp_unslash( $_POST['i18nly_plugin_selector'] ) );
-		}
-
-		$target_language = $existing_language;
-		if ( ! $is_locked && isset( $_POST['i18nly_target_language_selector'] ) ) {
-			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
-		}
-
-		if ( ! $is_locked && '' !== $source_slug && '' !== $target_language ) {
-			$existing_translation_id = $this->find_duplicate_translation_id( $source_slug, $target_language, (int) $post_id );
-
-			if ( $existing_translation_id > 0 ) {
-				$this->handle_duplicate_translation_creation( (int) $post_id, $existing_translation_id, $source_slug, $target_language );
-				return;
+	/**
+	 * Returns save handler.
+	 *
+	 * @return I18nly_Translation_Save_Handler
+	 */
+	protected function get_save_handler() {
+		return new I18nly_Translation_Save_Handler(
+			self::POST_TYPE,
+			self::META_SOURCE_SLUG,
+			self::META_TARGET_LANGUAGE,
+			function ( $translation_id, $source_slug, array $entries_payload ) {
+				$this->persist_translation_entries( $translation_id, $source_slug, $entries_payload );
+			},
+			function ( $source_slug, $target_language, $current_post_id ) {
+				return $this->find_duplicate_translation_id( $source_slug, $target_language, $current_post_id );
+			},
+			function ( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
+				$this->handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language );
 			}
-		}
-
-		update_post_meta( (int) $post_id, self::META_SOURCE_SLUG, $source_slug );
-		update_post_meta( (int) $post_id, self::META_TARGET_LANGUAGE, $target_language );
-
-		if ( '' !== $source_slug ) {
-			$entries_payload = array();
-			$payload_json    = filter_input( INPUT_POST, 'i18nly_translation_entries_payload', FILTER_UNSAFE_RAW );
-
-			if ( ! is_string( $payload_json ) && isset( $_POST['i18nly_translation_entries_payload'] ) ) {
-				$payload_json = sanitize_textarea_field( wp_unslash( $_POST['i18nly_translation_entries_payload'] ) );
-			}
-
-			if ( is_string( $payload_json ) && '' !== $payload_json ) {
-				$decoded_payload = json_decode( wp_unslash( $payload_json ), true );
-
-				if ( is_array( $decoded_payload ) ) {
-					$entries_payload = $decoded_payload;
-				}
-			}
-
-			if ( ! empty( $entries_payload ) ) {
-				$this->persist_translation_entries( (int) $post_id, $source_slug, I18nly_Admin_Page_Helper::normalize_translation_entries_payload( $entries_payload ) );
-			}
-		}
-
-		$current_title = isset( $post->post_title ) ? (string) $post->post_title : '';
-		if ( '' !== trim( $current_title ) || '' === $source_slug || '' === $target_language ) {
-			return;
-		}
-
-		remove_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10 );
-
-		wp_update_post(
-			array(
-				'ID'         => (int) $post_id,
-				'post_title' => $source_slug . ' → ' . $target_language,
-			)
 		);
-
-		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 	}
 
 	/**
@@ -405,7 +347,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function register_post_type() {
-		I18nly_Admin_Page_Helper::register_post_type( self::POST_TYPE );
+		I18nly_Admin_Page_Helper::register_post_type();
 	}
 
 	/**

@@ -171,7 +171,7 @@ class AjaxPotGenerationTest extends TestCase {
 
 				return array(
 					array(
-						'source_entry_id'      => 99,
+						'source_entry_id'    => 99,
 						'msgctxt'            => 'email',
 						'msgid'              => 'Welcome',
 						'translation'        => 'Bienvenue',
