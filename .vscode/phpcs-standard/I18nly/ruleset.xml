@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="I18nly Custom Standard">
   <description>Project-specific PHPCS sniffs.</description>
+  <rule ref="I18nly.Commenting.NoPhpcsIgnore"/>
   <rule ref="I18nly.Files.FileLength"/>
 </ruleset>
