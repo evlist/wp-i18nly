@@ -242,6 +242,39 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Does not render entries block on creation mode.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_meta_box_hides_entries_block_on_creation_mode() {
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array(
+					'Name' => 'Akismet',
+				),
+			)
+		);
+		i18nly_test_set_available_languages( array( 'fr_FR' ) );
+		i18nly_test_set_available_translations(
+			array(
+				'fr_FR' => array(
+					'native_name' => 'Francais',
+				),
+			)
+		);
+
+		$page = new I18nly_Admin_Page();
+
+		ob_start();
+		$page->render_translation_meta_box( (object) array( 'ID' => 777 ) );
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringNotContainsString( 'id="i18nly-source-entries-table"', $html );
+		$this->assertStringNotContainsString( 'Loading translation entries…', $html );
+	}
+
+	/**
 	 * Saves meta and auto-generates title when current title is empty.
 	 *
 	 * @return void

@@ -173,10 +173,12 @@ class I18nly_Admin_Page {
 			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
 		<?php endif; ?>
 
-		<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
-		<div id="i18nly-source-entries-table">
-			<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
-		</div>
+		<?php if ( $is_locked ) : ?>
+			<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
+			<div id="i18nly-source-entries-table">
+				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
+			</div>
+		<?php endif; ?>
 		<?php
 	}
 
