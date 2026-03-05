@@ -29,16 +29,44 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 define( 'I18NLY_VERSION', '0.1.0' );
 define( 'I18NLY_PLUGIN_FILE', __FILE__ );
 
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-admin-page-helper.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-translation-entries-list-table.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-generator.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-source-entry-extractor.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-temporary-storage.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-workspace-service.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-source-schema-manager.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-source-wpdb-repository.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-i18nly-pot-source-importer.php';
+/**
+ * Returns one class file path from its class name.
+ *
+ * @param string $class_name Requested class name.
+ * @return string
+ */
+function i18nly_get_class_file_path( $class_name ) {
+	if ( 0 !== strpos( $class_name, 'I18nly_' ) ) {
+		return '';
+	}
+
+	$normalized = strtolower( str_replace( '_', '-', $class_name ) );
+	$file_path  = plugin_dir_path( __FILE__ ) . 'includes/class-' . $normalized . '.php';
+
+	if ( ! is_readable( $file_path ) ) {
+		return '';
+	}
+
+	return $file_path;
+}
+
+/**
+ * Autoloads I18nly classes from the includes directory.
+ *
+ * @param string $class_name Requested class name.
+ * @return void
+ */
+function i18nly_autoload( $class_name ) {
+	$class_file_path = i18nly_get_class_file_path( (string) $class_name );
+
+	if ( '' === $class_file_path ) {
+		return;
+	}
+
+	require_once $class_file_path;
+}
+
+spl_autoload_register( 'i18nly_autoload' );
 
 /**
  * Loads plugin translations.
