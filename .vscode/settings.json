@@ -25,5 +25,9 @@
     "**/.devcontainer/**"
   ],
   "phpsab.phpExecutablePath": "/usr/bin/php",
-  "phpsab.debug": true
+  "phpsab.debug": true,
+  "chat.tools.terminal.autoApprove": {
+    "phpunit": true,
+    "phpcs": true
+  }
 }
