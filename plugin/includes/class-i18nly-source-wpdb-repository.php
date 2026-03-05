@@ -23,8 +23,12 @@ class I18nly_Source_Wpdb_Repository {
 		'catalog_id',
 		'msgctxt',
 		'msgid',
-		'plural_index',
 	);
+
+	/**
+	 * Default plural forms count used when locale rules are unknown.
+	 */
+	private const DEFAULT_PLURAL_FORMS_COUNT = 2;
 
 	/**
 	 * Source entry content columns tracked for unchanged detection.
@@ -143,8 +147,7 @@ class I18nly_Source_Wpdb_Repository {
 		$entry_id = $this->find_entry_id(
 			(int) $entry['catalog_id'],
 			isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : null,
-			(string) $entry['msgid'],
-			(int) $entry['plural_index']
+			(string) $entry['msgid']
 		);
 
 		$now_gmt          = (string) $entry['updated_at_gmt'];
@@ -155,7 +158,7 @@ class I18nly_Source_Wpdb_Repository {
 
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					'SELECT catalog_id, msgctxt, msgid, plural_index, msgid_plural, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
+					'SELECT catalog_id, msgctxt, msgid, msgid_plural, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
 					$table,
 					$entry_id
 				),
@@ -204,7 +207,6 @@ class I18nly_Source_Wpdb_Repository {
 				'msgctxt'          => $entry['msgctxt'],
 				'msgid'            => $entry['msgid'],
 				'msgid_plural'     => $entry['msgid_plural'],
-				'plural_index'     => $entry['plural_index'],
 				'comments_json'    => $entry['comments_json'],
 				'references_json'  => $entry['references_json'],
 				'flags_json'       => $entry['flags_json'],
@@ -213,7 +215,7 @@ class I18nly_Source_Wpdb_Repository {
 				'created_at_gmt'   => $entry['created_at_gmt'],
 				'updated_at_gmt'   => $entry['updated_at_gmt'],
 			),
-			array( '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		return 'inserted';
@@ -225,10 +227,9 @@ class I18nly_Source_Wpdb_Repository {
 	 * @param int         $catalog_id Catalog ID.
 	 * @param string|null $msgctxt Message context.
 	 * @param string      $msgid Message ID.
-	 * @param int         $plural_index Plural index.
 	 * @return int
 	 */
-	private function find_entry_id( $catalog_id, $msgctxt, $msgid, $plural_index ) {
+	private function find_entry_id( $catalog_id, $msgctxt, $msgid ) {
 		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 
 		if ( '' === $table ) {
@@ -238,23 +239,21 @@ class I18nly_Source_Wpdb_Repository {
 		if ( null === $msgctxt ) {
 			return (int) $this->db_get_var(
 				$this->wpdb->prepare(
-					'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s AND plural_index = %d',
+					'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s',
 					$table,
 					$catalog_id,
-					$msgid,
-					$plural_index
+					$msgid
 				)
 			);
 		}
 
 		return (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s AND plural_index = %d',
+				'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s',
 				$table,
 				$catalog_id,
 				$msgctxt,
-				$msgid,
-				$plural_index
+				$msgid
 			)
 		);
 	}
@@ -332,7 +331,7 @@ class I18nly_Source_Wpdb_Repository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.msgctxt, e.msgid, e.msgid_plural, e.plural_index, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.plural_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			(string) $plugin_slug,
@@ -348,9 +347,10 @@ class I18nly_Source_Wpdb_Repository {
 	 * @param int    $translation_id Translation ID.
 	 * @param string $plugin_slug Plugin slug.
 	 * @param string $now_gmt Current GMT datetime.
+	 * @param int    $plural_forms_count Number of target plural forms.
 	 * @return int Number of inserted rows.
 	 */
-	public function ensure_translated_entries_for_translation( $translation_id, $plugin_slug, $now_gmt ) {
+	public function ensure_translated_entries_for_translation( $translation_id, $plugin_slug, $now_gmt, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
 		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
@@ -359,29 +359,66 @@ class I18nly_Source_Wpdb_Repository {
 			return 0;
 		}
 
-		$query = $this->wpdb->prepare(
-			'INSERT INTO %i (translation_id, source_entry_id, translation, translation_plural, comment, created_at_gmt, updated_at_gmt) SELECT %d, e.id, %s, %s, %s, %s, %s FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.translation_id = %d AND t.source_entry_id = e.id WHERE c.plugin_slug = %s AND t.id IS NULL',
-			$translated_entries_table,
-			(int) $translation_id,
-			'',
-			'',
-			'',
-			(string) $now_gmt,
-			(string) $now_gmt,
-			$entries_table,
-			$catalogs_table,
-			$translated_entries_table,
-			(int) $translation_id,
-			(string) $plugin_slug
+		$max_forms = max( 1, (int) $plural_forms_count );
+
+		$source_rows = $this->db_get_results(
+			$this->wpdb->prepare(
+				'SELECT e.id AS source_entry_id, e.msgid_plural FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.id ASC',
+				$entries_table,
+				$catalogs_table,
+				(string) $plugin_slug
+			),
+			ARRAY_A
 		);
 
-		$result = $this->db_query( $query );
+		$inserted = 0;
 
-		if ( is_int( $result ) ) {
-			return $result;
+		foreach ( $source_rows as $source_row ) {
+			$source_entry_id = isset( $source_row['source_entry_id'] ) ? (int) $source_row['source_entry_id'] : 0;
+
+			if ( $source_entry_id <= 0 ) {
+				continue;
+			}
+
+			$has_plural     = isset( $source_row['msgid_plural'] ) && '' !== trim( (string) $source_row['msgid_plural'] );
+			$required_forms = $has_plural ? max( 2, $max_forms ) : 1;
+
+			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
+				$existing_translated_entry_id = (int) $this->db_get_var(
+					$this->wpdb->prepare(
+						'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d AND form_index = %d',
+						$translated_entries_table,
+						(int) $translation_id,
+						$source_entry_id,
+						$form_index
+					)
+				);
+
+				if ( $existing_translated_entry_id > 0 ) {
+					continue;
+				}
+
+				$result = $this->wpdb->insert(
+					$translated_entries_table,
+					array(
+						'translation_id'  => (int) $translation_id,
+						'source_entry_id' => $source_entry_id,
+						'form_index'      => $form_index,
+						'translation'     => '',
+						'comment'         => '',
+						'created_at_gmt'  => (string) $now_gmt,
+						'updated_at_gmt'  => (string) $now_gmt,
+					),
+					array( '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
+				);
+
+				if ( false !== $result ) {
+					++$inserted;
+				}
+			}
 		}
 
-		return 0;
+		return $inserted;
 	}
 
 	/**
@@ -390,9 +427,10 @@ class I18nly_Source_Wpdb_Repository {
 	 * @param int    $translation_id Translation ID.
 	 * @param string $plugin_slug Plugin slug.
 	 * @param int    $limit Maximum row count.
+	 * @param int    $plural_forms_count Number of target plural forms.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function list_translation_entries_by_plugin_slug( $translation_id, $plugin_slug, $limit = 500 ) {
+	public function list_translation_entries_by_plugin_slug( $translation_id, $plugin_slug, $limit = 500, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
 		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
@@ -404,7 +442,7 @@ class I18nly_Source_Wpdb_Repository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.plural_index, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.translation, t.translation_plural, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id INNER JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.plural_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			$translated_entries_table,
@@ -413,7 +451,63 @@ class I18nly_Source_Wpdb_Repository {
 			$max_rows
 		);
 
-		return $this->db_get_results( $query, ARRAY_A );
+		$rows             = $this->db_get_results( $query, ARRAY_A );
+		$normalized_rows  = array();
+		$max_plural_forms = max( 1, (int) $plural_forms_count );
+
+		foreach ( $rows as $row ) {
+			$source_entry_id = isset( $row['source_entry_id'] ) ? absint( $row['source_entry_id'] ) : 0;
+
+			if ( $source_entry_id <= 0 ) {
+				continue;
+			}
+
+			if ( ! isset( $normalized_rows[ $source_entry_id ] ) ) {
+				$normalized_rows[ $source_entry_id ] = array(
+					'source_entry_id'  => $source_entry_id,
+					'msgctxt'          => isset( $row['msgctxt'] ) ? (string) $row['msgctxt'] : '',
+					'msgid'            => isset( $row['msgid'] ) ? (string) $row['msgid'] : '',
+					'msgid_plural'     => isset( $row['msgid_plural'] ) ? (string) $row['msgid_plural'] : '',
+					'status'           => isset( $row['status'] ) ? (string) $row['status'] : '',
+					'last_seen_at_gmt' => isset( $row['last_seen_at_gmt'] ) ? (string) $row['last_seen_at_gmt'] : '',
+					'updated_at_gmt'   => isset( $row['updated_at_gmt'] ) ? (string) $row['updated_at_gmt'] : '',
+					'translations'     => array(),
+				);
+			}
+
+			if ( isset( $row['form_index'] ) && '' !== (string) $row['form_index'] ) {
+				$form_index = max( 0, (int) $row['form_index'] );
+
+				$normalized_rows[ $source_entry_id ]['translations'][ $form_index ] = array(
+					'source_entry_id' => $source_entry_id,
+					'form_index'      => $form_index,
+					'translation'     => isset( $row['translation'] ) ? (string) $row['translation'] : '',
+				);
+			}
+		}
+
+		foreach ( $normalized_rows as &$normalized_row ) {
+			$has_plural     = '' !== trim( (string) $normalized_row['msgid_plural'] );
+			$required_forms = $has_plural ? max( 2, $max_plural_forms ) : 1;
+
+			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
+				if ( isset( $normalized_row['translations'][ $form_index ] ) ) {
+					continue;
+				}
+
+				$normalized_row['translations'][ $form_index ] = array(
+					'source_entry_id' => (int) $normalized_row['source_entry_id'],
+					'form_index'      => $form_index,
+					'translation'     => '',
+				);
+			}
+
+			ksort( $normalized_row['translations'] );
+			$normalized_row['translations'] = array_values( $normalized_row['translations'] );
+		}
+		unset( $normalized_row );
+
+		return array_values( $normalized_rows );
 	}
 
 	/**
@@ -421,12 +515,12 @@ class I18nly_Source_Wpdb_Repository {
 	 *
 	 * @param int    $translation_id Translation ID.
 	 * @param int    $source_entry_id Source entry ID.
-	 * @param string $translation Singular translation value.
-	 * @param string $translation_plural Plural translation value.
+	 * @param int    $form_index Target plural form index.
+	 * @param string $translation Translated value.
 	 * @param string $now_gmt Current GMT datetime.
 	 * @return bool
 	 */
-	public function upsert_translated_entry( $translation_id, $source_entry_id, $translation, $translation_plural, $now_gmt ) {
+	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt ) {
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
 
 		if ( '' === $translated_entries_table ) {
@@ -435,10 +529,11 @@ class I18nly_Source_Wpdb_Repository {
 
 		$translated_entry_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d',
+				'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d AND form_index = %d',
 				$translated_entries_table,
 				(int) $translation_id,
-				(int) $source_entry_id
+				(int) $source_entry_id,
+				(int) $form_index
 			)
 		);
 
@@ -446,12 +541,11 @@ class I18nly_Source_Wpdb_Repository {
 			$result = $this->wpdb->update(
 				$translated_entries_table,
 				array(
-					'translation'        => (string) $translation,
-					'translation_plural' => (string) $translation_plural,
-					'updated_at_gmt'     => (string) $now_gmt,
+					'translation'    => (string) $translation,
+					'updated_at_gmt' => (string) $now_gmt,
 				),
 				array( 'id' => (int) $translated_entry_id ),
-				array( '%s', '%s', '%s' ),
+				array( '%s', '%s' ),
 				array( '%d' )
 			);
 
@@ -461,15 +555,15 @@ class I18nly_Source_Wpdb_Repository {
 		$result = $this->wpdb->insert(
 			$translated_entries_table,
 			array(
-				'translation_id'     => (int) $translation_id,
-				'source_entry_id'    => (int) $source_entry_id,
-				'translation'        => (string) $translation,
-				'translation_plural' => (string) $translation_plural,
-				'comment'            => '',
-				'created_at_gmt'     => (string) $now_gmt,
-				'updated_at_gmt'     => (string) $now_gmt,
+				'translation_id'  => (int) $translation_id,
+				'source_entry_id' => (int) $source_entry_id,
+				'form_index'      => (int) $form_index,
+				'translation'     => (string) $translation,
+				'comment'         => '',
+				'created_at_gmt'  => (string) $now_gmt,
+				'updated_at_gmt'  => (string) $now_gmt,
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
 		);
 
 		return false !== $result;

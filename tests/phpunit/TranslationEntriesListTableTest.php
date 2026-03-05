@@ -67,13 +67,21 @@ class TranslationEntriesListTableTest extends TestCase {
 
 				return array(
 					array(
-						'source_entry_id'    => 11,
-						'msgctxt'            => 'email',
-						'msgid'              => 'Welcome',
-						'translation'        => 'Bienvenue',
-						'msgid_plural'       => 'Welcomes',
-						'translation_plural' => 'Bienvenues',
-						'status'             => 'active',
+						'source_entry_id' => 11,
+						'msgctxt'         => 'email',
+						'msgid'           => 'Welcome',
+						'msgid_plural'    => 'Welcomes',
+						'status'          => 'active',
+						'translations'    => array(
+							array(
+								'form_index'  => 0,
+								'translation' => 'Bienvenue',
+							),
+							array(
+								'form_index'  => 1,
+								'translation' => 'Bienvenues',
+							),
+						),
 					),
 				);
 			}
@@ -99,13 +107,17 @@ class TranslationEntriesListTableTest extends TestCase {
 		$list_table = new I18nly_Translation_Entries_List_Table(
 			array(
 				array(
-					'source_entry_id'    => 21,
-					'msgctxt'            => '',
-					'msgid'              => 'Hello',
-					'translation'        => 'Bonjour',
-					'msgid_plural'       => '',
-					'translation_plural' => '',
-					'status'             => 'active',
+					'source_entry_id' => 21,
+					'msgctxt'         => '',
+					'msgid'           => 'Hello',
+					'msgid_plural'    => '',
+					'status'          => 'active',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => 'Bonjour',
+						),
+					),
 				),
 			)
 		);
@@ -118,9 +130,9 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'Hello', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="21"', $html );
-		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $html );
+		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
 		$this->assertStringContainsString( 'value="Bonjour"', $html );
-		$this->assertStringNotContainsString( 'i18nly-form-marker', $html );
+		$this->assertStringContainsString( 'i18nly-form-marker', $html );
 	}
 
 	/**
@@ -132,13 +144,21 @@ class TranslationEntriesListTableTest extends TestCase {
 		$list_table = new I18nly_Translation_Entries_List_Table(
 			array(
 				array(
-					'source_entry_id'    => 31,
-					'msgctxt'            => '',
-					'msgid'              => '%s item',
-					'translation'        => '%s article',
-					'msgid_plural'       => '%s items',
-					'translation_plural' => '',
-					'status'             => 'active',
+					'source_entry_id' => 31,
+					'msgctxt'         => '',
+					'msgid'           => '%s item',
+					'msgid_plural'    => '%s items',
+					'status'          => 'active',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '%s article',
+						),
+						array(
+							'form_index'  => 1,
+							'translation' => '%s articles',
+						),
+					),
 				),
 			)
 		);
@@ -155,8 +175,9 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( '>1</span>', $html );
 		$this->assertStringContainsString( '>n</span>', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="31"', $html );
-		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $html );
-		$this->assertStringContainsString( 'data-i18nly-entry-field="translation_plural"', $html );
+		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
+		$this->assertStringContainsString( 'data-i18nly-form-index="1"', $html );
 		$this->assertStringContainsString( 'value="%s article"', $html );
+		$this->assertStringContainsString( 'value="%s articles"', $html );
 	}
 }

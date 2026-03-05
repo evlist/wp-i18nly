@@ -73,11 +73,6 @@ class I18nly_Pot_Source_Importer {
 			$now_gmt
 		);
 
-		$plural_form  = $translations->getHeaders()->getPluralForm();
-		$plural_count = is_array( $plural_form ) && isset( $plural_form[0] )
-			? max( 1, (int) $plural_form[0] )
-			: 2;
-
 		$inserted  = 0;
 		$updated   = 0;
 		$unchanged = 0;
@@ -96,38 +91,34 @@ class I18nly_Pot_Source_Importer {
 
 			$msgctxt      = $translation->getContext();
 			$msgid_plural = $translation->getPlural();
-			$entry_count  = null !== $msgid_plural ? $plural_count : 1;
 
-			for ( $plural_index = 0; $plural_index < $entry_count; $plural_index++ ) {
-				$result = (string) $this->repository->upsert_source_entry(
-					array(
-						'catalog_id'       => $catalog_id,
-						'msgctxt'          => null !== $msgctxt ? (string) $msgctxt : null,
-						'msgid'            => $msgid,
-						'msgid_plural'     => null !== $msgid_plural ? (string) $msgid_plural : null,
-						'plural_index'     => $plural_index,
-						'comments_json'    => $this->encode_json(
-							array(
-								'comments'           => $translation->getComments()->toArray(),
-								'extracted_comments' => $translation->getExtractedComments()->toArray(),
-							)
-						),
-						'references_json'  => $this->encode_json( $translation->getReferences()->toArray() ),
-						'flags_json'       => $this->encode_json( $translation->getFlags()->toArray() ),
-						'status'           => 'active',
-						'last_seen_at_gmt' => $now_gmt,
-						'created_at_gmt'   => $now_gmt,
-						'updated_at_gmt'   => $now_gmt,
-					)
-				);
+			$result = (string) $this->repository->upsert_source_entry(
+				array(
+					'catalog_id'       => $catalog_id,
+					'msgctxt'          => null !== $msgctxt ? (string) $msgctxt : null,
+					'msgid'            => $msgid,
+					'msgid_plural'     => null !== $msgid_plural ? (string) $msgid_plural : null,
+					'comments_json'    => $this->encode_json(
+						array(
+							'comments'           => $translation->getComments()->toArray(),
+							'extracted_comments' => $translation->getExtractedComments()->toArray(),
+						)
+					),
+					'references_json'  => $this->encode_json( $translation->getReferences()->toArray() ),
+					'flags_json'       => $this->encode_json( $translation->getFlags()->toArray() ),
+					'status'           => 'active',
+					'last_seen_at_gmt' => $now_gmt,
+					'created_at_gmt'   => $now_gmt,
+					'updated_at_gmt'   => $now_gmt,
+				)
+			);
 
-				if ( 'inserted' === $result ) {
-					++$inserted;
-				} elseif ( 'updated' === $result ) {
-					++$updated;
-				} else {
-					++$unchanged;
-				}
+			if ( 'inserted' === $result ) {
+				++$inserted;
+			} elseif ( 'updated' === $result ) {
+				++$updated;
+			} else {
+				++$unchanged;
 			}
 		}
 

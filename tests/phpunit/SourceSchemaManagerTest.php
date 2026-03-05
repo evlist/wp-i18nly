@@ -34,9 +34,9 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertStringContainsString( 'i18nly_source_entries', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'last_seen_at_gmt', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'i18nly_translated_entries', $wpdb_stub->queries[2] );
-		$this->assertStringContainsString( 'translation_source_entry', $wpdb_stub->queries[2] );
-		$this->assertStringContainsString( 'translation_plural', $wpdb_stub->queries[2] );
-		$this->assertSame( '0.0.5', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertStringContainsString( 'translation_source_entry_form', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'form_index', $wpdb_stub->queries[2] );
+		$this->assertSame( '0.0.6', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 

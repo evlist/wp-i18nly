@@ -171,13 +171,21 @@ class AjaxPotGenerationTest extends TestCase {
 
 				return array(
 					array(
-						'source_entry_id'    => 99,
-						'msgctxt'            => 'email',
-						'msgid'              => 'Welcome',
-						'translation'        => 'Bienvenue',
-						'msgid_plural'       => 'Welcomes',
-						'translation_plural' => 'Bienvenues',
-						'status'             => 'active',
+						'source_entry_id' => 99,
+						'msgctxt'         => 'email',
+						'msgid'           => 'Welcome',
+						'msgid_plural'    => 'Welcomes',
+						'status'          => 'active',
+						'translations'    => array(
+							array(
+								'form_index'  => 0,
+								'translation' => 'Bienvenue',
+							),
+							array(
+								'form_index'  => 1,
+								'translation' => 'Bienvenues',
+							),
+						),
 					),
 				);
 			}
@@ -200,8 +208,8 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'Singular form', $response['data']['html'] );
 		$this->assertStringContainsString( 'Plural form', $response['data']['html'] );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="99"', $response['data']['html'] );
-		$this->assertStringContainsString( 'data-i18nly-entry-field="translation"', $response['data']['html'] );
-		$this->assertStringContainsString( 'data-i18nly-entry-field="translation_plural"', $response['data']['html'] );
+		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $response['data']['html'] );
+		$this->assertStringContainsString( 'data-i18nly-form-index="1"', $response['data']['html'] );
 		$this->assertStringContainsString( 'value="Bienvenue"', $response['data']['html'] );
 		$this->assertStringContainsString( 'value="Bienvenues"', $response['data']['html'] );
 		$this->assertStringNotContainsString( 'name="_wpnonce"', $response['data']['html'] );

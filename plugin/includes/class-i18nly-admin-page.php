@@ -529,13 +529,18 @@ class I18nly_Admin_Page {
 
 		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
+		$translation = $this->get_translation( $translation_id );
+		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
+			? (string) $translation['target_language']
+			: '';
+		$form_count = I18nly_Admin_Page_Helper::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
-			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt );
+			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
 		}
 
 		if ( method_exists( $repository, 'list_translation_entries_by_plugin_slug' ) ) {
-			return $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug );
+			return $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug, 500, $form_count );
 		}
 
 		if ( ! method_exists( $repository, 'list_source_entries_by_plugin_slug' ) ) {

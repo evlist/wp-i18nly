@@ -52,11 +52,11 @@ POT;
 
 		$first_summary = $importer->import_file( 'sample-plugin/sample.php', $temp_file );
 
-		$this->assertSame( 3, $first_summary['inserted'] );
+		$this->assertSame( 2, $first_summary['inserted'] );
 		$this->assertSame( 0, $first_summary['updated'] );
 		$this->assertSame( 0, $first_summary['unchanged'] );
 		$this->assertSame( 0, $first_summary['obsoleted'] );
-		$this->assertCount( 3, $repository->entries );
+		$this->assertCount( 2, $repository->entries );
 
 		$comments_found = false;
 		$context_found  = false;
@@ -86,9 +86,9 @@ POT;
 
 		$this->assertSame( 0, $second_summary['inserted'] );
 		$this->assertSame( 0, $second_summary['updated'] );
-		$this->assertSame( 3, $second_summary['unchanged'] );
+		$this->assertSame( 2, $second_summary['unchanged'] );
 		$this->assertSame( 0, $second_summary['obsoleted'] );
-		$this->assertCount( 3, $repository->entries );
+		$this->assertCount( 2, $repository->entries );
 
 		unlink( $temp_file );
 	}
@@ -249,8 +249,7 @@ class I18nly_Test_InMemory_Source_Repository {
 	public function upsert_source_entry( array $entry ) {
 		$key = (string) $entry['catalog_id']
 			. '|' . (string) ( isset( $entry['msgctxt'] ) ? $entry['msgctxt'] : '' )
-			. '|' . (string) $entry['msgid']
-			. '|' . (string) $entry['plural_index'];
+			. '|' . (string) $entry['msgid'];
 
 		if ( ! isset( $this->entries[ $key ] ) ) {
 			$this->entries[ $key ] = $entry;
@@ -263,7 +262,6 @@ class I18nly_Test_InMemory_Source_Repository {
 		$unchanged = (string) $existing['catalog_id'] === (string) $entry['catalog_id']
 			&& (string) $existing['msgctxt'] === (string) $entry['msgctxt']
 			&& (string) $existing['msgid'] === (string) $entry['msgid']
-			&& (string) $existing['plural_index'] === (string) $entry['plural_index']
 			&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
 			&& (string) $existing['comments_json'] === (string) $entry['comments_json']
 			&& (string) $existing['references_json'] === (string) $entry['references_json']

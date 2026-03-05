@@ -397,7 +397,7 @@ class AdminPageRenderTest extends TestCase {
 		);
 
 		$_POST['i18nly_translation_meta_box_nonce']  = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_translation_entries_payload'] = '{"101":{"translation":"Bienvenue","translation_plural":"Bienvenues"}}';
+		$_POST['i18nly_translation_entries_payload'] = '{"101":{"forms":{"0":"Bienvenue","1":"Bienvenues"}}}';
 
 		$page = new class() extends I18nly_Admin_Page {
 			/**
@@ -436,8 +436,9 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 42, $page->captured_payload['translation_id'] );
 		$this->assertSame( 'akismet/akismet.php', $page->captured_payload['source_slug'] );
 		$this->assertArrayHasKey( '101', $page->captured_payload['entries_payload'] );
-		$this->assertSame( 'Bienvenue', $page->captured_payload['entries_payload']['101']['translation'] );
-		$this->assertSame( 'Bienvenues', $page->captured_payload['entries_payload']['101']['translation_plural'] );
+		$this->assertArrayHasKey( 'forms', $page->captured_payload['entries_payload']['101'] );
+		$this->assertSame( 'Bienvenue', $page->captured_payload['entries_payload']['101']['forms'][0] );
+		$this->assertSame( 'Bienvenues', $page->captured_payload['entries_payload']['101']['forms'][1] );
 
 		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_translation_entries_payload'] );
 	}
@@ -462,7 +463,7 @@ class AdminPageRenderTest extends TestCase {
 		);
 
 		$_POST['i18nly_translation_meta_box_nonce']  = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_translation_entries_payload'] = '{"101":{"translation":"Bienvenue","translation_plural":"Bienvenues"}}';
+		$_POST['i18nly_translation_entries_payload'] = '{"101":{"forms":{"0":"Bienvenue","1":"Bienvenues"}}}';
 
 		$page = new class() extends I18nly_Admin_Page {
 			/**
@@ -501,8 +502,9 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 42, $page->captured_payload['translation_id'] );
 		$this->assertSame( 'akismet/akismet.php', $page->captured_payload['source_slug'] );
 		$this->assertArrayHasKey( '101', $page->captured_payload['entries_payload'] );
-		$this->assertSame( 'Bienvenue', $page->captured_payload['entries_payload']['101']['translation'] );
-		$this->assertSame( 'Bienvenues', $page->captured_payload['entries_payload']['101']['translation_plural'] );
+		$this->assertArrayHasKey( 'forms', $page->captured_payload['entries_payload']['101'] );
+		$this->assertSame( 'Bienvenue', $page->captured_payload['entries_payload']['101']['forms'][0] );
+		$this->assertSame( 'Bienvenues', $page->captured_payload['entries_payload']['101']['forms'][1] );
 
 		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_translation_entries_payload'] );
 	}

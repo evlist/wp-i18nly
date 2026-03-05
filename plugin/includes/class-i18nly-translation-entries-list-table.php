@@ -75,44 +75,70 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 * @return string
 	 */
 	public function column_translation( $item ) {
-		$singular      = isset( $item['translation'] ) ? (string) $item['translation'] : '';
-		$plural        = isset( $item['translation_plural'] ) ? (string) $item['translation_plural'] : '';
 		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural    = '' !== trim( $source_plural );
 		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
+		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
+			? $item['translations']
+			: array();
 
 		if ( $source_entry <= 0 ) {
-			return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
+			return '';
 		}
 
-		$singular_input_id = sprintf( 'i18nly-translation-%d', $source_entry );
-		$plural_input_id   = sprintf( 'i18nly-translation-plural-%d', $source_entry );
+		$lines = array();
 
-		$singular_input = $this->render_translation_input(
-			$singular_input_id,
-			$source_entry,
-			'translation',
-			$singular,
-			_x( 'Singular translation', 'input label for singular translation', 'i18nly' )
-		);
+		foreach ( $translations as $translation_row ) {
+			if ( ! is_array( $translation_row ) ) {
+				continue;
+			}
 
-		$plural_input = $this->render_translation_input(
-			$plural_input_id,
-			$source_entry,
-			'translation_plural',
-			$plural,
-			_x( 'Plural translation', 'input label for plural translation', 'i18nly' )
-		);
+			$form_index = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
+			$value      = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
+			$input_id   = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
+
+			$lines[] = sprintf(
+				'<p class="i18nly-form-line">%1$s %2$s</p>',
+				$this->render_form_marker(
+					(string) $form_index,
+					sprintf(
+						/* translators: %d is plural form index. */
+						__( 'Plural form index %d', 'i18nly' ),
+						$form_index
+					)
+				),
+				$this->render_translation_input(
+					$input_id,
+					$source_entry,
+					$form_index,
+					$value,
+					sprintf(
+						/* translators: %d is plural form index. */
+						_x( 'Translation form %d', 'input label for one translation plural form', 'i18nly' ),
+						$form_index
+					)
+				)
+			);
+		}
+
+		if ( empty( $lines ) ) {
+			$lines[] = sprintf(
+				'<p class="i18nly-form-line">%s</p>',
+				$this->render_translation_input(
+					sprintf( 'i18nly-translation-%d-0', $source_entry ),
+					$source_entry,
+					0,
+					'',
+					_x( 'Translation form 0', 'input label for one translation form', 'i18nly' )
+				)
+			);
+		}
 
 		if ( ! $has_plural ) {
-			return sprintf( '<p class="i18nly-form-line">%s</p>', $singular_input );
+			return (string) reset( $lines );
 		}
 
-		return sprintf(
-			'<p class="i18nly-form-line">%1$s</p><p class="i18nly-form-line">%2$s</p>',
-			$singular_input,
-			$plural_input
-		);
+		return implode( '', $lines );
 	}
 
 	/**
@@ -120,18 +146,18 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 *
 	 * @param string $input_id Input ID.
 	 * @param int    $source_entry Source entry ID.
-	 * @param string $entry_field Entry field key.
+	 * @param int    $form_index Plural form index.
 	 * @param string $input_value Input value.
 	 * @param string $input_label Accessible label.
 	 * @return string
 	 */
-	private function render_translation_input( $input_id, $source_entry, $entry_field, $input_value, $input_label ) {
+	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label ) {
 		return sprintf(
-			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-entry-field="%4$s" aria-label="%5$s"/>',
+			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" aria-label="%5$s"/>',
 			esc_attr( $input_id ),
 			esc_attr( $input_value ),
 			(int) $source_entry,
-			esc_attr( $entry_field ),
+			(int) $form_index,
 			esc_attr( $input_label )
 		);
 	}

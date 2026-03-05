@@ -86,17 +86,21 @@
 			for (index = 0; index < inputsCount; index++) {
 				var input = translationInputs[index];
 				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
-				var entryField = input.getAttribute( 'data-i18nly-entry-field' );
+				var formIndex = input.getAttribute( 'data-i18nly-form-index' );
 
-				if ( ! sourceEntryId || ! entryField) {
+				if ( ! sourceEntryId) {
 					continue;
 				}
 
-				if ( ! payload[sourceEntryId]) {
-					payload[sourceEntryId] = {};
+				if ( ! formIndex) {
+					formIndex = '0';
 				}
 
-				payload[sourceEntryId][entryField] = input.value;
+				if ( ! payload[sourceEntryId]) {
+					payload[sourceEntryId] = { forms: {} };
+				}
+
+				payload[sourceEntryId].forms[formIndex] = input.value;
 			}
 
 			hiddenField.value = JSON.stringify( payload );
@@ -122,9 +126,9 @@
 		translationInputs.forEach(
 			function (input) {
 				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
-				var entryField = input.getAttribute( 'data-i18nly-entry-field' );
+				var formIndex = input.getAttribute( 'data-i18nly-form-index' );
 
-				if ( ! sourceEntryId || ! entryField) {
+				if ( ! sourceEntryId || ! formIndex) {
 					return;
 				}
 

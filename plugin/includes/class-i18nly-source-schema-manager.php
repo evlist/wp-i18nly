@@ -17,7 +17,7 @@ class I18nly_Source_Schema_Manager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.0.5';
+	private const SCHEMA_VERSION = '0.0.6';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -129,7 +129,6 @@ class I18nly_Source_Schema_Manager {
 			msgctxt text DEFAULT NULL,
 			msgid longtext NOT NULL,
 			msgid_plural longtext DEFAULT NULL,
-			plural_index smallint(5) unsigned NOT NULL DEFAULT 0,
 			comments_json longtext DEFAULT NULL,
 			references_json longtext DEFAULT NULL,
 			flags_json longtext DEFAULT NULL,
@@ -138,7 +137,7 @@ class I18nly_Source_Schema_Manager {
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY source_identity (catalog_id, msgctxt(191), msgid(191), plural_index),
+			UNIQUE KEY source_identity (catalog_id, msgctxt(191), msgid(191)),
 			KEY catalog_status (catalog_id, status)
 		) {$collation}";
 
@@ -146,13 +145,13 @@ class I18nly_Source_Schema_Manager {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			translation_id bigint(20) unsigned NOT NULL,
 			source_entry_id bigint(20) unsigned NOT NULL,
+			form_index smallint(5) unsigned NOT NULL DEFAULT 0,
 			translation longtext DEFAULT NULL,
-			translation_plural longtext DEFAULT NULL,
 			comment text DEFAULT NULL,
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY translation_source_entry (translation_id, source_entry_id),
+			UNIQUE KEY translation_source_entry_form (translation_id, source_entry_id, form_index),
 			KEY translation_lookup (translation_id),
 			KEY source_entry_lookup (source_entry_id)
 		) {$collation}";

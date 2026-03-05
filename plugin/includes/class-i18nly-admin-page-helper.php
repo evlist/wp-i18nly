@@ -630,9 +630,11 @@ class I18nly_Admin_Page_Helper {
 
 		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
+		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
+		$form_count = self::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
-			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt );
+			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
 		}
 
 		if ( ! method_exists( $repository, 'upsert_translated_entry' ) ) {
@@ -649,20 +651,21 @@ class I18nly_Admin_Page_Helper {
 				continue;
 			}
 
-			$translation        = isset( $entry_payload['translation'] )
-				? sanitize_text_field( (string) $entry_payload['translation'] )
-				: '';
-			$translation_plural = isset( $entry_payload['translation_plural'] )
-				? sanitize_text_field( (string) $entry_payload['translation_plural'] )
-				: '';
+			$forms = isset( $entry_payload['forms'] ) && is_array( $entry_payload['forms'] )
+				? $entry_payload['forms']
+				: array();
 
-			$repository->upsert_translated_entry(
-				(int) $translation_id,
-				$normalized_source_entry_id,
-				$translation,
-				$translation_plural,
-				$now_gmt
-			);
+			foreach ( $forms as $form_index => $form_translation ) {
+				$normalized_form_index = absint( $form_index );
+
+				$repository->upsert_translated_entry(
+					(int) $translation_id,
+					$normalized_source_entry_id,
+					$normalized_form_index,
+					sanitize_text_field( (string) $form_translation ),
+					$now_gmt
+				);
+			}
 		}
 	}
 
@@ -680,12 +683,65 @@ class I18nly_Admin_Page_Helper {
 				continue;
 			}
 
+			$forms = isset( $entry_payload['forms'] ) && is_array( $entry_payload['forms'] )
+				? $entry_payload['forms']
+				: array();
+
+			$normalized_forms = array();
+
+			foreach ( $forms as $form_index => $form_translation ) {
+				$normalized_forms[ absint( $form_index ) ] = sanitize_text_field( (string) $form_translation );
+			}
+
 			$normalized_payload[ $source_entry_id ] = array(
-				'translation'        => isset( $entry_payload['translation'] ) ? sanitize_text_field( (string) $entry_payload['translation'] ) : '',
-				'translation_plural' => isset( $entry_payload['translation_plural'] ) ? sanitize_text_field( (string) $entry_payload['translation_plural'] ) : '',
+				'forms' => $normalized_forms,
 			);
 		}
 
 		return $normalized_payload;
+	}
+
+	/**
+	 * Returns plural forms count for one locale.
+	 *
+	 * @param string $locale Target locale.
+	 * @return int
+	 */
+	public static function get_plural_forms_count_for_locale( $locale ) {
+		$locale = strtolower( (string) $locale );
+
+		if ( '' === $locale ) {
+			return 2;
+		}
+
+		$language = preg_replace( '/[_-].*$/', '', $locale );
+
+		$single_form_languages = array( 'ja', 'ko', 'zh', 'th', 'vi', 'id' );
+		$three_form_languages  = array( 'ru', 'uk', 'be', 'sr', 'hr', 'bs', 'pl', 'cs', 'sk' );
+		$four_form_languages   = array( 'sl' );
+		$five_form_languages   = array( 'ga' );
+		$six_form_languages    = array( 'ar' );
+
+		if ( in_array( $language, $single_form_languages, true ) ) {
+			return 1;
+		}
+
+		if ( in_array( $language, $three_form_languages, true ) ) {
+			return 3;
+		}
+
+		if ( in_array( $language, $four_form_languages, true ) ) {
+			return 4;
+		}
+
+		if ( in_array( $language, $five_form_languages, true ) ) {
+			return 5;
+		}
+
+		if ( in_array( $language, $six_form_languages, true ) ) {
+			return 6;
+		}
+
+		return 2;
 	}
 }
