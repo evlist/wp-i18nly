@@ -655,6 +655,152 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Delegates POT generation AJAX action to dedicated controller.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_generate_translation_pot_delegates_to_ajax_controller() {
+		$controller = new class() {
+			/**
+			 * Whether POT action was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_generate = false;
+
+			/**
+			 * Whether entries table action was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_table = false;
+
+			/**
+			 * Captures POT generation action call.
+			 *
+			 * @return void
+			 */
+			public function handle_generate_translation_pot() {
+				$this->called_generate = true;
+			}
+
+			/**
+			 * Captures entries table action call.
+			 *
+			 * @return void
+			 */
+			public function handle_get_translation_entries_table() {
+				$this->called_table = true;
+			}
+		};
+
+		$page = new class( $controller ) extends I18nly_Admin_Page {
+			/**
+			 * AJAX controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller AJAX controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns AJAX controller.
+			 *
+			 * @return object
+			 */
+			protected function get_ajax_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->ajax_generate_translation_pot();
+
+		$this->assertTrue( $controller->called_generate );
+		$this->assertFalse( $controller->called_table );
+	}
+
+	/**
+	 * Delegates entries table AJAX action to dedicated controller.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_get_translation_entries_table_delegates_to_ajax_controller() {
+		$controller = new class() {
+			/**
+			 * Whether POT action was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_generate = false;
+
+			/**
+			 * Whether entries table action was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_table = false;
+
+			/**
+			 * Captures POT generation action call.
+			 *
+			 * @return void
+			 */
+			public function handle_generate_translation_pot() {
+				$this->called_generate = true;
+			}
+
+			/**
+			 * Captures entries table action call.
+			 *
+			 * @return void
+			 */
+			public function handle_get_translation_entries_table() {
+				$this->called_table = true;
+			}
+		};
+
+		$page = new class( $controller ) extends I18nly_Admin_Page {
+			/**
+			 * AJAX controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller AJAX controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns AJAX controller.
+			 *
+			 * @return object
+			 */
+			protected function get_ajax_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->ajax_get_translation_entries_table();
+
+		$this->assertFalse( $controller->called_generate );
+		$this->assertTrue( $controller->called_table );
+	}
+
+	/**
 	 * Maps source sort to source meta key.
 	 *
 	 * @return void

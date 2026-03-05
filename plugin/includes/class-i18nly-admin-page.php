@@ -506,60 +506,7 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function ajax_generate_translation_pot() {
-		if ( ! isset( $_POST['translation_id'], $_POST['nonce'] ) ) {
-			wp_send_json_error( array( 'message' => 'Missing parameters.' ), 400 );
-			return;
-		}
-
-		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
-		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
-
-		if ( $translation_id <= 0 ) {
-			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $translation_id ) ) {
-			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
-			return;
-		}
-
-		if ( ! wp_verify_nonce( $nonce, 'i18nly_generate_translation_pot_' . $translation_id ) ) {
-			wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
-			return;
-		}
-
-		$translation = $this->get_translation( $translation_id );
-		if ( null === $translation || empty( $translation['source_slug'] ) ) {
-			wp_send_json_error( array( 'message' => 'Translation source is missing.' ), 400 );
-			return;
-		}
-
-		$source_slug      = (string) $translation['source_slug'];
-		$source_extractor = new I18nly_Pot_Source_Entry_Extractor();
-		$entries          = $source_extractor->extract_from_source_slug( $source_slug );
-		$text_domain      = $this->infer_text_domain_from_source_slug( $source_slug );
-		$header_overrides = $this->build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
-
-		$pot_workspace = new I18nly_Pot_Workspace_Service();
-		$pot_importer  = new I18nly_Pot_Source_Importer();
-
-		try {
-			$pot_file_path  = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries, $header_overrides );
-			$import_summary = $pot_importer->import_file( $source_slug, $pot_file_path );
-		} catch ( RuntimeException $exception ) {
-			wp_send_json_error( array( 'message' => $exception->getMessage() ), 500 );
-			return;
-		}
-
-		wp_send_json_success(
-			array(
-				'translation_id' => $translation_id,
-				'entries_count'  => count( $entries ),
-				'import_summary' => $import_summary,
-				'pot_file_path'  => $pot_file_path,
-			)
-		);
+		$this->get_ajax_controller()->handle_generate_translation_pot();
 	}
 
 	/**
@@ -568,44 +515,31 @@ class I18nly_Admin_Page {
 	 * @return void
 	 */
 	public function ajax_get_translation_entries_table() {
-		if ( ! isset( $_POST['translation_id'], $_POST['nonce'] ) ) {
-			wp_send_json_error( array( 'message' => 'Missing parameters.' ), 400 );
-			return;
-		}
+		$this->get_ajax_controller()->handle_get_translation_entries_table();
+	}
 
-		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
-		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
-
-		if ( $translation_id <= 0 ) {
-			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $translation_id ) ) {
-			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
-			return;
-		}
-
-		if ( ! wp_verify_nonce( $nonce, 'i18nly_get_translation_entries_table_' . $translation_id ) ) {
-			wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
-			return;
-		}
-
-		$translation = $this->get_translation( $translation_id );
-		if ( null === $translation || empty( $translation['source_slug'] ) ) {
-			wp_send_json_error( array( 'message' => 'Translation source is missing.' ), 400 );
-			return;
-		}
-
-		$source_slug    = (string) $translation['source_slug'];
-		$source_entries = $this->get_translation_source_entries( $translation_id, $source_slug );
-
-		wp_send_json_success(
-			array(
-				'translation_id' => $translation_id,
-				'entries_count'  => count( $source_entries ),
-				'html'           => $this->render_translation_source_entries_table_markup( $source_entries ),
-			)
+	/**
+	 * Returns translation AJAX controller.
+	 *
+	 * @return I18nly_Translation_Ajax_Controller
+	 */
+	protected function get_ajax_controller() {
+		return new I18nly_Translation_Ajax_Controller(
+			function ( $translation_id ) {
+				return $this->get_translation( $translation_id );
+			},
+			function ( $source_slug ) {
+				return $this->infer_text_domain_from_source_slug( $source_slug );
+			},
+			function ( $source_slug, $text_domain ) {
+				return $this->build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
+			},
+			function ( $translation_id, $source_slug ) {
+				return $this->get_translation_source_entries( $translation_id, $source_slug );
+			},
+			function ( array $source_entries ) {
+				return $this->render_translation_source_entries_table_markup( $source_entries );
+			}
 		);
 	}
 
