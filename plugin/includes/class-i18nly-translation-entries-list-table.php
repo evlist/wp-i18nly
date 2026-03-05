@@ -128,7 +128,7 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		$plural_marker   = $this->render_form_marker( 'n', __( 'Plural form', 'i18nly' ) );
 
 		return sprintf(
-			'<p>%1$s %2$s</p><p>%3$s %4$s</p>',
+			'<p class="i18nly-form-line">%1$s %2$s</p><p class="i18nly-form-line">%3$s %4$s</p>',
 			$singular_marker,
 			esc_html( $singular ),
 			$plural_marker,
