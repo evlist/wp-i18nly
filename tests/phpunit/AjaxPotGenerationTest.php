@@ -192,7 +192,8 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'wp-list-table widefat fixed striped', $response['data']['html'] );
 		$this->assertStringContainsString( 'Welcome', $response['data']['html'] );
 		$this->assertStringContainsString( 'Translation', $response['data']['html'] );
-		$this->assertStringContainsString( 'Plural translation', $response['data']['html'] );
+		$this->assertStringContainsString( 'Singular', $response['data']['html'] );
+		$this->assertStringContainsString( 'Plural', $response['data']['html'] );
 		$this->assertStringContainsString( 'Bienvenue', $response['data']['html'] );
 		$this->assertStringContainsString( 'Bienvenues', $response['data']['html'] );
 		$this->assertStringContainsString( 'active', $response['data']['html'] );

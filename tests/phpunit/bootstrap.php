@@ -1433,7 +1433,11 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 
 					foreach ( array_keys( $columns ) as $column_name ) {
 						echo '<td>';
-						if ( method_exists( $this, 'column_default' ) ) {
+						$column_method = 'column_' . (string) $column_name;
+
+						if ( method_exists( $this, $column_method ) ) {
+							echo $this->{$column_method}( (array) $item ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaping is delegated to column rendering.
+						} elseif ( method_exists( $this, 'column_default' ) ) {
 							echo $this->column_default( (array) $item, (string) $column_name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaping is delegated to column rendering.
 						}
 						echo '</td>';

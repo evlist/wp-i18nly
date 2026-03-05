@@ -47,13 +47,37 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	 */
 	public function get_columns() {
 		return array(
-			'msgctxt'            => __( 'Context', 'i18nly' ),
-			'msgid'              => __( 'Source string', 'i18nly' ),
-			'translation'        => __( 'Translation', 'i18nly' ),
-			'msgid_plural'       => __( 'Plural', 'i18nly' ),
-			'translation_plural' => __( 'Plural translation', 'i18nly' ),
-			'status'             => __( 'Status', 'i18nly' ),
+			'msgctxt'     => __( 'Context', 'i18nly' ),
+			'msgid'       => __( 'Source string', 'i18nly' ),
+			'translation' => __( 'Translation', 'i18nly' ),
+			'status'      => __( 'Status', 'i18nly' ),
 		);
+	}
+
+	/**
+	 * Renders source singular/plural values in one stacked cell.
+	 *
+	 * @param array<string, mixed> $item Row item.
+	 * @return string
+	 */
+	public function column_msgid( $item ) {
+		$singular = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
+		$plural   = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
+
+		return $this->render_stacked_text_pair( $singular, $plural );
+	}
+
+	/**
+	 * Renders translation singular/plural values in one stacked cell.
+	 *
+	 * @param array<string, mixed> $item Row item.
+	 * @return string
+	 */
+	public function column_translation( $item ) {
+		$singular = isset( $item['translation'] ) ? (string) $item['translation'] : '';
+		$plural   = isset( $item['translation_plural'] ) ? (string) $item['translation_plural'] : '';
+
+		return $this->render_stacked_text_pair( $singular, $plural );
 	}
 
 	/**
@@ -82,6 +106,23 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		}
 
 		return esc_html( (string) $item[ $column_name ] );
+	}
+
+	/**
+	 * Renders singular/plural values as two paragraphs in one cell.
+	 *
+	 * @param string $singular Singular value.
+	 * @param string $plural Plural value.
+	 * @return string
+	 */
+	private function render_stacked_text_pair( $singular, $plural ) {
+		return sprintf(
+			'<p><strong>%1$s:</strong> %2$s</p><p><strong>%3$s:</strong> %4$s</p>',
+			esc_html__( 'Singular', 'i18nly' ),
+			esc_html( $singular ),
+			esc_html__( 'Plural', 'i18nly' ),
+			esc_html( $plural )
+		);
 	}
 
 	/**
