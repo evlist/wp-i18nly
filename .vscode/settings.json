@@ -29,6 +29,7 @@
   "chat.tools.terminal.autoApprove": {
     "phpunit": true,
     "phpcs": true,
-    "phpcbf": true
+    "phpcbf": true,
+    "reuse": true
   }
 }
