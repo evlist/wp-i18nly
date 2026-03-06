@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<psalm
+    errorLevel="5"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="true"
+>
+    <projectFiles>
+        <directory name="../plugin" />
+        <ignoreFiles>
+            <directory name="../plugin/third-party/vendor" />
+            <directory name="../plugin/third-party/wp-cli" />
+        </ignoreFiles>
+    </projectFiles>
+
+    <stubs>
+        <file name="intelephense-stubs/wp-core.php" />
+        <file name="psalm-stubs/wp-runtime-extra.php" />
+        <file name="psalm-stubs/wp-compat.php" />
+    </stubs>
+</psalm>
