@@ -159,7 +159,41 @@ Core principles for this repository:
 3. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
 4. Repeat with the same loop: implement → validate → commit.
 
-## 11) POT Import Strategy Notes
+## 11) Psalm Compatibility & Usage
+
+### Compatibility Issues
+
+Psalm is used for static analysis and dead code detection. Recent versions (Psalm 6.x) require PHP >=8.3.16, which may not match the devcontainer or CI environment. Additionally, global Composer installs can conflict with other tools (e.g., PHPUnit 11), making it impractical to install Psalm globally alongside other dependencies.
+
+### Installation in Temporary Directory
+
+To avoid conflicts, install Psalm in a dedicated directory (outside Composer global):
+
+```bash
+mkdir -p /home/vscode/.local/psalm5
+cd /home/vscode/.local/psalm5
+composer require --dev vimeo/psalm:^5
+```
+
+This keeps Psalm isolated and avoids dependency issues.
+
+### Usage Instructions
+
+To run Psalm with the workspace-local config and stubs:
+
+```bash
+php /home/vscode/.local/psalm5/vendor/bin/psalm --config=.vscode/psalm-plugin.xml --output-format=compact
+```
+
+For dead code detection:
+
+```bash
+php /home/vscode/.local/psalm5/vendor/bin/psalm --config=.vscode/psalm-plugin.xml --output-format=json --find-unused-code
+```
+
+The config and stubs are located in `.vscode/`. Stubs are enriched to reduce false positives from WordPress dynamic hooks.
+
+## 12) POT Import Strategy Notes
 
 Planned import logic must eventually reconcile three potential inputs:
 
