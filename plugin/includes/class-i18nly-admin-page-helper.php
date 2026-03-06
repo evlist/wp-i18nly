@@ -522,41 +522,6 @@ class I18nly_Admin_Page_Helper {
 	}
 
 	/**
-	 * Creates one translation row.
-	 *
-	 * @param string $source_slug Source slug.
-	 * @param string $target_language Target language.
-	 * @param string $post_type Translation post type.
-	 * @param string $meta_source_key Source meta key.
-	 * @param string $meta_target_key Target meta key.
-	 * @return int
-	 */
-	public static function create_translation( $source_slug, $target_language, $post_type, $meta_source_key, $meta_target_key ) {
-		$created_at_local = current_time( 'mysql' );
-		$created_at_gmt   = current_time( 'mysql', true );
-
-		$translation_post_id = wp_insert_post(
-			array(
-				'post_type'     => $post_type,
-				'post_status'   => 'draft',
-				'post_title'    => $source_slug . ' → ' . $target_language,
-				'post_date'     => $created_at_local,
-				'post_date_gmt' => $created_at_gmt,
-			),
-			true
-		);
-
-		if ( is_wp_error( $translation_post_id ) || $translation_post_id <= 0 ) {
-			return 0;
-		}
-
-		update_post_meta( $translation_post_id, $meta_source_key, $source_slug );
-		update_post_meta( $translation_post_id, $meta_target_key, $target_language );
-
-		return (int) $translation_post_id;
-	}
-
-	/**
 	 * Returns one translation row by ID.
 	 *
 	 * @param int    $translation_id Translation ID.

@@ -344,23 +344,6 @@ class I18nly_Admin_Page {
 	}
 
 	/**
-	 * Creates one translation row.
-	 *
-	 * @param string $source_slug Source slug identifier.
-	 * @param string $target_language Target language code.
-	 * @return int
-	 */
-	private function create_translation( $source_slug, $target_language ) {
-		return I18nly_Admin_Page_Helper::create_translation(
-			$source_slug,
-			$target_language,
-			self::POST_TYPE,
-			self::META_SOURCE_SLUG,
-			self::META_TARGET_LANGUAGE
-		);
-	}
-
-	/**
 	 * Returns one translation row by ID.
 	 *
 	 * @param int $translation_id Translation ID.

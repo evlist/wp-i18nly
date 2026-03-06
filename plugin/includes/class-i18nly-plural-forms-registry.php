@@ -674,22 +674,6 @@ class I18nly_Plural_Forms_Registry {
 	}
 
 	/**
-	 * Builds alphabetical markers sequence.
-	 *
-	 * @param int $count Number of markers.
-	 * @return array<int, string>
-	 */
-	private static function build_markers( $count ) {
-		$markers = array();
-
-		for ( $index = 0; $index < $count; $index++ ) {
-			$markers[] = self::marker_from_index( $index );
-		}
-
-		return $markers;
-	}
-
-	/**
 	 * Pads marker array to expected count.
 	 *
 	 * @param array<int, string> $markers Marker symbols.
