@@ -61,5 +61,4 @@ class I18nly_Pot_Workspace_Service {
 
 		return $pot_file_path;
 	}
-
 }
