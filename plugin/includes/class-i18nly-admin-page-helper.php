@@ -708,40 +708,6 @@ class I18nly_Admin_Page_Helper {
 	 * @return int
 	 */
 	public static function get_plural_forms_count_for_locale( $locale ) {
-		$locale = strtolower( (string) $locale );
-
-		if ( '' === $locale ) {
-			return 2;
-		}
-
-		$language = preg_replace( '/[_-].*$/', '', $locale );
-
-		$single_form_languages = array( 'ja', 'ko', 'zh', 'th', 'vi', 'id' );
-		$three_form_languages  = array( 'ru', 'uk', 'be', 'sr', 'hr', 'bs', 'pl', 'cs', 'sk' );
-		$four_form_languages   = array( 'sl' );
-		$five_form_languages   = array( 'ga' );
-		$six_form_languages    = array( 'ar' );
-
-		if ( in_array( $language, $single_form_languages, true ) ) {
-			return 1;
-		}
-
-		if ( in_array( $language, $three_form_languages, true ) ) {
-			return 3;
-		}
-
-		if ( in_array( $language, $four_form_languages, true ) ) {
-			return 4;
-		}
-
-		if ( in_array( $language, $five_form_languages, true ) ) {
-			return 5;
-		}
-
-		if ( in_array( $language, $six_form_languages, true ) ) {
-			return 6;
-		}
-
-		return 2;
+		return I18nly_Plural_Forms_Registry::get_plural_forms_count_for_locale( $locale );
 	}
 }

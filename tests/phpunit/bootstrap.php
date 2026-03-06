@@ -1548,6 +1548,7 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 }
 
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
+require_once __DIR__ . '/../../plugin/includes/class-i18nly-plural-forms-registry.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page-helper.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-translation-save-handler.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-translation-ajax-controller-interface.php';
