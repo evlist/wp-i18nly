@@ -62,13 +62,4 @@ class I18nly_Pot_Workspace_Service {
 		return $pot_file_path;
 	}
 
-	/**
-	 * Removes all temporary artifacts for one translation.
-	 *
-	 * @param int $translation_post_id Translation post ID.
-	 * @return void
-	 */
-	public function cleanup_temporary_pot( $translation_post_id ) {
-		$this->temporary_storage->cleanup_translation_workspace( $translation_post_id );
-	}
 }

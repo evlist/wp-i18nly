@@ -24,7 +24,6 @@ class TemporaryStorageTest extends TestCase {
 	public function test_path_helpers_return_expected_paths() {
 		$storage = new I18nly_Temporary_Storage( '/tmp/i18nly-tests' );
 
-		$this->assertSame( '/tmp/i18nly-tests', $storage->get_base_directory() );
 		$this->assertSame( '/tmp/i18nly-tests/translation-42', $storage->get_translation_directory( 42 ) );
 		$this->assertSame( '/tmp/i18nly-tests/translation-42/messages.pot', $storage->get_pot_file_path( 42 ) );
 	}
@@ -80,7 +79,7 @@ class TemporaryStorageTest extends TestCase {
 	public function test_default_base_directory_falls_back_to_system_temp() {
 		$storage = new I18nly_Temporary_Storage();
 
-		$this->assertStringEndsWith( '/i18nly/staging', $storage->get_base_directory() );
+		$this->assertStringEndsWith( '/i18nly/staging/translation-1', $storage->get_translation_directory( 1 ) );
 	}
 }
 

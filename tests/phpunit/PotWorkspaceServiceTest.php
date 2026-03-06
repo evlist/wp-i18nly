@@ -44,7 +44,7 @@ class PotWorkspaceServiceTest extends TestCase {
 		$this->assertIsString( $content );
 		$this->assertStringContainsString( 'msgid "Temporary string"', $content );
 
-		$service->cleanup_temporary_pot( 12 );
+		$storage->cleanup_translation_workspace( 12 );
 		$this->assertDirectoryDoesNotExist( $base_dir . '/translation-12' );
 
 		rmdir( $base_dir );

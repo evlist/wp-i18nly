@@ -36,15 +36,6 @@ class I18nly_Temporary_Storage {
 	}
 
 	/**
-	 * Returns the base temporary directory.
-	 *
-	 * @return string
-	 */
-	public function get_base_directory() {
-		return $this->base_directory;
-	}
-
-	/**
 	 * Returns the workspace directory for one translation post.
 	 *
 	 * @param int $translation_post_id Translation post ID.

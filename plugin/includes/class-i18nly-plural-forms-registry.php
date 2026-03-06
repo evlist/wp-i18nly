@@ -301,36 +301,6 @@ class I18nly_Plural_Forms_Registry {
 	}
 
 	/**
-	 * Returns gettext Plural-Forms header value for one locale.
-	 *
-	 * @param string $locale Target locale.
-	 * @return string
-	 */
-	public static function get_plural_forms_header_for_locale( $locale ) {
-		return sprintf(
-			'nplurals=%1$d; plural=%2$s;',
-			self::get_plural_forms_count_for_locale( $locale ),
-			self::get_plural_expression_for_locale( $locale )
-		);
-	}
-
-	/**
-	 * Computes form index for one locale and quantity.
-	 *
-	 * @param string $locale Target locale.
-	 * @param int    $n Quantity.
-	 * @return int
-	 */
-	public static function compute_form_index( $locale, $n ) {
-		$language = self::normalize_language( $locale );
-		$n        = max( 0, (int) $n );
-
-		$index = self::compute_form_index_by_language( $language, $n );
-
-		return self::clamp_form_index( $locale, $index );
-	}
-
-	/**
 	 * Computes form index for language-specific rule.
 	 *
 	 * @param string $language Normalized language code.

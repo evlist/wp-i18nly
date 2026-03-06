@@ -60,16 +60,13 @@ class PluralFormsRegistryTest extends TestCase {
 	}
 
 	/**
-	 * Exposes gettext plural expression and header value.
+	 * Exposes gettext plural expression and related forms metadata.
 	 *
 	 * @return void
 	 */
 	public function test_registry_exposes_plural_forms_header_for_locale() {
 		$this->assertSame( '(n > 1)', I18nly_Plural_Forms_Registry::get_plural_expression_for_locale( 'fr_FR' ) );
-		$this->assertSame(
-			'nplurals=2; plural=(n > 1);',
-			I18nly_Plural_Forms_Registry::get_plural_forms_header_for_locale( 'fr_FR' )
-		);
+		$this->assertSame( 2, I18nly_Plural_Forms_Registry::get_plural_forms_count_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'a', 'b' ), I18nly_Plural_Forms_Registry::get_form_markers_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'Zero or one', 'More than one' ), I18nly_Plural_Forms_Registry::get_form_tooltips_for_locale( 'fr_FR' ) );
 		$this->assertSame(
@@ -87,30 +84,6 @@ class PluralFormsRegistryTest extends TestCase {
 			),
 			I18nly_Plural_Forms_Registry::get_forms_for_locale( 'fr_FR' )
 		);
-	}
-
-	/**
-	 * Distinguishes French and English behavior for zero.
-	 *
-	 * @return void
-	 */
-	public function test_registry_computes_different_zero_index_for_french_and_english() {
-		$this->assertSame( 0, I18nly_Plural_Forms_Registry::compute_form_index( 'fr_FR', 0 ) );
-		$this->assertSame( 1, I18nly_Plural_Forms_Registry::compute_form_index( 'en_US', 0 ) );
-	}
-
-	/**
-	 * Computes Arabic indexes across six plural forms.
-	 *
-	 * @return void
-	 */
-	public function test_registry_computes_arabic_form_indexes() {
-		$this->assertSame( 0, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 0 ) );
-		$this->assertSame( 1, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 1 ) );
-		$this->assertSame( 2, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 2 ) );
-		$this->assertSame( 3, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 7 ) );
-		$this->assertSame( 4, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 13 ) );
-		$this->assertSame( 5, I18nly_Plural_Forms_Registry::compute_form_index( 'ar_AR', 100 ) );
 	}
 
 	/**
