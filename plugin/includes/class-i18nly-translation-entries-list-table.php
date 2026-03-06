@@ -81,6 +81,9 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
 			? $item['translations']
 			: array();
+		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
+			? array_values( $item['form_labels'] )
+			: array();
 
 		if ( $source_entry <= 0 ) {
 			return '';
@@ -97,27 +100,37 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 			$value      = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
 			$input_id   = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
+			$input_html = $this->render_translation_input(
+				$input_id,
+				$source_entry,
+				$form_index,
+				$value,
+				sprintf(
+					/* translators: %d is plural form index. */
+					_x( 'Translation form %d', 'input label for one translation plural form', 'i18nly' ),
+					$form_index
+				)
+			);
+
+			if ( ! $has_plural ) {
+				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $input_html );
+				continue;
+			}
+
+			$form_label = $this->resolve_form_label( $form_index, $form_labels );
+
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%1$s %2$s</p>',
 				$this->render_form_marker(
-					(string) $form_index,
+					$form_label,
 					sprintf(
-						/* translators: %d is plural form index. */
-						__( 'Plural form index %d', 'i18nly' ),
+						/* translators: %1$s is plural category label, %2$d is plural form index. */
+						__( 'Plural category %1$s (index %2$d)', 'i18nly' ),
+						$form_label,
 						$form_index
 					)
 				),
-				$this->render_translation_input(
-					$input_id,
-					$source_entry,
-					$form_index,
-					$value,
-					sprintf(
-						/* translators: %d is plural form index. */
-						_x( 'Translation form %d', 'input label for one translation plural form', 'i18nly' ),
-						$form_index
-					)
-				)
+				$input_html
 			);
 		}
 
@@ -139,6 +152,25 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		}
 
 		return implode( '', $lines );
+	}
+
+	/**
+	 * Resolves one form marker label.
+	 *
+	 * @param int               $form_index Plural form index.
+	 * @param array<int, mixed> $form_labels Ordered locale form labels.
+	 * @return string
+	 */
+	private function resolve_form_label( $form_index, array $form_labels ) {
+		if ( isset( $form_labels[ $form_index ] ) ) {
+			$label = (string) $form_labels[ $form_index ];
+
+			if ( '' !== trim( $label ) ) {
+				return $label;
+			}
+		}
+
+		return (string) $form_index;
 	}
 
 	/**

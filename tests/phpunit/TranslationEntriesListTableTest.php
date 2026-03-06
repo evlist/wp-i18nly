@@ -132,7 +132,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="21"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
 		$this->assertStringContainsString( 'value="Bonjour"', $html );
-		$this->assertStringContainsString( 'i18nly-form-marker', $html );
+		$this->assertStringNotContainsString( 'i18nly-form-marker', $html );
 	}
 
 	/**
@@ -149,6 +149,7 @@ class TranslationEntriesListTableTest extends TestCase {
 					'msgid'           => '%s item',
 					'msgid_plural'    => '%s items',
 					'status'          => 'active',
+					'form_labels'     => array( 'one', 'other' ),
 					'translations'    => array(
 						array(
 							'form_index'  => 0,
@@ -170,10 +171,10 @@ class TranslationEntriesListTableTest extends TestCase {
 
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'class="i18nly-form-marker"', $html );
-		$this->assertStringContainsString( 'title="Singular form"', $html );
-		$this->assertStringContainsString( 'title="Plural form"', $html );
-		$this->assertStringContainsString( '>1</span>', $html );
-		$this->assertStringContainsString( '>n</span>', $html );
+		$this->assertStringContainsString( 'title="Plural category one (index 0)"', $html );
+		$this->assertStringContainsString( 'title="Plural category other (index 1)"', $html );
+		$this->assertStringContainsString( '>one</span>', $html );
+		$this->assertStringContainsString( '>other</span>', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="31"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="1"', $html );

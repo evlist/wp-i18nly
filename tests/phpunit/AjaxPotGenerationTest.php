@@ -176,6 +176,7 @@ class AjaxPotGenerationTest extends TestCase {
 						'msgid'           => 'Welcome',
 						'msgid_plural'    => 'Welcomes',
 						'status'          => 'active',
+						'form_labels'     => array( 'one', 'other' ),
 						'translations'    => array(
 							array(
 								'form_index'  => 0,
@@ -205,8 +206,8 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'Welcome', $response['data']['html'] );
 		$this->assertStringContainsString( 'Translation', $response['data']['html'] );
 		$this->assertStringContainsString( 'i18nly-form-marker', $response['data']['html'] );
-		$this->assertStringContainsString( 'Singular form', $response['data']['html'] );
-		$this->assertStringContainsString( 'Plural form', $response['data']['html'] );
+		$this->assertStringContainsString( 'Plural category one (index 0)', $response['data']['html'] );
+		$this->assertStringContainsString( 'Plural category other (index 1)', $response['data']['html'] );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="99"', $response['data']['html'] );
 		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $response['data']['html'] );
 		$this->assertStringContainsString( 'data-i18nly-form-index="1"', $response['data']['html'] );
