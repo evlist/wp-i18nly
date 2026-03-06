@@ -540,15 +540,19 @@ class I18nly_Admin_Page {
 		}
 
 		if ( method_exists( $repository, 'list_translation_entries_by_plugin_slug' ) ) {
-			$entries     = $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug, 500, $form_count );
-			$form_labels = I18nly_Plural_Forms_Registry::get_form_labels_for_locale( $locale );
+			$entries       = $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug, 500, $form_count );
+			$form_labels   = I18nly_Plural_Forms_Registry::get_form_labels_for_locale( $locale );
+			$form_markers  = I18nly_Plural_Forms_Registry::get_form_markers_for_locale( $locale );
+			$form_tooltips = I18nly_Plural_Forms_Registry::get_form_tooltips_for_locale( $locale );
 
 			foreach ( $entries as &$entry ) {
 				if ( ! is_array( $entry ) ) {
 					continue;
 				}
 
-				$entry['form_labels'] = $form_labels;
+				$entry['form_labels']   = $form_labels;
+				$entry['form_markers']  = $form_markers;
+				$entry['form_tooltips'] = $form_tooltips;
 			}
 			unset( $entry );
 

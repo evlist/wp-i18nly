@@ -55,6 +55,8 @@ class PluralFormsRegistryTest extends TestCase {
 			'nplurals=2; plural=(n > 1);',
 			I18nly_Plural_Forms_Registry::get_plural_forms_header_for_locale( 'fr_FR' )
 		);
+		$this->assertSame( array( 'a', 'b' ), I18nly_Plural_Forms_Registry::get_form_markers_for_locale( 'fr_FR' ) );
+		$this->assertSame( array( 'Zero or one', 'More than one' ), I18nly_Plural_Forms_Registry::get_form_tooltips_for_locale( 'fr_FR' ) );
 	}
 
 	/**

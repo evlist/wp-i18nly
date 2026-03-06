@@ -150,6 +150,8 @@ class TranslationEntriesListTableTest extends TestCase {
 					'msgid_plural'    => '%s items',
 					'status'          => 'active',
 					'form_labels'     => array( 'one', 'other' ),
+					'form_markers'    => array( 'a', 'b' ),
+					'form_tooltips'   => array( 'Zero or one', 'More than one' ),
 					'translations'    => array(
 						array(
 							'form_index'  => 0,
@@ -171,10 +173,10 @@ class TranslationEntriesListTableTest extends TestCase {
 
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'class="i18nly-form-marker"', $html );
-		$this->assertStringContainsString( 'title="Plural category one (index 0)"', $html );
-		$this->assertStringContainsString( 'title="Plural category other (index 1)"', $html );
-		$this->assertStringContainsString( '>one</span>', $html );
-		$this->assertStringContainsString( '>other</span>', $html );
+		$this->assertStringContainsString( 'title="Zero or one"', $html );
+		$this->assertStringContainsString( 'title="More than one"', $html );
+		$this->assertStringContainsString( '>a</span>', $html );
+		$this->assertStringContainsString( '>b</span>', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="31"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="1"', $html );

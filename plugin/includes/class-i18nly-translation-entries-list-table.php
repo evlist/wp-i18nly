@@ -84,6 +84,12 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
 			? array_values( $item['form_labels'] )
 			: array();
+		$form_markers  = isset( $item['form_markers'] ) && is_array( $item['form_markers'] )
+			? array_values( $item['form_markers'] )
+			: array();
+		$form_tooltips = isset( $item['form_tooltips'] ) && is_array( $item['form_tooltips'] )
+			? array_values( $item['form_tooltips'] )
+			: array();
 
 		if ( $source_entry <= 0 ) {
 			return '';
@@ -117,18 +123,15 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 				continue;
 			}
 
-			$form_label = $this->resolve_form_label( $form_index, $form_labels );
+			$form_label   = $this->resolve_form_label( $form_index, $form_labels );
+			$form_marker  = $this->resolve_form_marker( $form_index, $form_markers );
+			$form_tooltip = $this->resolve_form_tooltip( $form_index, $form_tooltips, $form_label );
 
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%1$s %2$s</p>',
 				$this->render_form_marker(
-					$form_label,
-					sprintf(
-						/* translators: %1$s is plural category label, %2$d is plural form index. */
-						__( 'Plural category %1$s (index %2$d)', 'i18nly' ),
-						$form_label,
-						$form_index
-					)
+					$form_marker,
+					$form_tooltip
 				),
 				$input_html
 			);
@@ -171,6 +174,53 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		}
 
 		return (string) $form_index;
+	}
+
+	/**
+	 * Resolves one marker symbol for one form index.
+	 *
+	 * @param int               $form_index Plural form index.
+	 * @param array<int, mixed> $form_markers Ordered marker symbols.
+	 * @return string
+	 */
+	private function resolve_form_marker( $form_index, array $form_markers ) {
+		if ( isset( $form_markers[ $form_index ] ) ) {
+			$marker = (string) $form_markers[ $form_index ];
+
+			if ( '' !== trim( $marker ) ) {
+				return $marker;
+			}
+		}
+
+		return (string) $form_index;
+	}
+
+	/**
+	 * Resolves one tooltip for one form index.
+	 *
+	 * @param int               $form_index Plural form index.
+	 * @param array<int, mixed> $form_tooltips Ordered form tooltips.
+	 * @param string            $fallback_label Fallback label.
+	 * @return string
+	 */
+	private function resolve_form_tooltip( $form_index, array $form_tooltips, $fallback_label ) {
+		if ( isset( $form_tooltips[ $form_index ] ) ) {
+			$tooltip = (string) $form_tooltips[ $form_index ];
+
+			if ( '' !== trim( $tooltip ) ) {
+				return $tooltip;
+			}
+		}
+
+		if ( '' !== trim( $fallback_label ) ) {
+			return $fallback_label;
+		}
+
+		return sprintf(
+			/* translators: %d is plural form index. */
+			__( 'Plural form %d', 'i18nly' ),
+			$form_index
+		);
 	}
 
 	/**

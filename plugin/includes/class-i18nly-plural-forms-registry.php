@@ -25,6 +25,7 @@ class I18nly_Plural_Forms_Registry {
 		'nplurals'          => 2,
 		'categories'        => array( 'one', 'other' ),
 		'plural_expression' => '(n != 1)',
+		'form_tooltips'     => array( 'One', 'Other values' ),
 	);
 
 	/**
@@ -62,6 +63,7 @@ class I18nly_Plural_Forms_Registry {
 			'nplurals'          => 2,
 			'categories'        => array( 'one', 'other' ),
 			'plural_expression' => '(n > 1)',
+			'form_tooltips'     => array( 'Zero or one', 'More than one' ),
 		),
 		'ga' => array(
 			'nplurals'          => 5,
@@ -163,16 +165,13 @@ class I18nly_Plural_Forms_Registry {
 	 */
 	public static function get_spec_for_locale( $locale ) {
 		$language = self::normalize_language( $locale );
+		$spec     = self::DEFAULT_SPEC;
 
-		if ( '' === $language ) {
-			return self::DEFAULT_SPEC;
+		if ( '' !== $language && isset( self::LANGUAGE_SPEC_MAP[ $language ] ) ) {
+			$spec = self::LANGUAGE_SPEC_MAP[ $language ];
 		}
 
-		if ( isset( self::LANGUAGE_SPEC_MAP[ $language ] ) ) {
-			return self::LANGUAGE_SPEC_MAP[ $language ];
-		}
-
-		return self::DEFAULT_SPEC;
+		return self::enrich_spec_for_ui( $spec );
 	}
 
 	/**
@@ -205,6 +204,38 @@ class I18nly_Plural_Forms_Registry {
 		}
 
 		return (array) self::DEFAULT_SPEC['categories'];
+	}
+
+	/**
+	 * Returns ordered form marker symbols for one locale.
+	 *
+	 * @param string $locale Target locale.
+	 * @return array<int, string>
+	 */
+	public static function get_form_markers_for_locale( $locale ) {
+		$spec = self::get_spec_for_locale( $locale );
+
+		if ( isset( $spec['form_markers'] ) && is_array( $spec['form_markers'] ) ) {
+			return array_values( $spec['form_markers'] );
+		}
+
+		return array( 'a', 'b' );
+	}
+
+	/**
+	 * Returns ordered form tooltips for one locale.
+	 *
+	 * @param string $locale Target locale.
+	 * @return array<int, string>
+	 */
+	public static function get_form_tooltips_for_locale( $locale ) {
+		$spec = self::get_spec_for_locale( $locale );
+
+		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
+			return array_values( $spec['form_tooltips'] );
+		}
+
+		return array( 'One', 'Other values' );
 	}
 
 	/**
@@ -395,6 +426,100 @@ class I18nly_Plural_Forms_Registry {
 		}
 
 		return (int) $index;
+	}
+
+	/**
+	 * Adds UI-oriented marker and tooltip fields to one spec.
+	 *
+	 * @param array<string, mixed> $spec Raw spec.
+	 * @return array<string, mixed>
+	 */
+	private static function enrich_spec_for_ui( array $spec ) {
+		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+
+		$spec['form_markers'] = self::build_markers( $nplurals );
+
+		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
+			$spec['form_tooltips'] = self::pad_tooltips( $spec['form_tooltips'], $nplurals );
+			return $spec;
+		}
+
+		$categories = isset( $spec['categories'] ) && is_array( $spec['categories'] )
+			? array_values( $spec['categories'] )
+			: array();
+
+		$tooltips = array();
+
+		foreach ( $categories as $category ) {
+			$tooltips[] = ucfirst( (string) $category );
+		}
+
+		$spec['form_tooltips'] = self::pad_tooltips( $tooltips, $nplurals );
+
+		return $spec;
+	}
+
+	/**
+	 * Builds alphabetical markers sequence.
+	 *
+	 * @param int $count Number of markers.
+	 * @return array<int, string>
+	 */
+	private static function build_markers( $count ) {
+		$markers = array();
+
+		for ( $index = 0; $index < $count; $index++ ) {
+			$markers[] = self::marker_from_index( $index );
+		}
+
+		return $markers;
+	}
+
+	/**
+	 * Pads tooltips array to expected count.
+	 *
+	 * @param array<int, mixed> $tooltips Tooltips.
+	 * @param int               $count Expected count.
+	 * @return array<int, string>
+	 */
+	private static function pad_tooltips( array $tooltips, $count ) {
+		$normalized = array();
+
+		foreach ( $tooltips as $tooltip ) {
+			$normalized[] = (string) $tooltip;
+		}
+
+		$normalized_count = count( $normalized );
+
+		while ( $normalized_count < $count ) {
+			$normalized[] = sprintf(
+				/* translators: %d is plural form index. */
+				__( 'Plural form %d', 'i18nly' ),
+				$normalized_count
+			);
+
+			++$normalized_count;
+		}
+
+		return array_slice( $normalized, 0, $count );
+	}
+
+	/**
+	 * Returns alphabetical marker for one index.
+	 *
+	 * @param int $index Marker index.
+	 * @return string
+	 */
+	private static function marker_from_index( $index ) {
+		$index  = max( 0, (int) $index );
+		$marker = '';
+
+		do {
+			$marker = chr( 97 + ( $index % 26 ) ) . $marker;
+			$index  = (int) floor( $index / 26 ) - 1;
+		} while ( $index >= 0 );
+
+		return $marker;
 	}
 
 	/**
