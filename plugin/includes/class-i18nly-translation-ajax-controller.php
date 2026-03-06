@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Handles translation edit AJAX actions.
  */
-class I18nly_Translation_Ajax_Controller implements I18nly_Translation_Ajax_Controller_Interface {
+class I18nly_Translation_Ajax_Controller {
 	/**
 	 * Callback returning one translation row.
 	 *
