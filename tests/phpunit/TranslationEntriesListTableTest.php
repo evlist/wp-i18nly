@@ -149,6 +149,18 @@ class TranslationEntriesListTableTest extends TestCase {
 					'msgid'           => '%s item',
 					'msgid_plural'    => '%s items',
 					'status'          => 'active',
+					'forms'           => array(
+						array(
+							'marker'  => 'a',
+							'label'   => 'one',
+							'tooltip' => 'Zero or one',
+						),
+						array(
+							'marker'  => 'b',
+							'label'   => 'other',
+							'tooltip' => 'More than one',
+						),
+					),
 					'form_labels'     => array( 'one', 'other' ),
 					'form_markers'    => array( 'a', 'b' ),
 					'form_tooltips'   => array( 'Zero or one', 'More than one' ),

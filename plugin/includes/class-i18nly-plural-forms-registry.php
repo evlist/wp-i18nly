@@ -25,7 +25,18 @@ class I18nly_Plural_Forms_Registry {
 		'nplurals'          => 2,
 		'categories'        => array( 'one', 'other' ),
 		'plural_expression' => '(n != 1)',
-		'form_tooltips'     => array( 'One', 'Other values' ),
+		'forms'             => array(
+			array(
+				'marker'  => 'a',
+				'label'   => 'one',
+				'tooltip' => 'One',
+			),
+			array(
+				'marker'  => 'b',
+				'label'   => 'other',
+				'tooltip' => 'Other values',
+			),
+		),
 	);
 
 	/**
@@ -63,7 +74,10 @@ class I18nly_Plural_Forms_Registry {
 			'nplurals'          => 2,
 			'categories'        => array( 'one', 'other' ),
 			'plural_expression' => '(n > 1)',
-			'form_tooltips'     => array( 'Zero or one', 'More than one' ),
+			'forms'             => array(
+				'a' => 'Zero or one',
+				'b' => 'More than one',
+			),
 		),
 		'ga' => array(
 			'nplurals'          => 5,
@@ -197,7 +211,12 @@ class I18nly_Plural_Forms_Registry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_labels_for_locale( $locale ) {
-		$spec = self::get_spec_for_locale( $locale );
+		$spec  = self::get_spec_for_locale( $locale );
+		$forms = self::get_forms_from_spec( $spec );
+
+		if ( ! empty( $forms ) ) {
+			return self::pluck_forms_string_field( $forms, 'label' );
+		}
 
 		if ( isset( $spec['categories'] ) && is_array( $spec['categories'] ) ) {
 			return array_values( $spec['categories'] );
@@ -213,7 +232,12 @@ class I18nly_Plural_Forms_Registry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_markers_for_locale( $locale ) {
-		$spec = self::get_spec_for_locale( $locale );
+		$spec  = self::get_spec_for_locale( $locale );
+		$forms = self::get_forms_from_spec( $spec );
+
+		if ( ! empty( $forms ) ) {
+			return self::pluck_forms_string_field( $forms, 'marker' );
+		}
 
 		if ( isset( $spec['form_markers'] ) && is_array( $spec['form_markers'] ) ) {
 			return array_values( $spec['form_markers'] );
@@ -229,13 +253,35 @@ class I18nly_Plural_Forms_Registry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_tooltips_for_locale( $locale ) {
-		$spec = self::get_spec_for_locale( $locale );
+		$spec  = self::get_spec_for_locale( $locale );
+		$forms = self::get_forms_from_spec( $spec );
+
+		if ( ! empty( $forms ) ) {
+			return self::pluck_forms_string_field( $forms, 'tooltip' );
+		}
 
 		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
 			return array_values( $spec['form_tooltips'] );
 		}
 
 		return array( 'One', 'Other values' );
+	}
+
+	/**
+	 * Returns ordered form metadata for one locale.
+	 *
+	 * @param string $locale Target locale.
+	 * @return array<int, array{marker: string, label: string, tooltip: string}>
+	 */
+	public static function get_forms_for_locale( $locale ) {
+		$spec  = self::get_spec_for_locale( $locale );
+		$forms = self::get_forms_from_spec( $spec );
+
+		if ( ! empty( $forms ) ) {
+			return $forms;
+		}
+
+		return self::get_forms_from_spec( self::DEFAULT_SPEC );
 	}
 
 	/**
@@ -435,18 +481,135 @@ class I18nly_Plural_Forms_Registry {
 	 * @return array<string, mixed>
 	 */
 	private static function enrich_spec_for_ui( array $spec ) {
-		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+		$nplurals      = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+		$raw_forms     = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? $spec['forms'] : array();
+		$form_count    = max( $nplurals, count( $raw_forms ) );
+		$categories    = self::pad_labels( self::extract_categories( $spec ), $form_count );
+		$form_markers  = self::pad_markers( self::extract_markers( $spec ), $form_count );
+		$form_tooltips = self::pad_tooltips( self::extract_tooltips( $spec, $categories ), $form_count );
 
-		$spec['form_markers'] = self::build_markers( $nplurals );
+		$spec['forms'] = self::normalize_forms(
+			$raw_forms,
+			$form_count,
+			$form_markers,
+			$categories,
+			$form_tooltips
+		);
 
-		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
-			$spec['form_tooltips'] = self::pad_tooltips( $spec['form_tooltips'], $nplurals );
-			return $spec;
+		$spec['nplurals']      = count( $spec['forms'] );
+		$spec['categories']    = self::pluck_forms_string_field( $spec['forms'], 'label' );
+		$spec['form_markers']  = self::pluck_forms_string_field( $spec['forms'], 'marker' );
+		$spec['form_tooltips'] = self::pluck_forms_string_field( $spec['forms'], 'tooltip' );
+
+		return $spec;
+	}
+
+	/**
+	 * Normalizes one forms definition array.
+	 *
+	 * @param array<int|string, mixed> $forms Raw forms array.
+	 * @param int                      $count Expected count.
+	 * @param array<int, string>       $markers Fallback markers.
+	 * @param array<int, string>       $labels Fallback labels.
+	 * @param array<int, string>       $tooltips Fallback tooltips.
+	 * @return array<int, array{marker: string, label: string, tooltip: string}>
+	 */
+	private static function normalize_forms( array $forms, $count, array $markers, array $labels, array $tooltips ) {
+		$normalized = array();
+
+		for ( $index = 0; $index < $count; $index++ ) {
+			$entry = null;
+
+			if ( isset( $forms[ $index ] ) ) {
+				$entry = $forms[ $index ];
+			} elseif ( isset( $markers[ $index ] ) && isset( $forms[ $markers[ $index ] ] ) ) {
+				$entry = $forms[ $markers[ $index ] ];
+			}
+
+			$marker  = isset( $markers[ $index ] ) ? (string) $markers[ $index ] : self::marker_from_index( $index );
+			$label   = isset( $labels[ $index ] ) ? (string) $labels[ $index ] : (string) $index;
+			$tooltip = isset( $tooltips[ $index ] ) ? (string) $tooltips[ $index ] : $label;
+
+			if ( is_array( $entry ) ) {
+				if ( isset( $entry['marker'] ) && '' !== trim( (string) $entry['marker'] ) ) {
+					$marker = (string) $entry['marker'];
+				}
+
+				if ( isset( $entry['label'] ) && '' !== trim( (string) $entry['label'] ) ) {
+					$label = (string) $entry['label'];
+				}
+
+				if ( isset( $entry['tooltip'] ) && '' !== trim( (string) $entry['tooltip'] ) ) {
+					$tooltip = (string) $entry['tooltip'];
+				}
+			} elseif ( is_string( $entry ) && '' !== trim( $entry ) ) {
+				$tooltip = $entry;
+			}
+
+			$normalized[] = array(
+				'marker'  => $marker,
+				'label'   => $label,
+				'tooltip' => $tooltip,
+			);
 		}
 
-		$categories = isset( $spec['categories'] ) && is_array( $spec['categories'] )
-			? array_values( $spec['categories'] )
-			: array();
+		return $normalized;
+	}
+
+	/**
+	 * Returns categories from one spec.
+	 *
+	 * @param array<string, mixed> $spec Raw spec.
+	 * @return array<int, string>
+	 */
+	private static function extract_categories( array $spec ) {
+		if ( isset( $spec['categories'] ) && is_array( $spec['categories'] ) ) {
+			return array_values(
+				array_map(
+					'strval',
+					$spec['categories']
+				)
+			);
+		}
+
+		return array();
+	}
+
+	/**
+	 * Returns marker symbols from one spec.
+	 *
+	 * @param array<string, mixed> $spec Raw spec.
+	 * @return array<int, string>
+	 */
+	private static function extract_markers( array $spec ) {
+		if ( isset( $spec['form_markers'] ) && is_array( $spec['form_markers'] ) ) {
+			return array_values(
+				array_map(
+					'strval',
+					$spec['form_markers']
+				)
+			);
+		}
+
+		return array();
+	}
+
+	/**
+	 * Returns tooltips from one spec.
+	 *
+	 * @param array<string, mixed> $spec Raw spec.
+	 * @param array<int, string>   $categories Fallback categories.
+	 * @return array<int, string>
+	 */
+	private static function extract_tooltips( array $spec, array $categories ) {
+		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
+			return array_values(
+				array_map(
+					'strval',
+					$spec['form_tooltips']
+				)
+			);
+		}
 
 		$tooltips = array();
 
@@ -454,9 +617,60 @@ class I18nly_Plural_Forms_Registry {
 			$tooltips[] = ucfirst( (string) $category );
 		}
 
-		$spec['form_tooltips'] = self::pad_tooltips( $tooltips, $nplurals );
+		return $tooltips;
+	}
 
-		return $spec;
+	/**
+	 * Returns normalized forms list from one spec.
+	 *
+	 * @param array<string, mixed> $spec Spec.
+	 * @return array<int, array{marker: string, label: string, tooltip: string}>
+	 */
+	private static function get_forms_from_spec( array $spec ) {
+		if ( ! isset( $spec['forms'] ) || ! is_array( $spec['forms'] ) ) {
+			return array();
+		}
+
+		$forms = array();
+
+		foreach ( $spec['forms'] as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$marker  = isset( $form['marker'] ) ? (string) $form['marker'] : '';
+			$label   = isset( $form['label'] ) ? (string) $form['label'] : '';
+			$tooltip = isset( $form['tooltip'] ) ? (string) $form['tooltip'] : '';
+
+			if ( '' === trim( $marker ) ) {
+				continue;
+			}
+
+			$forms[] = array(
+				'marker'  => $marker,
+				'label'   => $label,
+				'tooltip' => $tooltip,
+			);
+		}
+
+		return $forms;
+	}
+
+	/**
+	 * Returns one string field from forms list.
+	 *
+	 * @param array<int, array<string, mixed>> $forms Forms list.
+	 * @param string                           $field Field key.
+	 * @return array<int, string>
+	 */
+	private static function pluck_forms_string_field( array $forms, $field ) {
+		$values = array();
+
+		foreach ( $forms as $form ) {
+			$values[] = isset( $form[ $field ] ) ? (string) $form[ $field ] : '';
+		}
+
+		return $values;
 	}
 
 	/**
@@ -473,6 +687,50 @@ class I18nly_Plural_Forms_Registry {
 		}
 
 		return $markers;
+	}
+
+	/**
+	 * Pads marker array to expected count.
+	 *
+	 * @param array<int, string> $markers Marker symbols.
+	 * @param int                $count Expected count.
+	 * @return array<int, string>
+	 */
+	private static function pad_markers( array $markers, $count ) {
+		$normalized = array_values(
+			array_map(
+				'strval',
+				$markers
+			)
+		);
+
+		for ( $index = count( $normalized ); $index < $count; $index++ ) {
+			$normalized[] = self::marker_from_index( $index );
+		}
+
+		return array_slice( $normalized, 0, $count );
+	}
+
+	/**
+	 * Pads form labels array to expected count.
+	 *
+	 * @param array<int, string> $labels Labels.
+	 * @param int                $count Expected count.
+	 * @return array<int, string>
+	 */
+	private static function pad_labels( array $labels, $count ) {
+		$normalized = array_values(
+			array_map(
+				'strval',
+				$labels
+			)
+		);
+
+		for ( $index = count( $normalized ); $index < $count; $index++ ) {
+			$normalized[] = sprintf( 'form-%d', $index );
+		}
+
+		return array_slice( $normalized, 0, $count );
 	}
 
 	/**

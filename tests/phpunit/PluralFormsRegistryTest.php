@@ -22,6 +22,21 @@ class PluralFormsRegistryTest extends TestCase {
 	public function test_registry_falls_back_to_default_spec_for_unknown_locale() {
 		$this->assertSame( 2, I18nly_Plural_Forms_Registry::get_plural_forms_count_for_locale( 'xx_XX' ) );
 		$this->assertSame( array( 'one', 'other' ), I18nly_Plural_Forms_Registry::get_form_labels_for_locale( 'xx_XX' ) );
+		$this->assertSame(
+			array(
+				array(
+					'marker'  => 'a',
+					'label'   => 'one',
+					'tooltip' => 'One',
+				),
+				array(
+					'marker'  => 'b',
+					'label'   => 'other',
+					'tooltip' => 'Other values',
+				),
+			),
+			I18nly_Plural_Forms_Registry::get_forms_for_locale( 'xx_XX' )
+		);
 	}
 
 	/**
@@ -57,6 +72,21 @@ class PluralFormsRegistryTest extends TestCase {
 		);
 		$this->assertSame( array( 'a', 'b' ), I18nly_Plural_Forms_Registry::get_form_markers_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'Zero or one', 'More than one' ), I18nly_Plural_Forms_Registry::get_form_tooltips_for_locale( 'fr_FR' ) );
+		$this->assertSame(
+			array(
+				array(
+					'marker'  => 'a',
+					'label'   => 'one',
+					'tooltip' => 'Zero or one',
+				),
+				array(
+					'marker'  => 'b',
+					'label'   => 'other',
+					'tooltip' => 'More than one',
+				),
+			),
+			I18nly_Plural_Forms_Registry::get_forms_for_locale( 'fr_FR' )
+		);
 	}
 
 	/**

@@ -84,6 +84,9 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
 			? array_values( $item['form_labels'] )
 			: array();
+		$forms         = isset( $item['forms'] ) && is_array( $item['forms'] )
+			? array_values( $item['forms'] )
+			: array();
 		$form_markers  = isset( $item['form_markers'] ) && is_array( $item['form_markers'] )
 			? array_values( $item['form_markers'] )
 			: array();
@@ -123,9 +126,9 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 				continue;
 			}
 
-			$form_label   = $this->resolve_form_label( $form_index, $form_labels );
-			$form_marker  = $this->resolve_form_marker( $form_index, $form_markers );
-			$form_tooltip = $this->resolve_form_tooltip( $form_index, $form_tooltips, $form_label );
+			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
+			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
+			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips, $form_label );
 
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%1$s %2$s</p>',
@@ -160,11 +163,20 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	/**
 	 * Resolves one form marker label.
 	 *
-	 * @param int               $form_index Plural form index.
-	 * @param array<int, mixed> $form_labels Ordered locale form labels.
+	 * @param int                              $form_index Plural form index.
+	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
+	 * @param array<int, mixed>                $form_labels Ordered locale form labels.
 	 * @return string
 	 */
-	private function resolve_form_label( $form_index, array $form_labels ) {
+	private function resolve_form_label( $form_index, array $forms, array $form_labels ) {
+		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['label'] ) ) {
+			$label = (string) $forms[ $form_index ]['label'];
+
+			if ( '' !== trim( $label ) ) {
+				return $label;
+			}
+		}
+
 		if ( isset( $form_labels[ $form_index ] ) ) {
 			$label = (string) $form_labels[ $form_index ];
 
@@ -179,11 +191,20 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	/**
 	 * Resolves one marker symbol for one form index.
 	 *
-	 * @param int               $form_index Plural form index.
-	 * @param array<int, mixed> $form_markers Ordered marker symbols.
+	 * @param int                              $form_index Plural form index.
+	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
+	 * @param array<int, mixed>                $form_markers Ordered marker symbols.
 	 * @return string
 	 */
-	private function resolve_form_marker( $form_index, array $form_markers ) {
+	private function resolve_form_marker( $form_index, array $forms, array $form_markers ) {
+		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['marker'] ) ) {
+			$marker = (string) $forms[ $form_index ]['marker'];
+
+			if ( '' !== trim( $marker ) ) {
+				return $marker;
+			}
+		}
+
 		if ( isset( $form_markers[ $form_index ] ) ) {
 			$marker = (string) $form_markers[ $form_index ];
 
@@ -198,12 +219,21 @@ class I18nly_Translation_Entries_List_Table extends WP_List_Table {
 	/**
 	 * Resolves one tooltip for one form index.
 	 *
-	 * @param int               $form_index Plural form index.
-	 * @param array<int, mixed> $form_tooltips Ordered form tooltips.
-	 * @param string            $fallback_label Fallback label.
+	 * @param int                              $form_index Plural form index.
+	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
+	 * @param array<int, mixed>                $form_tooltips Ordered form tooltips.
+	 * @param string                           $fallback_label Fallback label.
 	 * @return string
 	 */
-	private function resolve_form_tooltip( $form_index, array $form_tooltips, $fallback_label ) {
+	private function resolve_form_tooltip( $form_index, array $forms, array $form_tooltips, $fallback_label ) {
+		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['tooltip'] ) ) {
+			$tooltip = (string) $forms[ $form_index ]['tooltip'];
+
+			if ( '' !== trim( $tooltip ) ) {
+				return $tooltip;
+			}
+		}
+
 		if ( isset( $form_tooltips[ $form_index ] ) ) {
 			$tooltip = (string) $form_tooltips[ $form_index ];
 

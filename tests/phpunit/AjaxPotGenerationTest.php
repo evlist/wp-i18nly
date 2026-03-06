@@ -176,6 +176,18 @@ class AjaxPotGenerationTest extends TestCase {
 						'msgid'           => 'Welcome',
 						'msgid_plural'    => 'Welcomes',
 						'status'          => 'active',
+						'forms'           => array(
+							array(
+								'marker'  => 'a',
+								'label'   => 'one',
+								'tooltip' => 'Zero or one',
+							),
+							array(
+								'marker'  => 'b',
+								'label'   => 'other',
+								'tooltip' => 'More than one',
+							),
+						),
 						'form_labels'     => array( 'one', 'other' ),
 						'form_markers'    => array( 'a', 'b' ),
 						'form_tooltips'   => array( 'Zero or one', 'More than one' ),
