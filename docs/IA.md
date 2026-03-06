@@ -229,6 +229,24 @@ For security/compliance fixes affecting vendored upstream code, prefer this dura
 
 Avoid relying on ad-hoc local edits in vendored code as a permanent strategy.
 
+## 13) Potential TODOs
+
+### Evaluate `wp_mock` for unit tests
+
+Potential improvement: reduce custom WordPress stubs in PHPUnit bootstrap by using `wp_mock` for selected unit tests.
+
+Constraints for this repository:
+
+- do not add test tooling to `plugin/composer.json`,
+- install in a dedicated external Composer directory (similar to isolated Psalm setup),
+- document setup so local and CI usage stay reproducible.
+
+Suggested spike scope:
+
+1. migrate one high-mock test class,
+2. compare readability/maintenance cost vs current bootstrap stubs,
+3. decide whether to generalize progressively.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
