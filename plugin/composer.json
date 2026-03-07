@@ -15,13 +15,7 @@
   "autoload": {
     "psr-4": {
       "WP_I18nly\\": "includes/WP_I18nly/"
-    },
-    "classmap": [
-      "includes/"
-    ],
-    "exclude-from-classmap": [
-      "/includes/WP_I18nly/"
-    ]
+    }
   },
   "config": {
     "vendor-dir": "third-party/vendor",
