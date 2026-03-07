@@ -9,7 +9,8 @@
   },
   "intelephense.cs_environment.phpVersion": "8.2",
   "intelephense.environment.includePaths": [
-    ".vscode/intelephense-stubs"
+    ".vscode/intelephense-stubs",
+    "/home/vscode/.composer/vendor"
   ],
   "intelephense.diagnostics.runtime": "8.2",
   "php.validate.executablePath": "/usr/bin/php",
@@ -22,7 +23,8 @@
   "phpsab.excludeGlobs": [
     "**/vendor/**",
     "**/node_modules/**",
-    "**/.devcontainer/**"
+    "**/.devcontainer/**",
+    "**/tests/phpunit/bootstrap.php"
   ],
   "phpsab.phpExecutablePath": "/usr/bin/php",
   "phpsab.debug": true,

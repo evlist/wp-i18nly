@@ -12,6 +12,11 @@
     "gettext/gettext": "^5.7",
     "mck89/peast": "^1.17"
   },
+  "autoload": {
+    "classmap": [
+      "includes/"
+    ]
+  },
   "config": {
     "vendor-dir": "third-party/vendor",
     "sort-packages": true,

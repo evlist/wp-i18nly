@@ -35,6 +35,20 @@ class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'I18nly_Admin_Page' => __DIR__ . '/../../..' . '/includes/class-i18nly-admin-page.php',
+        'I18nly_Admin_Page_Helper' => __DIR__ . '/../../..' . '/includes/class-i18nly-admin-page-helper.php',
+        'I18nly_Plural_Forms_Registry' => __DIR__ . '/../../..' . '/includes/class-i18nly-plural-forms-registry.php',
+        'I18nly_Pot_Generator' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-generator.php',
+        'I18nly_Pot_Source_Entry_Extractor' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-source-entry-extractor.php',
+        'I18nly_Pot_Source_Importer' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-source-importer.php',
+        'I18nly_Pot_Workspace_Service' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-workspace-service.php',
+        'I18nly_Source_Schema_Manager' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-schema-manager.php',
+        'I18nly_Source_Wpdb_Repository' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-wpdb-repository.php',
+        'I18nly_Temporary_Storage' => __DIR__ . '/../../..' . '/includes/class-i18nly-temporary-storage.php',
+        'I18nly_Translation_Ajax_Controller' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-ajax-controller.php',
+        'I18nly_Translation_Entries_List_Table' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-entries-list-table.php',
+        'I18nly_Translation_Meta_Box_Renderer' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-meta-box-renderer.php',
+        'I18nly_Translation_Save_Handler' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-save-handler.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

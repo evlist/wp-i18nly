@@ -7,4 +7,18 @@ $baseDir = dirname(dirname($vendorDir));
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'I18nly_Admin_Page' => $baseDir . '/includes/class-i18nly-admin-page.php',
+    'I18nly_Admin_Page_Helper' => $baseDir . '/includes/class-i18nly-admin-page-helper.php',
+    'I18nly_Plural_Forms_Registry' => $baseDir . '/includes/class-i18nly-plural-forms-registry.php',
+    'I18nly_Pot_Generator' => $baseDir . '/includes/class-i18nly-pot-generator.php',
+    'I18nly_Pot_Source_Entry_Extractor' => $baseDir . '/includes/class-i18nly-pot-source-entry-extractor.php',
+    'I18nly_Pot_Source_Importer' => $baseDir . '/includes/class-i18nly-pot-source-importer.php',
+    'I18nly_Pot_Workspace_Service' => $baseDir . '/includes/class-i18nly-pot-workspace-service.php',
+    'I18nly_Source_Schema_Manager' => $baseDir . '/includes/class-i18nly-source-schema-manager.php',
+    'I18nly_Source_Wpdb_Repository' => $baseDir . '/includes/class-i18nly-source-wpdb-repository.php',
+    'I18nly_Temporary_Storage' => $baseDir . '/includes/class-i18nly-temporary-storage.php',
+    'I18nly_Translation_Ajax_Controller' => $baseDir . '/includes/class-i18nly-translation-ajax-controller.php',
+    'I18nly_Translation_Entries_List_Table' => $baseDir . '/includes/class-i18nly-translation-entries-list-table.php',
+    'I18nly_Translation_Meta_Box_Renderer' => $baseDir . '/includes/class-i18nly-translation-meta-box-renderer.php',
+    'I18nly_Translation_Save_Handler' => $baseDir . '/includes/class-i18nly-translation-save-handler.php',
 );

@@ -114,4 +114,25 @@ abstract class TestCase {
 	 * @return void
 	 */
 	public function assertStringEndsWith( string $suffix, string $string, string $message = '' ): void {}
+
+	/**
+	 * @param bool   $condition Condition expected to be true.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertTrue( bool $condition, string $message = '' ): void {}
+
+	/**
+	 * @param bool   $condition Condition expected to be false.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertFalse( bool $condition, string $message = '' ): void {}
+
+	/**
+	 * @param mixed  $actual Actual value expected to be non-empty.
+	 * @param string $message Failure message.
+	 * @return void
+	 */
+	public function assertNotEmpty( $actual, string $message = '' ): void {}
 }

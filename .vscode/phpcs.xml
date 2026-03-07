@@ -17,6 +17,7 @@ SPDX-License-Identifier: GPL-3.0-or-later OR MIT
   <exclude-pattern>*/.devcontainer/*</exclude-pattern>
   <exclude-pattern>*/.vscode/*</exclude-pattern>
   <exclude-pattern>*/languages/*</exclude-pattern>
+  <exclude-pattern>*/tests/phpunit/bootstrap.php</exclude-pattern>
 
   <rule ref="WordPress"/>
 
