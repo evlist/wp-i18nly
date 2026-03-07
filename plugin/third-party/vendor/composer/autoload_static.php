@@ -49,10 +49,8 @@ class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
         'I18nly_Pot_Generator' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-generator.php',
         'I18nly_Pot_Source_Entry_Extractor' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-source-entry-extractor.php',
         'I18nly_Pot_Source_Importer' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-source-importer.php',
-        'I18nly_Pot_Workspace_Service' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-workspace-service.php',
         'I18nly_Source_Schema_Manager' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-schema-manager.php',
         'I18nly_Source_Wpdb_Repository' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-wpdb-repository.php',
-        'I18nly_Temporary_Storage' => __DIR__ . '/../../..' . '/includes/class-i18nly-temporary-storage.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

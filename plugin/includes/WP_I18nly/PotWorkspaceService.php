@@ -8,40 +8,42 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Orchestrates temporary workspace creation and POT generation.
  */
-class I18nly_Pot_Workspace_Service {
+class PotWorkspaceService {
 	/**
 	 * Temporary storage manager.
 	 *
-	 * @var I18nly_Temporary_Storage
+	 * @var TemporaryStorage
 	 */
 	private $temporary_storage;
 
 	/**
 	 * POT generator.
 	 *
-	 * @var I18nly_Pot_Generator
+	 * @var \I18nly_Pot_Generator
 	 */
 	private $pot_generator;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param I18nly_Temporary_Storage|null $temporary_storage Storage service.
-	 * @param I18nly_Pot_Generator|null     $pot_generator POT generator service.
+	 * @param TemporaryStorage|null      $temporary_storage Storage service.
+	 * @param \I18nly_Pot_Generator|null $pot_generator POT generator service.
 	 */
 	public function __construct( $temporary_storage = null, $pot_generator = null ) {
-		$this->temporary_storage = $temporary_storage instanceof I18nly_Temporary_Storage
+		$this->temporary_storage = $temporary_storage instanceof TemporaryStorage
 			? $temporary_storage
-			: new I18nly_Temporary_Storage();
+			: new TemporaryStorage();
 
-		$this->pot_generator = $pot_generator instanceof I18nly_Pot_Generator
+		$this->pot_generator = $pot_generator instanceof \I18nly_Pot_Generator
 			? $pot_generator
-			: new I18nly_Pot_Generator();
+			: new \I18nly_Pot_Generator();
 	}
 
 	/**

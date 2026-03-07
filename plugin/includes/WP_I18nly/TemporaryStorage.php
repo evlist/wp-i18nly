@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Manages temporary filesystem storage for draft/unpublished translations.
  */
-class I18nly_Temporary_Storage {
+class TemporaryStorage {
 	/**
 	 * Base directory for temporary artifacts.
 	 *
@@ -60,7 +62,7 @@ class I18nly_Temporary_Storage {
 	 *
 	 * @param int $translation_post_id Translation post ID.
 	 * @return string Translation workspace directory.
-	 * @throws RuntimeException When directory creation fails.
+	 * @throws \RuntimeException When directory creation fails.
 	 */
 	public function ensure_translation_workspace( $translation_post_id ) {
 		$this->ensure_directory( $this->base_directory );
@@ -109,7 +111,7 @@ class I18nly_Temporary_Storage {
 	 *
 	 * @param string $directory Directory path.
 	 * @return void
-	 * @throws RuntimeException When directory creation fails.
+	 * @throws \RuntimeException When directory creation fails.
 	 */
 	private function ensure_directory( $directory ) {
 		if ( is_dir( $directory ) ) {
@@ -117,7 +119,7 @@ class I18nly_Temporary_Storage {
 		}
 
 		if ( ! wp_mkdir_p( $directory ) && ! is_dir( $directory ) ) {
-			throw new RuntimeException( 'Unable to create temporary storage directory.' );
+			throw new \RuntimeException( 'Unable to create temporary storage directory.' );
 		}
 	}
 

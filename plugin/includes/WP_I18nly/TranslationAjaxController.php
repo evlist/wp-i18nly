@@ -117,7 +117,7 @@ class TranslationAjaxController {
 		$build_headers     = $this->build_header_overrides_callback;
 		$text_domain       = $infer_text_domain( $source_slug );
 		$header_overrides  = $build_headers( $source_slug, $text_domain );
-		$pot_workspace     = new \I18nly_Pot_Workspace_Service();
+		$pot_workspace     = new PotWorkspaceService();
 		$pot_importer      = new \I18nly_Pot_Source_Importer();
 
 		try {
