@@ -247,56 +247,55 @@ Suggested spike scope:
 2. compare readability/maintenance cost vs current bootstrap stubs,
 3. decide whether to generalize progressively.
 
-## 14) Autoload & Architecture Migration Plan (3 Slices)
+## 14) PSR-4 Autoload Management
 
-### Slice 1: Runtime autoload via Composer classmap
+The plugin runtime now uses a single Composer PSR-4 autoloader.
 
-Goal: replace the custom `spl_autoload_register` loader with Composer runtime autoload while keeping current class names and file names unchanged.
+### Current Runtime Model
 
-Implementation notes:
+- runtime autoload file: `plugin/third-party/vendor/autoload.php`,
+- namespace root: `WP_I18nly\\`,
+- namespace path: `plugin/includes/WP_I18nly/`,
+- legacy custom `spl_autoload_register` loader has been removed,
+- classmap fallback has been removed.
 
-- add a minimal `plugin/composer.json` with `autoload.classmap` targeting `includes/`,
-- generate `plugin/vendor/autoload.php` via `composer dump-autoload` (using global Composer tooling),
-- update `plugin/i18nly.php` to load Composer autoload and remove the custom loader.
+### Composer Configuration
 
-Done criteria:
+`plugin/composer.json` uses:
 
-- plugin boots correctly with Composer autoload only,
-- custom autoload functions are removed,
-- PHPUnit suite remains green.
+```json
+"autoload": {
+	"psr-4": {
+		"WP_I18nly\\": "includes/WP_I18nly/"
+	}
+}
+```
 
-### Slice 2: PSR-4 migration (still under `includes/` initially)
+Runtime dependencies remain in `plugin/third-party/vendor` (`vendor-dir` override).
 
-Goal: migrate from classmap to PSR-4 conventions with namespaced classes.
+### Operational Commands
 
-Implementation notes:
+After class/file moves or namespace changes:
 
-- rename files to PSR-4-compatible file names,
-- migrate class names to namespaces,
-- update references in plugin code and tests,
-- switch Composer autoload from `classmap` to `psr-4`.
+```bash
+composer dump-autoload --working-dir=plugin
+phpunit
+```
 
-Done criteria:
+Recommended focused checks:
 
-- runtime and tests use PSR-4 classes,
-- classmap fallback is removed,
-- optional temporary aliases (if used) are documented and marked for removal.
+```bash
+php -l plugin/includes/WP_I18nly/<ClassName>.php
+phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
+```
 
-### Slice 3: Class decomposition and responsibility split
+### Contribution Rules For New Classes
 
-Goal: reduce large utility/static-heavy classes by splitting responsibilities into clearer services/components.
-
-Implementation notes:
-
-- prioritize decomposition of static helper-heavy files,
-- split by business responsibility (not necessarily one method per file),
-- favor dependency injection and explicit collaborators.
-
-Done criteria:
-
-- smaller focused classes,
-- reduced static coupling,
-- tests remain green and become easier to target at unit level.
+- place new runtime classes under `plugin/includes/WP_I18nly/`,
+- use `namespace WP_I18nly;`,
+- use PSR-4 class/file naming (for example `FooBar.php` for `WP_I18nly\\FooBar`),
+- avoid reintroducing legacy `I18nly_*` class names for runtime code,
+- keep tests updated to require or reference the namespaced classes.
 
 ## 10) Session Safety Checklist for Future Runs
 
