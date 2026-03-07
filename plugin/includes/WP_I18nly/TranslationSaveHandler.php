@@ -159,7 +159,7 @@ class TranslationSaveHandler {
 					$this->persist_entries_callback,
 					(int) $post_id,
 					$source_slug,
-					\I18nly_Admin_Page_Helper::normalize_translation_entries_payload( $entries_payload )
+					AdminPageHelper::normalize_translation_entries_payload( $entries_payload )
 				);
 			}
 		}

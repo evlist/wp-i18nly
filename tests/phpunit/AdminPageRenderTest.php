@@ -22,7 +22,7 @@ class AdminPageRenderTest extends TestCase {
 	public function test_register_menu_registers_translations_menu_structure() {
 		i18nly_test_reset_admin_menu_capture();
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 		$page->register_menu();
 
 		$menus    = i18nly_test_get_menu_pages();
@@ -48,7 +48,7 @@ class AdminPageRenderTest extends TestCase {
 		i18nly_test_set_can_manage_options( true );
 		i18nly_test_reset_last_redirect_url();
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_all_translations_page();
@@ -71,7 +71,7 @@ class AdminPageRenderTest extends TestCase {
 		i18nly_test_set_can_manage_options( false );
 		i18nly_test_reset_last_redirect_url();
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_all_translations_page();
@@ -87,7 +87,7 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_filter_translation_list_columns_adds_source_and_target_columns() {
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		$columns = $page->filter_translation_list_columns(
 			array(
@@ -121,7 +121,7 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_translation_list_column( 'source_slug', 42 );
@@ -141,7 +141,7 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_filter_translation_sortable_columns_adds_source_and_target() {
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		$columns = $page->filter_translation_sortable_columns( array() );
 
@@ -186,7 +186,7 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
@@ -231,7 +231,7 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
@@ -263,7 +263,7 @@ class AdminPageRenderTest extends TestCase {
 			)
 		);
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 
 		ob_start();
 		$page->render_translation_meta_box( (object) array( 'ID' => 777 ) );
@@ -287,7 +287,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 		$page->save_translation_meta_box(
 			42,
 			(object) array(
@@ -323,7 +323,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 		$page->save_translation_meta_box(
 			42,
 			(object) array(
@@ -361,7 +361,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_plugin_selector']            = 'hello-dolly/hello.php';
 		$_POST['i18nly_target_language_selector']   = 'de_DE';
 
-		$page = new I18nly_Admin_Page();
+		$page = new \WP_I18nly\AdminPage();
 		$page->save_translation_meta_box(
 			42,
 			(object) array(
@@ -399,7 +399,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_translation_meta_box_nonce']  = 'nonce-i18nly_translation_meta_box';
 		$_POST['i18nly_translation_entries_payload'] = '{"101":{"forms":{"0":"Bienvenue","1":"Bienvenues"}}}';
 
-		$page = new class() extends I18nly_Admin_Page {
+		$page = new class() extends \WP_I18nly\AdminPage {
 			/**
 			 * Captured save payload.
 			 *
@@ -465,7 +465,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_translation_meta_box_nonce']  = 'nonce-i18nly_translation_meta_box';
 		$_POST['i18nly_translation_entries_payload'] = '{"101":{"forms":{"0":"Bienvenue","1":"Bienvenues"}}}';
 
-		$page = new class() extends I18nly_Admin_Page {
+		$page = new class() extends \WP_I18nly\AdminPage {
 			/**
 			 * Captured save payload.
 			 *
@@ -532,7 +532,7 @@ class AdminPageRenderTest extends TestCase {
 		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
-		$page = new class() extends I18nly_Admin_Page {
+		$page = new class() extends \WP_I18nly\AdminPage {
 			/**
 			 * Captured duplicate payload.
 			 *
@@ -615,7 +615,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page = new class( $handler ) extends I18nly_Admin_Page {
+		$page = new class( $handler ) extends \WP_I18nly\AdminPage {
 			/**
 			 * Save handler test double.
 			 *
@@ -696,7 +696,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page = new class( $controller ) extends I18nly_Admin_Page {
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
 			/**
 			 * AJAX controller test double.
 			 *
@@ -769,7 +769,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page = new class( $controller ) extends I18nly_Admin_Page {
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
 			/**
 			 * AJAX controller test double.
 			 *
@@ -884,7 +884,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page = new class( $renderer ) extends I18nly_Admin_Page {
+		$page = new class( $renderer ) extends \WP_I18nly\AdminPage {
 			/**
 			 * Renderer test double.
 			 *
@@ -926,7 +926,7 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_apply_translation_sorting_maps_source_slug_to_meta_ordering() {
-		$page  = new I18nly_Admin_Page();
+		$page  = new \WP_I18nly\AdminPage();
 		$query = new class() {
 			/**
 			 * Query vars.
@@ -981,7 +981,7 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_apply_translation_sorting_maps_target_language_to_meta_ordering() {
-		$page  = new I18nly_Admin_Page();
+		$page  = new \WP_I18nly\AdminPage();
 		$query = new class() {
 			/**
 			 * Query vars.

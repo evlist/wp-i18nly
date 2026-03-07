@@ -7,6 +7,4 @@ $baseDir = dirname(dirname($vendorDir));
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
-    'I18nly_Admin_Page' => $baseDir . '/includes/class-i18nly-admin-page.php',
-    'I18nly_Admin_Page_Helper' => $baseDir . '/includes/class-i18nly-admin-page-helper.php',
 );

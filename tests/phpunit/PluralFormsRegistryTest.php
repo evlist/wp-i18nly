@@ -92,6 +92,6 @@ class PluralFormsRegistryTest extends TestCase {
 	 * @return void
 	 */
 	public function test_admin_page_helper_uses_registry_for_plural_count() {
-		$this->assertSame( 6, I18nly_Admin_Page_Helper::get_plural_forms_count_for_locale( 'ar_AR' ) );
+		$this->assertSame( 6, \WP_I18nly\AdminPageHelper::get_plural_forms_count_for_locale( 'ar_AR' ) );
 	}
 }

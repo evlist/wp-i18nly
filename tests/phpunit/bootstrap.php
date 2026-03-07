@@ -1547,9 +1547,9 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 	}
 }
 
-require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page.php';
+require_once __DIR__ . '/../../plugin/includes/WP_I18nly/AdminPage.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PluralFormsRegistry.php';
-require_once __DIR__ . '/../../plugin/includes/class-i18nly-admin-page-helper.php';
+require_once __DIR__ . '/../../plugin/includes/WP_I18nly/AdminPageHelper.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationSaveHandler.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationAjaxController.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationMetaBoxRenderer.php';
