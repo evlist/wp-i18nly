@@ -19,10 +19,10 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'WP_List_Table', false ) ) {
-	$wp_list_table_file = ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
+	$i18nly_wp_list_table_file = ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 
-	if ( file_exists( $wp_list_table_file ) ) {
-		require_once $wp_list_table_file;
+	if ( file_exists( $i18nly_wp_list_table_file ) ) {
+		require_once $i18nly_wp_list_table_file;
 	}
 }
 
