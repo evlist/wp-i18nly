@@ -673,6 +673,6 @@ class I18nly_Admin_Page_Helper {
 	 * @return int
 	 */
 	public static function get_plural_forms_count_for_locale( $locale ) {
-		return I18nly_Plural_Forms_Registry::get_plural_forms_count_for_locale( $locale );
+		return \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 	}
 }

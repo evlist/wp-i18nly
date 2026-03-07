@@ -9,5 +9,4 @@ return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'I18nly_Admin_Page' => $baseDir . '/includes/class-i18nly-admin-page.php',
     'I18nly_Admin_Page_Helper' => $baseDir . '/includes/class-i18nly-admin-page-helper.php',
-    'I18nly_Plural_Forms_Registry' => $baseDir . '/includes/class-i18nly-plural-forms-registry.php',
 );

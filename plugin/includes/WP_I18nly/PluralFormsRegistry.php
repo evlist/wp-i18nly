@@ -8,6 +8,8 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -15,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * The embedded values are derived from Unicode CLDR plural rules.
  */
-class I18nly_Plural_Forms_Registry {
+class PluralFormsRegistry {
 	/**
 	 * Default spec used when locale is unknown.
 	 *
