@@ -26,24 +26,24 @@ class PotWorkspaceService {
 	/**
 	 * POT generator.
 	 *
-	 * @var \I18nly_Pot_Generator
+	 * @var PotGenerator
 	 */
 	private $pot_generator;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param TemporaryStorage|null      $temporary_storage Storage service.
-	 * @param \I18nly_Pot_Generator|null $pot_generator POT generator service.
+	 * @param TemporaryStorage|null $temporary_storage Storage service.
+	 * @param PotGenerator|null     $pot_generator POT generator service.
 	 */
 	public function __construct( $temporary_storage = null, $pot_generator = null ) {
 		$this->temporary_storage = $temporary_storage instanceof TemporaryStorage
 			? $temporary_storage
 			: new TemporaryStorage();
 
-		$this->pot_generator = $pot_generator instanceof \I18nly_Pot_Generator
+		$this->pot_generator = $pot_generator instanceof PotGenerator
 			? $pot_generator
-			: new \I18nly_Pot_Generator();
+			: new PotGenerator();
 	}
 
 	/**

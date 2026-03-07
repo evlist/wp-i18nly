@@ -1554,8 +1554,8 @@ require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationSaveHandler.
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationAjaxController.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationMetaBoxRenderer.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationEntriesListTable.php';
-require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-generator.php';
-require_once __DIR__ . '/../../plugin/includes/class-i18nly-pot-source-entry-extractor.php';
+require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotGenerator.php';
+require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotSourceEntryExtractor.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TemporaryStorage.php';
 require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotWorkspaceService.php';
 require_once __DIR__ . '/../../plugin/includes/class-i18nly-source-schema-manager.php';

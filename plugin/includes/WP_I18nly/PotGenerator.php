@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Generates POT files from extracted entries.
  */
-class I18nly_Pot_Generator {
+class PotGenerator {
 	/**
 	 * Generates a POT file on disk.
 	 *
@@ -22,7 +24,7 @@ class I18nly_Pot_Generator {
 	 * @param array<int, array<string,mixed>> $entries Extracted entries.
 	 * @param array<string, string>           $header_overrides Header values overriding defaults.
 	 * @return void
-	 * @throws RuntimeException When destination directory or file cannot be written.
+	 * @throws \RuntimeException When destination directory or file cannot be written.
 	 */
 	public function generate( $destination_file, $text_domain, array $entries, array $header_overrides = array() ) {
 		$this->ensure_gettext_classes_are_available();
@@ -33,12 +35,12 @@ class I18nly_Pot_Generator {
 
 		$directory = dirname( $destination_file );
 		if ( ! is_dir( $directory ) && ! wp_mkdir_p( $directory ) && ! is_dir( $directory ) ) {
-			throw new RuntimeException( 'Unable to create destination directory for POT file.' );
+			throw new \RuntimeException( 'Unable to create destination directory for POT file.' );
 		}
 
 		$generator = new \Gettext\Generator\PoGenerator();
 		if ( ! $generator->generateFile( $translations, $destination_file ) ) {
-			throw new RuntimeException( 'Unable to write POT file to destination.' );
+			throw new \RuntimeException( 'Unable to write POT file to destination.' );
 		}
 	}
 
@@ -160,6 +162,6 @@ class I18nly_Pot_Generator {
 			return;
 		}
 
-		require_once dirname( __DIR__ ) . '/third-party/vendor/autoload.php';
+		require_once dirname( __DIR__, 2 ) . '/third-party/vendor/autoload.php';
 	}
 }

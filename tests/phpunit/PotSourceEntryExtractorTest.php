@@ -32,7 +32,7 @@ class PotSourceEntryExtractorTest extends TestCase {
 			"<?php\n/* translators: Greeting shown on welcome panel. */\nprintf( __( 'Hello world', 'sample-plugin' ) );\n_x( 'Open', 'verb', 'sample-plugin' );\n_n( '%s item', '%s items', 2, 'sample-plugin' );\n"
 		);
 
-		$extractor = new I18nly_Pot_Source_Entry_Extractor( $plugins_root );
+		$extractor = new \WP_I18nly\PotSourceEntryExtractor( $plugins_root );
 		$entries   = $extractor->extract_from_source_slug( 'sample-plugin/sample-plugin.php' );
 
 		$this->assertCount( 3, $entries );
@@ -95,7 +95,7 @@ class PotSourceEntryExtractorTest extends TestCase {
 			"<?php\n__( 'Akismet only', 'akismet' );\n"
 		);
 
-		$extractor = new I18nly_Pot_Source_Entry_Extractor( $plugins_root );
+		$extractor = new \WP_I18nly\PotSourceEntryExtractor( $plugins_root );
 		$entries   = $extractor->extract_from_source_slug( 'hello.php' );
 
 		$this->assertCount( 1, $entries );

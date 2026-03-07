@@ -111,7 +111,7 @@ class TranslationAjaxController {
 		}
 
 		$source_slug       = (string) $translation['source_slug'];
-		$source_extractor  = new \I18nly_Pot_Source_Entry_Extractor();
+		$source_extractor  = new PotSourceEntryExtractor();
 		$entries           = $source_extractor->extract_from_source_slug( $source_slug );
 		$infer_text_domain = $this->infer_text_domain_callback;
 		$build_headers     = $this->build_header_overrides_callback;

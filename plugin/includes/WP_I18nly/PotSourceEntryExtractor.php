@@ -8,12 +8,20 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+use SplFileObject;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Extracts POT entries from a plugin source tree.
  */
-class I18nly_Pot_Source_Entry_Extractor {
+class PotSourceEntryExtractor {
 	/**
 	 * Optional plugins root directory.
 	 *
