@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Creates and upgrades source catalog/entries tables.
  */
-class I18nly_Source_Schema_Manager {
+class SourceSchemaManager {
 	/**
 	 * Source schema version.
 	 */

@@ -507,10 +507,10 @@ class I18nly_Admin_Page {
 	 * @return array<int, array<string, mixed>>
 	 */
 	protected function get_translation_source_entries( $translation_id, $source_slug ) {
-		$schema_manager = new I18nly_Source_Schema_Manager();
+		$schema_manager = new \WP_I18nly\SourceSchemaManager();
 		$schema_manager->maybe_upgrade();
 
-		$repository  = new I18nly_Source_Wpdb_Repository( $schema_manager );
+		$repository  = new \WP_I18nly\SourceWpdbRepository( $schema_manager );
 		$now_gmt     = gmdate( 'Y-m-d H:i:s' );
 		$translation = $this->get_translation( $translation_id );
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )

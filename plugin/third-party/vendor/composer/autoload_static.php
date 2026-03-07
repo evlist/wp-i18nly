@@ -46,9 +46,6 @@ class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
         'I18nly_Admin_Page' => __DIR__ . '/../../..' . '/includes/class-i18nly-admin-page.php',
         'I18nly_Admin_Page_Helper' => __DIR__ . '/../../..' . '/includes/class-i18nly-admin-page-helper.php',
         'I18nly_Plural_Forms_Registry' => __DIR__ . '/../../..' . '/includes/class-i18nly-plural-forms-registry.php',
-        'I18nly_Pot_Source_Importer' => __DIR__ . '/../../..' . '/includes/class-i18nly-pot-source-importer.php',
-        'I18nly_Source_Schema_Manager' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-schema-manager.php',
-        'I18nly_Source_Wpdb_Repository' => __DIR__ . '/../../..' . '/includes/class-i18nly-source-wpdb-repository.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

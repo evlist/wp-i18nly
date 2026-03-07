@@ -25,7 +25,7 @@ class SourceSchemaManagerTest extends TestCase {
 		i18nly_test_reset_options();
 
 		$wpdb_stub = new I18nly_Test_WPDB_Query_Stub();
-		$manager   = new I18nly_Source_Schema_Manager( $wpdb_stub );
+		$manager   = new \WP_I18nly\SourceSchemaManager( $wpdb_stub );
 
 		$manager->maybe_upgrade();
 

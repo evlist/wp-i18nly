@@ -590,10 +590,10 @@ class I18nly_Admin_Page_Helper {
 	 * @return void
 	 */
 	public static function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
-		$schema_manager = new I18nly_Source_Schema_Manager();
+		$schema_manager = new \WP_I18nly\SourceSchemaManager();
 		$schema_manager->maybe_upgrade();
 
-		$repository = new I18nly_Source_Wpdb_Repository( $schema_manager );
+		$repository = new \WP_I18nly\SourceWpdbRepository( $schema_manager );
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
 		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
 		$form_count = self::get_plural_forms_count_for_locale( $locale );

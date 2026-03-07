@@ -8,16 +8,18 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Imports source entries from one POT file into source tables.
  */
-class I18nly_Pot_Source_Importer {
+class PotSourceImporter {
 	/**
 	 * Source schema manager.
 	 *
-	 * @var I18nly_Source_Schema_Manager
+	 * @var SourceSchemaManager
 	 */
 	private $schema_manager;
 
@@ -31,17 +33,17 @@ class I18nly_Pot_Source_Importer {
 	/**
 	 * Constructor.
 	 *
-	 * @param I18nly_Source_Schema_Manager|null $schema_manager Source schema manager.
-	 * @param object|null                       $repository Repository with upsert methods.
+	 * @param SourceSchemaManager|null $schema_manager Source schema manager.
+	 * @param object|null              $repository Repository with upsert methods.
 	 */
 	public function __construct( $schema_manager = null, $repository = null ) {
-		$this->schema_manager = $schema_manager instanceof I18nly_Source_Schema_Manager
+		$this->schema_manager = $schema_manager instanceof SourceSchemaManager
 			? $schema_manager
-			: new I18nly_Source_Schema_Manager();
+			: new SourceSchemaManager();
 
 		$this->repository = null !== $repository
 			? $repository
-			: new I18nly_Source_Wpdb_Repository( $this->schema_manager );
+			: new SourceWpdbRepository( $this->schema_manager );
 	}
 
 	/**
@@ -145,7 +147,7 @@ class I18nly_Pot_Source_Importer {
 			return;
 		}
 
-		require_once dirname( __DIR__ ) . '/third-party/vendor/autoload.php';
+		require_once dirname( __DIR__, 2 ) . '/third-party/vendor/autoload.php';
 	}
 
 	/**

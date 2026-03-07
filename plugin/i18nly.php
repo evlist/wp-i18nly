@@ -62,7 +62,7 @@ add_action( 'init', 'i18nly_load_textdomain' );
  * @return void
  */
 function i18nly_bootstrap() {
-	$schema_manager = new I18nly_Source_Schema_Manager();
+	$schema_manager = new \WP_I18nly\SourceSchemaManager();
 	$schema_manager->maybe_upgrade();
 
 	$admin_page = new I18nly_Admin_Page();

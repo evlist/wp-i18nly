@@ -10,7 +10,4 @@ return array(
     'I18nly_Admin_Page' => $baseDir . '/includes/class-i18nly-admin-page.php',
     'I18nly_Admin_Page_Helper' => $baseDir . '/includes/class-i18nly-admin-page-helper.php',
     'I18nly_Plural_Forms_Registry' => $baseDir . '/includes/class-i18nly-plural-forms-registry.php',
-    'I18nly_Pot_Source_Importer' => $baseDir . '/includes/class-i18nly-pot-source-importer.php',
-    'I18nly_Source_Schema_Manager' => $baseDir . '/includes/class-i18nly-source-schema-manager.php',
-    'I18nly_Source_Wpdb_Repository' => $baseDir . '/includes/class-i18nly-source-wpdb-repository.php',
 );

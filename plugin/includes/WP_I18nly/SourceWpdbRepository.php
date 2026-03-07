@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Persists source catalogs and entries in WordPress tables.
  */
-class I18nly_Source_Wpdb_Repository {
+class SourceWpdbRepository {
 	/**
 	 * Source entry identity columns.
 	 *
@@ -53,17 +55,17 @@ class I18nly_Source_Wpdb_Repository {
 	/**
 	 * Schema manager.
 	 *
-	 * @var I18nly_Source_Schema_Manager
+	 * @var SourceSchemaManager
 	 */
 	private $schema_manager;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param I18nly_Source_Schema_Manager $schema_manager Source schema manager.
-	 * @param object|null                  $wpdb Optional wpdb object.
+	 * @param SourceSchemaManager $schema_manager Source schema manager.
+	 * @param object|null         $wpdb Optional wpdb object.
 	 */
-	public function __construct( I18nly_Source_Schema_Manager $schema_manager, $wpdb = null ) {
+	public function __construct( SourceSchemaManager $schema_manager, $wpdb = null ) {
 		$this->schema_manager = $schema_manager;
 
 		if ( null !== $wpdb ) {
