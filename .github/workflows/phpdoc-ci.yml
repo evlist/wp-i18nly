@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: PHP API Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "plugin/**/*.php"
+      - "phpdoc.xml"
+      - ".github/workflows/phpdoc-ci.yml"
+  pull_request:
+    paths:
+      - "plugin/**/*.php"
+      - "phpdoc.xml"
+      - ".github/workflows/phpdoc-ci.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-php-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+
+      - name: Download phpDocumentor
+        run: |
+          curl -fsSL -o phpDocumentor.phar https://phpdoc.org/phpDocumentor.phar
+          php phpDocumentor.phar --version
+
+      - name: Generate API documentation
+        run: |
+          php phpDocumentor.phar --config phpdoc.xml
+
+      - name: Upload API documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18nly-php-api-docs
+          path: build/docs/php
+          if-no-files-found: error
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/docs/php
+
+  deploy-pages:
+    if: github.event_name != 'pull_request'
+    needs: build-php-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

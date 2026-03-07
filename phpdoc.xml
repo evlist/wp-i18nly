@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<phpdocumentor
+    configVersion="3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://www.phpdoc.org"
+    xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/phpDocumentor/phpDocumentor/master/data/xsd/phpdoc.xsd"
+>
+    <title>I18nly PHP API</title>
+
+    <paths>
+        <output>build/docs/php</output>
+    </paths>
+
+    <version number="latest">
+        <api>
+            <source dsn=".">
+                <path>plugin/i18nly.php</path>
+                <path>plugin/includes/WP_I18nly</path>
+            </source>
+        </api>
+    </version>
+
+</phpdocumentor>
