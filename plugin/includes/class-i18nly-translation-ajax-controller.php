@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Handles translation edit AJAX actions.
  */
-class I18nly_Translation_Ajax_Controller {
+class TranslationAjaxController {
 	/**
 	 * Callback returning one translation row.
 	 *
@@ -109,19 +111,19 @@ class I18nly_Translation_Ajax_Controller {
 		}
 
 		$source_slug       = (string) $translation['source_slug'];
-		$source_extractor  = new I18nly_Pot_Source_Entry_Extractor();
+		$source_extractor  = new \I18nly_Pot_Source_Entry_Extractor();
 		$entries           = $source_extractor->extract_from_source_slug( $source_slug );
 		$infer_text_domain = $this->infer_text_domain_callback;
 		$build_headers     = $this->build_header_overrides_callback;
 		$text_domain       = $infer_text_domain( $source_slug );
 		$header_overrides  = $build_headers( $source_slug, $text_domain );
-		$pot_workspace     = new I18nly_Pot_Workspace_Service();
-		$pot_importer      = new I18nly_Pot_Source_Importer();
+		$pot_workspace     = new \I18nly_Pot_Workspace_Service();
+		$pot_importer      = new \I18nly_Pot_Source_Importer();
 
 		try {
 			$pot_file_path  = $pot_workspace->generate_temporary_pot( $translation_id, $text_domain, $entries, $header_overrides );
 			$import_summary = $pot_importer->import_file( $source_slug, $pot_file_path );
-		} catch ( RuntimeException $exception ) {
+		} catch ( \RuntimeException $exception ) {
 			wp_send_json_error( array( 'message' => $exception->getMessage() ), 500 );
 			return;
 		}

@@ -17,8 +17,8 @@ return array(
     'I18nly_Source_Schema_Manager' => $baseDir . '/includes/class-i18nly-source-schema-manager.php',
     'I18nly_Source_Wpdb_Repository' => $baseDir . '/includes/class-i18nly-source-wpdb-repository.php',
     'I18nly_Temporary_Storage' => $baseDir . '/includes/class-i18nly-temporary-storage.php',
-    'I18nly_Translation_Ajax_Controller' => $baseDir . '/includes/class-i18nly-translation-ajax-controller.php',
     'I18nly_Translation_Entries_List_Table' => $baseDir . '/includes/class-i18nly-translation-entries-list-table.php',
-    'I18nly_Translation_Meta_Box_Renderer' => $baseDir . '/includes/class-i18nly-translation-meta-box-renderer.php',
     'I18nly_Translation_Save_Handler' => $baseDir . '/includes/class-i18nly-translation-save-handler.php',
+    'WP_I18nly\\TranslationAjaxController' => $baseDir . '/includes/class-i18nly-translation-ajax-controller.php',
+    'WP_I18nly\\TranslationMetaBoxRenderer' => $baseDir . '/includes/class-i18nly-translation-meta-box-renderer.php',
 );

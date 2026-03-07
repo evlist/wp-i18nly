@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Renders translation meta box and entries table markup.
  */
-class I18nly_Translation_Meta_Box_Renderer {
+class TranslationMetaBoxRenderer {
 	/**
 	 * Renders translation meta box fields.
 	 *
@@ -78,7 +80,7 @@ class I18nly_Translation_Meta_Box_Renderer {
 	 */
 	public function render_source_entries_table_markup( array $source_entries ) {
 		ob_start();
-		$list_table = new I18nly_Translation_Entries_List_Table( $source_entries );
+		$list_table = new \I18nly_Translation_Entries_List_Table( $source_entries );
 		$list_table->prepare_items();
 		$list_table->display();
 

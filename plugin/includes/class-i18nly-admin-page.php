@@ -149,10 +149,10 @@ class I18nly_Admin_Page {
 	/**
 	 * Returns translation meta box renderer.
 	 *
-	 * @return I18nly_Translation_Meta_Box_Renderer
+	 * @return \WP_I18nly\TranslationMetaBoxRenderer
 	 */
 	protected function get_meta_box_renderer() {
-		return new I18nly_Translation_Meta_Box_Renderer();
+		return new \WP_I18nly\TranslationMetaBoxRenderer();
 	}
 
 	/**
@@ -477,10 +477,10 @@ class I18nly_Admin_Page {
 	/**
 	 * Returns translation AJAX controller.
 	 *
-	 * @return I18nly_Translation_Ajax_Controller
+	 * @return \WP_I18nly\TranslationAjaxController
 	 */
 	protected function get_ajax_controller() {
-		return new I18nly_Translation_Ajax_Controller(
+		return new \WP_I18nly\TranslationAjaxController(
 			function ( $translation_id ) {
 				return $this->get_translation( $translation_id );
 			},
