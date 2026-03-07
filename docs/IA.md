@@ -297,6 +297,31 @@ phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
 - avoid reintroducing legacy `I18nly_*` class names for runtime code,
 - keep tests updated to require or reference the namespaced classes.
 
+## 15) Slice 3 Decomposition Direction (Admin)
+
+Primary architectural concern identified after PSR-4 migration: current `AdminPage` and `AdminPageHelper` remain too broad and mix UI orchestration with technical utilities.
+
+### Target decomposition
+
+- split edit-screen behavior (`post-new.php` and `post.php`) into a dedicated component (for example `TranslationEditController`),
+- keep high-level admin hook wiring in a thin admin controller/facade,
+- separate UI/rendering responsibilities from technical helpers.
+
+### Suggested namespace structure
+
+- `WP_I18nly\\Admin\\...` for admin controllers,
+- `WP_I18nly\\Admin\\UI\\...` for renderers/list table/view helpers,
+- `WP_I18nly\\Support\\...` (or `Infrastructure`) for technical utilities and integration details.
+
+### Incremental migration strategy
+
+1. extract translation edit flow from `AdminPage` into a dedicated class,
+2. move pure UI helpers out of `AdminPageHelper` into `Admin\\UI` classes,
+3. move technical utility methods into support/infrastructure classes,
+4. keep behavior stable with tests at each extraction step.
+
+This direction is intended to reduce static coupling, improve readability, and prepare upcoming admin features (including future settings pages).
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
