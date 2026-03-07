@@ -80,7 +80,7 @@ class TranslationMetaBoxRenderer {
 	 */
 	public function render_source_entries_table_markup( array $source_entries ) {
 		ob_start();
-		$list_table = new \I18nly_Translation_Entries_List_Table( $source_entries );
+		$list_table = new TranslationEntriesListTable( $source_entries );
 		$list_table->prepare_items();
 		$list_table->display();
 

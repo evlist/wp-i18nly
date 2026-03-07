@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Renders translation entries using WP_List_Table conventions.
  */
-class I18nly_Translation_Entries_List_Table extends WP_List_Table {
+class TranslationEntriesListTable extends \WP_List_Table {
 	/**
 	 * Table rows.
 	 *

@@ -170,10 +170,10 @@ class I18nly_Admin_Page {
 	/**
 	 * Returns save handler.
 	 *
-	 * @return I18nly_Translation_Save_Handler
+	 * @return \WP_I18nly\TranslationSaveHandler
 	 */
 	protected function get_save_handler() {
-		return new I18nly_Translation_Save_Handler(
+		return new \WP_I18nly\TranslationSaveHandler(
 			self::POST_TYPE,
 			self::META_SOURCE_SLUG,
 			self::META_TARGET_LANGUAGE,

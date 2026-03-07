@@ -8,12 +8,14 @@
  * @package I18nly
  */
 
+namespace WP_I18nly;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Handles translation save flow orchestration.
  */
-class I18nly_Translation_Save_Handler {
+class TranslationSaveHandler {
 	/**
 	 * Translation post type.
 	 *
@@ -157,7 +159,7 @@ class I18nly_Translation_Save_Handler {
 					$this->persist_entries_callback,
 					(int) $post_id,
 					$source_slug,
-					I18nly_Admin_Page_Helper::normalize_translation_entries_payload( $entries_payload )
+					\I18nly_Admin_Page_Helper::normalize_translation_entries_payload( $entries_payload )
 				);
 			}
 		}
