@@ -247,6 +247,57 @@ Suggested spike scope:
 2. compare readability/maintenance cost vs current bootstrap stubs,
 3. decide whether to generalize progressively.
 
+## 14) Autoload & Architecture Migration Plan (3 Slices)
+
+### Slice 1: Runtime autoload via Composer classmap
+
+Goal: replace the custom `spl_autoload_register` loader with Composer runtime autoload while keeping current class names and file names unchanged.
+
+Implementation notes:
+
+- add a minimal `plugin/composer.json` with `autoload.classmap` targeting `includes/`,
+- generate `plugin/vendor/autoload.php` via `composer dump-autoload` (using global Composer tooling),
+- update `plugin/i18nly.php` to load Composer autoload and remove the custom loader.
+
+Done criteria:
+
+- plugin boots correctly with Composer autoload only,
+- custom autoload functions are removed,
+- PHPUnit suite remains green.
+
+### Slice 2: PSR-4 migration (still under `includes/` initially)
+
+Goal: migrate from classmap to PSR-4 conventions with namespaced classes.
+
+Implementation notes:
+
+- rename files to PSR-4-compatible file names,
+- migrate class names to namespaces,
+- update references in plugin code and tests,
+- switch Composer autoload from `classmap` to `psr-4`.
+
+Done criteria:
+
+- runtime and tests use PSR-4 classes,
+- classmap fallback is removed,
+- optional temporary aliases (if used) are documented and marked for removal.
+
+### Slice 3: Class decomposition and responsibility split
+
+Goal: reduce large utility/static-heavy classes by splitting responsibilities into clearer services/components.
+
+Implementation notes:
+
+- prioritize decomposition of static helper-heavy files,
+- split by business responsibility (not necessarily one method per file),
+- favor dependency injection and explicit collaborators.
+
+Done criteria:
+
+- smaller focused classes,
+- reduced static coupling,
+- tests remain green and become easier to target at unit level.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
