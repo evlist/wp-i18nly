@@ -7,6 +7,10 @@ namespace Composer\Autoload;
 class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
 {
     public static $prefixLengthsPsr4 = array (
+        'W' =>
+        array (
+            'WP_I18nly\\' => 10,
+        ),
         'P' =>
         array (
             'Peast\\' => 6,
@@ -19,6 +23,10 @@ class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
     );
 
     public static $prefixDirsPsr4 = array (
+        'WP_I18nly\\' =>
+        array (
+            0 => __DIR__ . '/../../..' . '/includes/WP_I18nly',
+        ),
         'Peast\\' =>
         array (
             0 => __DIR__ . '/..' . '/mck89/peast/lib/Peast',
@@ -47,8 +55,6 @@ class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
         'I18nly_Temporary_Storage' => __DIR__ . '/../../..' . '/includes/class-i18nly-temporary-storage.php',
         'I18nly_Translation_Entries_List_Table' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-entries-list-table.php',
         'I18nly_Translation_Save_Handler' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-save-handler.php',
-        'WP_I18nly\\TranslationAjaxController' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-ajax-controller.php',
-        'WP_I18nly\\TranslationMetaBoxRenderer' => __DIR__ . '/../../..' . '/includes/class-i18nly-translation-meta-box-renderer.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

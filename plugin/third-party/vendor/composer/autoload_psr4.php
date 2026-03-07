@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname(dirname($vendorDir));
 
 return array(
+    'WP_I18nly\\' => array($baseDir . '/includes/WP_I18nly'),
     'Peast\\' => array($vendorDir . '/mck89/peast/lib/Peast'),
     'Gettext\\Languages\\' => array($vendorDir . '/gettext/languages/src'),
     'Gettext\\' => array($vendorDir . '/gettext/gettext/src'),

@@ -21,6 +21,10 @@ SPDX-License-Identifier: GPL-3.0-or-later OR MIT
 
   <rule ref="WordPress"/>
 
+  <rule ref="WordPress.Files.FileName">
+    <exclude-pattern>*/plugin/includes/WP_I18nly/*</exclude-pattern>
+  </rule>
+
   <rule ref="./.vscode/phpcs-standard/I18nly/Sniffs/Commenting/NoPhpcsIgnoreSniff.php">
     <exclude-pattern>*/tests/*</exclude-pattern>
   </rule>
