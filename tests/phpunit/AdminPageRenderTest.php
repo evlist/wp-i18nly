@@ -871,6 +871,189 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Delegates list columns filtering to UI handler.
+	 *
+	 * @return void
+	 */
+	public function test_filter_translation_list_columns_delegates_to_list_columns_handler() {
+		$handler = new class() {
+			/**
+			 * Whether delegation occurred.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures filter call.
+			 *
+			 * @param array<string, string> $columns Columns.
+			 * @return array<string, string>
+			 */
+			public function filter_columns( array $columns ) {
+				$this->called = true;
+
+				return $columns;
+			}
+
+			/**
+			 * Stub method.
+			 *
+			 * @param array<string, string> $columns Columns.
+			 * @return array<string, string>
+			 */
+			public function filter_sortable_columns( array $columns ) {
+				return $columns;
+			}
+
+			/**
+			 * Stub method.
+			 *
+			 * @param string $column_name Column name.
+			 * @param int    $post_id Post ID.
+			 * @param string $meta_source_key Source key.
+			 * @param string $meta_target_key Target key.
+			 * @return string
+			 */
+			public function get_column_value( $column_name, $post_id, $meta_source_key, $meta_target_key ) {
+				unset( $column_name, $post_id, $meta_source_key, $meta_target_key );
+				return '';
+			}
+
+			/**
+			 * Stub method.
+			 *
+			 * @param object $query Query.
+			 * @param string $post_type Post type.
+			 * @param string $meta_source_key Source key.
+			 * @param string $meta_target_key Target key.
+			 * @return void
+			 */
+			public function apply_sorting( $query, $post_type, $meta_source_key, $meta_target_key ) {
+				unset( $query, $post_type, $meta_source_key, $meta_target_key );
+			}
+
+			/**
+			 * Stub method.
+			 *
+			 * @param array<string, string> $actions Actions.
+			 * @param object                $post Post.
+			 * @param string                $post_type Post type.
+			 * @return array<string, string>
+			 */
+			public function filter_row_actions( array $actions, $post, $post_type ) {
+				unset( $post, $post_type );
+				return $actions;
+			}
+		};
+
+		$page = new class( $handler ) extends \WP_I18nly\AdminPage {
+			/**
+			 * List columns handler test double.
+			 *
+			 * @var object
+			 */
+			private $test_handler;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_handler Handler test double.
+			 */
+			public function __construct( $test_handler ) {
+				$this->test_handler = $test_handler;
+			}
+
+			/**
+			 * Returns test double.
+			 *
+			 * @return object
+			 */
+			protected function get_list_columns() {
+				return $this->test_handler;
+			}
+		};
+
+		$page->filter_translation_list_columns( array( 'title' => 'Title' ) );
+
+		$this->assertTrue( $handler->called );
+	}
+
+	/**
+	 * Delegates post messages filtering to messages handler.
+	 *
+	 * @return void
+	 */
+	public function test_filter_translation_post_updated_messages_delegates_to_messages_handler() {
+		$handler = new class() {
+			/**
+			 * Whether delegation occurred.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures filter call.
+			 *
+			 * @param array<string, array<int, string>> $messages Messages.
+			 * @param string                            $post_type Post type.
+			 * @return array<string, array<int, string>>
+			 */
+			public function filter_post_updated_messages( array $messages, $post_type ) {
+				$this->called = true;
+				unset( $post_type );
+
+				return $messages;
+			}
+
+			/**
+			 * Stub method.
+			 *
+			 * @param array<string, array<string, string>> $bulk_messages Bulk messages.
+			 * @param array<string, int>                   $bulk_counts Counts.
+			 * @param string                               $post_type Post type.
+			 * @return array<string, array<string, string>>
+			 */
+			public function filter_bulk_updated_messages( array $bulk_messages, array $bulk_counts, $post_type ) {
+				unset( $bulk_counts, $post_type );
+				return $bulk_messages;
+			}
+		};
+
+		$page = new class( $handler ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Messages handler test double.
+			 *
+			 * @var object
+			 */
+			private $test_handler;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_handler Handler test double.
+			 */
+			public function __construct( $test_handler ) {
+				$this->test_handler = $test_handler;
+			}
+
+			/**
+			 * Returns test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_messages() {
+				return $this->test_handler;
+			}
+		};
+
+		$page->filter_translation_post_updated_messages( array() );
+
+		$this->assertTrue( $handler->called );
+	}
+
+	/**
 	 * Delegates translation save flow to dedicated save handler.
 	 *
 	 * @return void

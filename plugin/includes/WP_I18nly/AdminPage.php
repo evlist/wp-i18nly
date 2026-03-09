@@ -11,6 +11,9 @@
 namespace WP_I18nly;
 
 use WP_I18nly\Admin\TranslationEditController;
+use WP_I18nly\Admin\UI\TranslationListColumns;
+use WP_I18nly\Admin\UI\TranslationMessages;
+use WP_I18nly\Admin\UI\EditScreenAssets;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -98,7 +101,7 @@ class AdminPage {
 	 * @return array<string, array<int, string>>
 	 */
 	public function filter_translation_post_updated_messages( array $messages ) {
-		return AdminPageHelper::filter_translation_post_updated_messages( $messages, self::POST_TYPE );
+		return $this->get_translation_messages()->filter_post_updated_messages( $messages, self::POST_TYPE );
 	}
 
 	/**
@@ -109,7 +112,7 @@ class AdminPage {
 	 * @return array<string, array<string, string>>
 	 */
 	public function filter_translation_bulk_updated_messages( array $bulk_messages, array $bulk_counts ) {
-		return AdminPageHelper::filter_translation_bulk_updated_messages( $bulk_messages, $bulk_counts, self::POST_TYPE );
+		return $this->get_translation_messages()->filter_bulk_updated_messages( $bulk_messages, $bulk_counts, self::POST_TYPE );
 	}
 
 	/**
@@ -272,7 +275,7 @@ class AdminPage {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_list_columns( array $columns ) {
-		return AdminPageHelper::filter_translation_list_columns( $columns );
+		return $this->get_list_columns()->filter_columns( $columns );
 	}
 
 	/**
@@ -283,7 +286,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function render_translation_list_column( $column_name, $post_id ) {
-		echo esc_html( AdminPageHelper::get_translation_list_column_value( $column_name, $post_id, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE ) );
+		echo esc_html( $this->get_list_columns()->get_column_value( $column_name, $post_id, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE ) );
 	}
 
 	/**
@@ -293,7 +296,7 @@ class AdminPage {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_sortable_columns( array $columns ) {
-		return AdminPageHelper::filter_translation_sortable_columns( $columns );
+		return $this->get_list_columns()->filter_sortable_columns( $columns );
 	}
 
 	/**
@@ -303,7 +306,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function apply_translation_sorting( $query ) {
-		AdminPageHelper::apply_translation_sorting( $query, self::POST_TYPE, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE );
+		$this->get_list_columns()->apply_sorting( $query, self::POST_TYPE, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE );
 	}
 
 	/**
@@ -332,7 +335,7 @@ class AdminPage {
 	 * @return array<string, string>
 	 */
 	public function filter_translation_row_actions( array $actions, $post ) {
-		return AdminPageHelper::filter_translation_row_actions( $actions, $post, self::POST_TYPE );
+		return $this->get_list_columns()->filter_row_actions( $actions, $post, self::POST_TYPE );
 	}
 
 	/**
@@ -391,7 +394,7 @@ class AdminPage {
 	 * @return string
 	 */
 	private function get_translation_edit_script_url() {
-		return AdminPageHelper::get_translation_edit_script_url();
+		return $this->get_edit_screen_assets()->get_script_url();
 	}
 
 	/**
@@ -400,7 +403,7 @@ class AdminPage {
 	 * @return string
 	 */
 	private function get_translation_edit_style_url() {
-		return AdminPageHelper::get_translation_edit_style_url();
+		return $this->get_edit_screen_assets()->get_style_url();
 	}
 
 	/**
@@ -410,7 +413,7 @@ class AdminPage {
 	 * @return array<string, mixed>
 	 */
 	private function build_translation_edit_script_config( $translation_id ) {
-		return AdminPageHelper::build_translation_edit_script_config( $translation_id );
+		return $this->get_edit_screen_assets()->build_script_config( $translation_id );
 	}
 
 	/**
@@ -466,6 +469,33 @@ class AdminPage {
 				return $this->get_ajax_controller();
 			}
 		);
+	}
+
+	/**
+	 * Returns translation list columns handler.
+	 *
+	 * @return \WP_I18nly\Admin\UI\TranslationListColumns
+	 */
+	protected function get_list_columns() {
+		return new TranslationListColumns();
+	}
+
+	/**
+	 * Returns translation messages handler.
+	 *
+	 * @return \WP_I18nly\Admin\UI\TranslationMessages
+	 */
+	protected function get_translation_messages() {
+		return new TranslationMessages();
+	}
+
+	/**
+	 * Returns edit screen assets handler.
+	 *
+	 * @return \WP_I18nly\Admin\UI\EditScreenAssets
+	 */
+	protected function get_edit_screen_assets() {
+		return new EditScreenAssets();
 	}
 
 	/**
