@@ -1547,18 +1547,4 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 	}
 }
 
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/AdminPage.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/Admin/TranslationEditController.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PluralFormsRegistry.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/AdminPageHelper.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationSaveHandler.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationAjaxController.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationMetaBoxRenderer.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TranslationEntriesListTable.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotGenerator.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotSourceEntryExtractor.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/TemporaryStorage.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotWorkspaceService.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/SourceSchemaManager.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/SourceWpdbRepository.php';
-require_once __DIR__ . '/../../plugin/includes/WP_I18nly/PotSourceImporter.php';
+require_once __DIR__ . '/../../plugin/third-party/vendor/autoload.php';
