@@ -10,6 +10,8 @@
 
 namespace WP_I18nly;
 
+use WP_I18nly\Admin\TranslationEditController;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -116,13 +118,9 @@ class AdminPage {
 	 * @return void
 	 */
 	public function register_translation_meta_box() {
-		add_meta_box(
-			'i18nly-translation-settings',
-			__( 'Translation', 'i18nly' ),
-			array( $this, 'render_translation_meta_box' ),
+		$this->get_translation_edit_controller()->register_translation_meta_box(
 			self::POST_TYPE,
-			'normal',
-			'high'
+			array( $this, 'render_translation_meta_box' )
 		);
 	}
 
@@ -133,18 +131,10 @@ class AdminPage {
 	 * @return void
 	 */
 	public function render_translation_meta_box( $post ) {
-		$plugin_options    = $this->get_plugin_options();
-		$target_languages  = $this->get_target_language_options();
-		$selected_source   = (string) get_post_meta( (int) $post->ID, self::META_SOURCE_SLUG, true );
-		$selected_language = (string) get_post_meta( (int) $post->ID, self::META_TARGET_LANGUAGE, true );
-		$is_locked         = '' !== $selected_source || '' !== $selected_language;
-
-		$this->get_meta_box_renderer()->render_translation_meta_box(
-			$plugin_options,
-			$target_languages,
-			$selected_source,
-			$selected_language,
-			$is_locked
+		$this->get_translation_edit_controller()->handle_render_translation_meta_box(
+			$post,
+			self::META_SOURCE_SLUG,
+			self::META_TARGET_LANGUAGE
 		);
 	}
 
@@ -166,7 +156,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function save_translation_meta_box( $post_id, $post, $update ) {
-		$this->get_save_handler()->handle_save( (int) $post_id, $post, (bool) $update );
+		$this->get_translation_edit_controller()->handle_save_translation_meta_box( $post_id, $post, $update );
 	}
 
 	/**
@@ -389,44 +379,9 @@ class AdminPage {
 	 * @return void
 	 */
 	public function render_translation_edit_pot_generation_script( $hook_suffix = '' ) {
-		if ( '' !== (string) $hook_suffix && 'post.php' !== (string) $hook_suffix ) {
-			return;
-		}
-
-		$translation_id = $this->get_current_edit_translation_id();
-
-		if ( $translation_id <= 0 ) {
-			return;
-		}
-
-		$script_handle = 'i18nly-translation-edit';
-		$style_handle  = 'i18nly-translation-edit-style';
-
-		wp_enqueue_style(
-			$style_handle,
-			$this->get_translation_edit_style_url(),
-			array(),
+		$this->get_translation_edit_controller()->render_translation_edit_pot_generation_script(
+			$hook_suffix,
 			defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '0.1.0'
-		);
-
-		wp_enqueue_script(
-			$script_handle,
-			$this->get_translation_edit_script_url(),
-			array(),
-			defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '0.1.0',
-			true
-		);
-
-		$config_json = wp_json_encode( $this->build_translation_edit_script_config( $translation_id ) );
-
-		if ( false === $config_json ) {
-			return;
-		}
-
-		wp_add_inline_script(
-			$script_handle,
-			'window.i18nlyTranslationEditConfig = ' . $config_json . ';',
-			'before'
 		);
 	}
 
@@ -464,7 +419,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function ajax_generate_translation_pot() {
-		$this->get_ajax_controller()->handle_generate_translation_pot();
+		$this->get_translation_edit_controller()->ajax_generate_translation_pot();
 	}
 
 	/**
@@ -473,7 +428,44 @@ class AdminPage {
 	 * @return void
 	 */
 	public function ajax_get_translation_entries_table() {
-		$this->get_ajax_controller()->handle_get_translation_entries_table();
+		$this->get_translation_edit_controller()->ajax_get_translation_entries_table();
+	}
+
+	/**
+	 * Returns translation edit controller.
+	 *
+	 * @return \WP_I18nly\Admin\TranslationEditController
+	 */
+	protected function get_translation_edit_controller() {
+		return new TranslationEditController(
+			function () {
+				return $this->get_plugin_options();
+			},
+			function () {
+				return $this->get_target_language_options();
+			},
+			function () {
+				return $this->get_meta_box_renderer();
+			},
+			function () {
+				return $this->get_save_handler();
+			},
+			function () {
+				return $this->get_current_edit_translation_id();
+			},
+			function () {
+				return $this->get_translation_edit_script_url();
+			},
+			function () {
+				return $this->get_translation_edit_style_url();
+			},
+			function ( $translation_id ) {
+				return $this->build_translation_edit_script_config( (int) $translation_id );
+			},
+			function () {
+				return $this->get_ajax_controller();
+			}
+		);
 	}
 
 	/**

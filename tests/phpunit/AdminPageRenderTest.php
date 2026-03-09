@@ -577,6 +577,300 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Delegates translation meta box registration to edit controller.
+	 *
+	 * @return void
+	 */
+	public function test_register_translation_meta_box_delegates_to_translation_edit_controller() {
+		$controller = new class() {
+			/**
+			 * Whether registration was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured post type.
+			 *
+			 * @var string
+			 */
+			public $captured_post_type = '';
+
+			/**
+			 * Captures registration call.
+			 *
+			 * @param string   $post_type Translation post type.
+			 * @param callable $render_callback Render callback.
+			 * @return void
+			 */
+			public function register_translation_meta_box( $post_type, callable $render_callback ) {
+				$this->called             = true;
+				$this->captured_post_type = (string) $post_type;
+
+				unset( $render_callback );
+			}
+		};
+
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Edit controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller Edit controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns edit controller test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_edit_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->register_translation_meta_box();
+
+		$this->assertTrue( $controller->called );
+		$this->assertSame( 'i18nly_translation', $controller->captured_post_type );
+	}
+
+	/**
+	 * Delegates translation meta box rendering to edit controller.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_meta_box_delegates_to_translation_edit_controller() {
+		$controller = new class() {
+			/**
+			 * Whether rendering was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured render arguments.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured = array();
+
+			/**
+			 * Captures render delegation.
+			 *
+			 * @param object $post Current post object.
+			 * @param string $meta_source_key Source key.
+			 * @param string $meta_target_key Target key.
+			 * @return void
+			 */
+			public function handle_render_translation_meta_box( $post, $meta_source_key, $meta_target_key ) {
+				$this->called   = true;
+				$this->captured = array(
+					'post_id'         => isset( $post->ID ) ? (int) $post->ID : 0,
+					'meta_source_key' => (string) $meta_source_key,
+					'meta_target_key' => (string) $meta_target_key,
+				);
+			}
+		};
+
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Edit controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller Edit controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns edit controller test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_edit_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
+
+		$this->assertTrue( $controller->called );
+		$this->assertSame( 42, $controller->captured['post_id'] );
+		$this->assertSame( '_i18nly_source_slug', $controller->captured['meta_source_key'] );
+		$this->assertSame( '_i18nly_target_language', $controller->captured['meta_target_key'] );
+	}
+
+	/**
+	 * Delegates save handling to translation edit controller.
+	 *
+	 * @return void
+	 */
+	public function test_save_translation_meta_box_delegates_to_translation_edit_controller() {
+		$controller = new class() {
+			/**
+			 * Whether save was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured arguments.
+			 *
+			 * @var array<string, mixed>
+			 */
+			public $captured = array();
+
+			/**
+			 * Captures delegated save call.
+			 *
+			 * @param int    $post_id Post ID.
+			 * @param object $post Post object.
+			 * @param bool   $update Update flag.
+			 * @return void
+			 */
+			public function handle_save_translation_meta_box( $post_id, $post, $update ) {
+				$this->called   = true;
+				$this->captured = array(
+					'post_id' => (int) $post_id,
+					'update'  => (bool) $update,
+					'type'    => isset( $post->post_type ) ? (string) $post->post_type : '',
+				);
+			}
+		};
+
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Edit controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller Edit controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns edit controller test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_edit_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->save_translation_meta_box(
+			42,
+			(object) array(
+				'post_type' => 'i18nly_translation',
+			),
+			true
+		);
+
+		$this->assertTrue( $controller->called );
+		$this->assertSame( 42, $controller->captured['post_id'] );
+		$this->assertSame( true, $controller->captured['update'] );
+		$this->assertSame( 'i18nly_translation', $controller->captured['type'] );
+	}
+
+	/**
+	 * Delegates POT script rendering to translation edit controller.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_edit_pot_generation_script_delegates_to_translation_edit_controller() {
+		$controller = new class() {
+			/**
+			 * Whether assets rendering was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captured arguments.
+			 *
+			 * @var array<string, string>
+			 */
+			public $captured = array();
+
+			/**
+			 * Captures delegated script render call.
+			 *
+			 * @param string $hook_suffix Current hook suffix.
+			 * @param string $asset_version Asset version.
+			 * @return void
+			 */
+			public function render_translation_edit_pot_generation_script( $hook_suffix, $asset_version ) {
+				$this->called   = true;
+				$this->captured = array(
+					'hook_suffix'   => (string) $hook_suffix,
+					'asset_version' => (string) $asset_version,
+				);
+			}
+		};
+
+		$page = new class( $controller ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Edit controller test double.
+			 *
+			 * @var object
+			 */
+			private $test_controller;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_controller Edit controller test double.
+			 */
+			public function __construct( $test_controller ) {
+				$this->test_controller = $test_controller;
+			}
+
+			/**
+			 * Returns edit controller test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_edit_controller() {
+				return $this->test_controller;
+			}
+		};
+
+		$page->render_translation_edit_pot_generation_script( 'post.php' );
+
+		$this->assertTrue( $controller->called );
+		$this->assertSame( 'post.php', $controller->captured['hook_suffix'] );
+		$this->assertSame( '0.1.0', $controller->captured['asset_version'] );
+	}
+
+	/**
 	 * Delegates translation save flow to dedicated save handler.
 	 *
 	 * @return void
