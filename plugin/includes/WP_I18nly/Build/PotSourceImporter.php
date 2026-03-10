@@ -8,7 +8,7 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Build;
 
 use WP_I18nly\Storage\SourceSchemaManager;
 use WP_I18nly\Storage\SourceWpdbRepository;

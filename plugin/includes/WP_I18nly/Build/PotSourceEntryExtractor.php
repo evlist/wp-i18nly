@@ -8,7 +8,7 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Build;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;

@@ -48,7 +48,7 @@ POT;
 
 		$schema_stub = new I18nly_Test_Source_Schema_Manager_Stub();
 		$repository  = new I18nly_Test_InMemory_Source_Repository();
-		$importer    = new \WP_I18nly\PotSourceImporter( $schema_stub, $repository );
+		$importer    = new \WP_I18nly\Build\PotSourceImporter( $schema_stub, $repository );
 
 		$first_summary = $importer->import_file( 'sample-plugin/sample.php', $temp_file );
 
@@ -130,7 +130,7 @@ POT;
 
 		$schema_stub = new I18nly_Test_Source_Schema_Manager_Stub();
 		$repository  = new I18nly_Test_InMemory_Source_Repository();
-		$importer    = new \WP_I18nly\PotSourceImporter( $schema_stub, $repository );
+		$importer    = new \WP_I18nly\Build\PotSourceImporter( $schema_stub, $repository );
 
 		$importer->import_file( 'sample-plugin/sample.php', $temp_first );
 		$summary = $importer->import_file( 'sample-plugin/sample.php', $temp_second );
