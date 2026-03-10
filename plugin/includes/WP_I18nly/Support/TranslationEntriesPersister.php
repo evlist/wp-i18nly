@@ -25,10 +25,10 @@ class TranslationEntriesPersister {
 	 * @return void
 	 */
 	public function persist( $translation_id, $source_slug, array $entries_payload ) {
-		$schema_manager = new \WP_I18nly\SourceSchemaManager();
+		$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
 		$schema_manager->maybe_upgrade();
 
-		$repository = new \WP_I18nly\SourceWpdbRepository( $schema_manager );
+		$repository = new \WP_I18nly\Storage\SourceWpdbRepository( $schema_manager );
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
 		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
 		$form_count = \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );

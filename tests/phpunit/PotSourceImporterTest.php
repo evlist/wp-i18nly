@@ -158,7 +158,7 @@ POT;
 /**
  * In-memory schema manager stub.
  */
-class I18nly_Test_Source_Schema_Manager_Stub extends \WP_I18nly\SourceSchemaManager {
+class I18nly_Test_Source_Schema_Manager_Stub extends \WP_I18nly\Storage\SourceSchemaManager {
 	/**
 	 * Upgrade invocation count.
 	 *

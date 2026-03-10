@@ -129,7 +129,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( '"Project-Id-Version: Akismet Anti-Spam 5.3.7\\n"', $content );
 		$this->assertStringContainsString( '"Report-Msgid-Bugs-To: https://example.test/akismet\\n"', $content );
 
-		$storage = new \WP_I18nly\TemporaryStorage();
+		$storage = new \WP_I18nly\Storage\TemporaryStorage();
 		$storage->cleanup_translation_workspace( 42 );
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );

@@ -22,7 +22,7 @@ class TemporaryStorageTest extends TestCase {
 	 * @return void
 	 */
 	public function test_path_helpers_return_expected_paths() {
-		$storage = new \WP_I18nly\TemporaryStorage( '/tmp/i18nly-tests' );
+		$storage = new \WP_I18nly\Storage\TemporaryStorage( '/tmp/i18nly-tests' );
 
 		$this->assertSame( '/tmp/i18nly-tests/translation-42', $storage->get_translation_directory( 42 ) );
 		$this->assertSame( '/tmp/i18nly-tests/translation-42/messages.pot', $storage->get_pot_file_path( 42 ) );
@@ -35,7 +35,7 @@ class TemporaryStorageTest extends TestCase {
 	 */
 	public function test_ensure_translation_workspace_creates_directories() {
 		$base_dir = sys_get_temp_dir() . '/i18nly-storage-' . uniqid( '', true );
-		$storage  = new \WP_I18nly\TemporaryStorage( $base_dir );
+		$storage  = new \WP_I18nly\Storage\TemporaryStorage( $base_dir );
 
 		$workspace = $storage->ensure_translation_workspace( 99 );
 
@@ -57,7 +57,7 @@ class TemporaryStorageTest extends TestCase {
 		$translation_dir = $base_dir . '/translation-5';
 		$nested_dir      = $translation_dir . '/nested';
 		$nested_file     = $nested_dir . '/strings.txt';
-		$storage         = new \WP_I18nly\TemporaryStorage( $base_dir );
+		$storage         = new \WP_I18nly\Storage\TemporaryStorage( $base_dir );
 
 		mkdir( $nested_dir, 0755, true );
 		file_put_contents( $nested_file, 'temporary data' );
@@ -77,7 +77,7 @@ class TemporaryStorageTest extends TestCase {
 	 * @return void
 	 */
 	public function test_default_base_directory_falls_back_to_system_temp() {
-		$storage = new \WP_I18nly\TemporaryStorage();
+		$storage = new \WP_I18nly\Storage\TemporaryStorage();
 
 		$this->assertStringEndsWith( '/i18nly/staging/translation-1', $storage->get_translation_directory( 1 ) );
 	}

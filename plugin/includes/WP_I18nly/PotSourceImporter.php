@@ -10,6 +10,9 @@
 
 namespace WP_I18nly;
 
+use WP_I18nly\Storage\SourceSchemaManager;
+use WP_I18nly\Storage\SourceWpdbRepository;
+
 defined( 'ABSPATH' ) || exit;
 
 /**

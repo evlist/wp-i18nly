@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 
 require_once dirname( __DIR__ ) . '/plugin/includes/WP_I18nly/SourceSchemaManager.php';
 
-$schema_manager = new \WP_I18nly\SourceSchemaManager();
+$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
 $schema_manager->maybe_upgrade();
 
 echo "i18nly source schema ensured (version 0.0.2).\n";

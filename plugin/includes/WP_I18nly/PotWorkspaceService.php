@@ -11,6 +11,7 @@
 namespace WP_I18nly;
 
 use WP_I18nly\Build\PotGenerator as BuildPotGenerator;
+use WP_I18nly\Storage\TemporaryStorage;
 
 defined( 'ABSPATH' ) || exit;
 

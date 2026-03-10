@@ -8,7 +8,7 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Storage;
 
 defined( 'ABSPATH' ) || exit;
 
