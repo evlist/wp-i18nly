@@ -10,3 +10,5 @@
 .phpdoc/
 build/docs/php/
 
+nohup.out
+
