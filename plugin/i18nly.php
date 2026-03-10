@@ -65,7 +65,7 @@ function i18nly_bootstrap() {
 	$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
 	$schema_manager->maybe_upgrade();
 
-	$admin_page = new \WP_I18nly\AdminPage();
+	$admin_page = new \WP_I18nly\Admin\AdminPage();
 	$admin_page->register();
 }
 add_action( 'plugins_loaded', 'i18nly_bootstrap' );

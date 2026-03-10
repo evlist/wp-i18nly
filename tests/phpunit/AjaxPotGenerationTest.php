@@ -38,7 +38,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_GET['post']   = '42';
 		$_GET['action'] = 'edit';
 
-		$page = new class() extends \WP_I18nly\AdminPage {
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
 			/**
 			 * Returns one query parameter for CLI tests.
 			 *
@@ -105,7 +105,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'nonce-i18nly_generate_translation_pot_42';
 
-		$page = new \WP_I18nly\AdminPage();
+		$page = new \WP_I18nly\Admin\AdminPage();
 		$page->ajax_generate_translation_pot();
 
 		$response = i18nly_test_get_last_json_response();
@@ -158,7 +158,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'nonce-i18nly_get_translation_entries_table_42';
 
-		$page = new class() extends \WP_I18nly\AdminPage {
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
 			/**
 			 * Returns deterministic source entries in tests.
 			 *
@@ -259,7 +259,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'invalid';
 
-		$page = new \WP_I18nly\AdminPage();
+		$page = new \WP_I18nly\Admin\AdminPage();
 		$page->ajax_generate_translation_pot();
 
 		$response = i18nly_test_get_last_json_response();
@@ -294,7 +294,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'nonce-i18nly_generate_translation_pot_42';
 
-		$page = new \WP_I18nly\AdminPage();
+		$page = new \WP_I18nly\Admin\AdminPage();
 		$page->ajax_generate_translation_pot();
 
 		$response = i18nly_test_get_last_json_response();
@@ -329,7 +329,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'nonce-i18nly_generate_translation_pot_42';
 
-		$page = new \WP_I18nly\AdminPage();
+		$page = new \WP_I18nly\Admin\AdminPage();
 		$page->ajax_generate_translation_pot();
 
 		$response = i18nly_test_get_last_json_response();
@@ -352,7 +352,7 @@ class AjaxPotGenerationTest extends TestCase {
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );
 
-		$page = new \WP_I18nly\AdminPage();
+		$page = new \WP_I18nly\Admin\AdminPage();
 		$page->ajax_get_translation_entries_table();
 
 		$response = i18nly_test_get_last_json_response();

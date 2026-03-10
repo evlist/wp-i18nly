@@ -8,7 +8,7 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Admin;
 
 use WP_I18nly\Build\PotSourceEntryExtractor;
 use WP_I18nly\Build\PotSourceImporter;

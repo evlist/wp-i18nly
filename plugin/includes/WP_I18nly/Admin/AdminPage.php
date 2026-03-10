@@ -8,9 +8,8 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Admin;
 
-use WP_I18nly\Admin\TranslationEditController;
 use WP_I18nly\Admin\UI\TranslationListColumns;
 use WP_I18nly\Admin\UI\TranslationMessages;
 use WP_I18nly\Admin\UI\EditScreenAssets;
@@ -171,10 +170,10 @@ class AdminPage {
 	/**
 	 * Returns save handler.
 	 *
-	 * @return \WP_I18nly\TranslationSaveHandler
+	 * @return \WP_I18nly\Admin\TranslationSaveHandler
 	 */
 	protected function get_save_handler() {
-		return new \WP_I18nly\TranslationSaveHandler(
+		return new \WP_I18nly\Admin\TranslationSaveHandler(
 			self::POST_TYPE,
 			self::META_SOURCE_SLUG,
 			self::META_TARGET_LANGUAGE,
@@ -507,10 +506,10 @@ class AdminPage {
 	/**
 	 * Returns translation AJAX controller.
 	 *
-	 * @return \WP_I18nly\TranslationAjaxController
+	 * @return \WP_I18nly\Admin\TranslationAjaxController
 	 */
 	protected function get_ajax_controller() {
-		return new \WP_I18nly\TranslationAjaxController(
+		return new \WP_I18nly\Admin\TranslationAjaxController(
 			function ( $translation_id ) {
 				return $this->get_translation( $translation_id );
 			},

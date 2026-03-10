@@ -54,7 +54,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$_POST['translation_id'] = '42';
 		$_POST['nonce']          = 'nonce-i18nly_get_translation_entries_table_42';
 
-		$page = new class() extends \WP_I18nly\AdminPage {
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
 			/**
 			 * Returns deterministic entries for test rendering.
 			 *
