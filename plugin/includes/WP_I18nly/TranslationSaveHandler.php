@@ -159,7 +159,7 @@ class TranslationSaveHandler {
 					$this->persist_entries_callback,
 					(int) $post_id,
 					$source_slug,
-					AdminPageHelper::normalize_translation_entries_payload( $entries_payload )
+					$this->normalize_translation_entries_payload( $entries_payload )
 				);
 			}
 		}
@@ -175,5 +175,37 @@ class TranslationSaveHandler {
 				'post_title' => $source_slug . ' → ' . $target_language,
 			)
 		);
+	}
+
+	/**
+	 * Normalizes translation entries payload rows.
+	 *
+	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
+	 * @return array<int|string, array<string, string>>
+	 */
+	private function normalize_translation_entries_payload( array $entries_payload ) {
+		$normalized_payload = array();
+
+		foreach ( $entries_payload as $source_entry_id => $entry_payload ) {
+			if ( ! is_array( $entry_payload ) ) {
+				continue;
+			}
+
+			$forms = isset( $entry_payload['forms'] ) && is_array( $entry_payload['forms'] )
+				? $entry_payload['forms']
+				: array();
+
+			$normalized_forms = array();
+
+			foreach ( $forms as $form_index => $form_translation ) {
+				$normalized_forms[ absint( $form_index ) ] = sanitize_text_field( (string) $form_translation );
+			}
+
+			$normalized_payload[ $source_entry_id ] = array(
+				'forms' => $normalized_forms,
+			);
+		}
+
+		return $normalized_payload;
 	}
 }

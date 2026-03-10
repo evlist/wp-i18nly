@@ -87,11 +87,11 @@ class PluralFormsRegistryTest extends TestCase {
 	}
 
 	/**
-	 * Keeps helper API wired to registry results.
+	 * Resolves six plural forms for Arabic locales.
 	 *
 	 * @return void
 	 */
-	public function test_admin_page_helper_uses_registry_for_plural_count() {
-		$this->assertSame( 6, \WP_I18nly\AdminPageHelper::get_plural_forms_count_for_locale( 'ar_AR' ) );
+	public function test_registry_resolves_six_form_locale() {
+		$this->assertSame( 6, \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ar_AR' ) );
 	}
 }

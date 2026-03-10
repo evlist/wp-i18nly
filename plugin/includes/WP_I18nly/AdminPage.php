@@ -14,6 +14,8 @@ use WP_I18nly\Admin\TranslationEditController;
 use WP_I18nly\Admin\UI\TranslationListColumns;
 use WP_I18nly\Admin\UI\TranslationMessages;
 use WP_I18nly\Admin\UI\EditScreenAssets;
+use WP_I18nly\Support\AdminRegistration;
+use WP_I18nly\Support\CurrentEditTranslationResolver;
 use WP_I18nly\Support\TranslationRepository;
 use WP_I18nly\Support\PluginMetadataProvider;
 use WP_I18nly\Support\LanguageOptionsProvider;
@@ -319,7 +321,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function register_post_type() {
-		AdminPageHelper::register_post_type();
+		$this->get_admin_registration()->register_post_type();
 	}
 
 	/**
@@ -328,7 +330,7 @@ class AdminPage {
 	 * @return void
 	 */
 	public function register_menu() {
-		AdminPageHelper::register_menu( self::LIST_SCREEN_SLUG, self::NEW_SCREEN_SLUG );
+		$this->get_admin_registration()->register_menu( self::LIST_SCREEN_SLUG, self::NEW_SCREEN_SLUG );
 	}
 
 	/**
@@ -544,7 +546,7 @@ class AdminPage {
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
 			? (string) $translation['target_language']
 			: '';
-		$form_count  = AdminPageHelper::get_plural_forms_count_for_locale( $locale );
+		$form_count  = \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
 			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
@@ -606,7 +608,7 @@ class AdminPage {
 	 * @return int
 	 */
 	private function get_current_edit_translation_id() {
-		return AdminPageHelper::get_current_edit_translation_id(
+		return $this->get_current_edit_translation_resolver()->resolve(
 			function ( $key ) {
 				return $this->get_query_parameter( $key );
 			},
@@ -666,5 +668,23 @@ class AdminPage {
 	 */
 	protected function get_translation_entries_persister() {
 		return new TranslationEntriesPersister();
+	}
+
+	/**
+	 * Returns admin registration service.
+	 *
+	 * @return \WP_I18nly\Support\AdminRegistration
+	 */
+	protected function get_admin_registration() {
+		return new AdminRegistration();
+	}
+
+	/**
+	 * Returns current edit translation resolver.
+	 *
+	 * @return \WP_I18nly\Support\CurrentEditTranslationResolver
+	 */
+	protected function get_current_edit_translation_resolver() {
+		return new CurrentEditTranslationResolver();
 	}
 }

@@ -1604,7 +1604,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page->expose_get_translation( 42 );
+		call_user_func( array( $page, 'expose_get_translation' ), 42 );
 
 		$this->assertTrue( $repository->called );
 	}
@@ -1708,7 +1708,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page->expose_get_plugin_options();
+		call_user_func( array( $page, 'expose_get_plugin_options' ) );
 
 		$this->assertTrue( $provider->called );
 	}
@@ -1783,7 +1783,7 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page->expose_get_target_language_options();
+		call_user_func( array( $page, 'expose_get_target_language_options' ) );
 
 		$this->assertTrue( $provider->called );
 	}
@@ -1855,8 +1855,145 @@ class AdminPageRenderTest extends TestCase {
 			}
 		};
 
-		$page->expose_persist_translation_entries( 42, 'test/test.php', array() );
+		call_user_func( array( $page, 'expose_persist_translation_entries' ), 42, 'test/test.php', array() );
 
 		$this->assertTrue( $persister->called );
+	}
+
+	/**
+	 * Delegates WordPress admin registration to dedicated service.
+	 *
+	 * @return void
+	 */
+	public function test_register_menu_delegates_to_admin_registration_service() {
+		$registration = new class() {
+			/**
+			 * Whether menu registration was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_menu = false;
+
+			/**
+			 * Whether post type registration was delegated.
+			 *
+			 * @var bool
+			 */
+			public $called_post_type = false;
+
+			/**
+			 * Captures post type registration call.
+			 *
+			 * @return void
+			 */
+			public function register_post_type() {
+				$this->called_post_type = true;
+			}
+
+			/**
+			 * Captures menu registration call.
+			 *
+			 * @param string $list_screen_slug List screen slug.
+			 * @param string $new_screen_slug New screen slug.
+			 * @return void
+			 */
+			public function register_menu( $list_screen_slug, $new_screen_slug ) {
+				$this->called_menu = true;
+				unset( $list_screen_slug, $new_screen_slug );
+			}
+		};
+
+		$page = new class( $registration ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Registration test double.
+			 *
+			 * @var object
+			 */
+			private $test_registration;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_registration Registration test double.
+			 */
+			public function __construct( $test_registration ) {
+				$this->test_registration = $test_registration;
+			}
+
+			/**
+			 * Returns registration test double.
+			 *
+			 * @return object
+			 */
+			protected function get_admin_registration() {
+				return $this->test_registration;
+			}
+		};
+
+		$page->register_menu();
+
+		$this->assertTrue( $registration->called_menu );
+		$this->assertFalse( $registration->called_post_type );
+	}
+
+	/**
+	 * Delegates current edit translation resolution to dedicated service.
+	 *
+	 * @return void
+	 */
+	public function test_render_translation_edit_script_delegates_current_edit_resolution() {
+		$resolver = new class() {
+			/**
+			 * Whether resolver was called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures resolver call.
+			 *
+			 * @param callable $query_reader Query reader.
+			 * @param callable $translation_reader Translation reader.
+			 * @return int
+			 */
+			public function resolve( callable $query_reader, callable $translation_reader ) {
+				$this->called = true;
+				unset( $query_reader, $translation_reader );
+
+				return 0;
+			}
+		};
+
+		$page = new class( $resolver ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Resolver test double.
+			 *
+			 * @var object
+			 */
+			private $test_resolver;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_resolver Resolver test double.
+			 */
+			public function __construct( $test_resolver ) {
+				$this->test_resolver = $test_resolver;
+			}
+
+			/**
+			 * Returns resolver test double.
+			 *
+			 * @return object
+			 */
+			protected function get_current_edit_translation_resolver() {
+				return $this->test_resolver;
+			}
+		};
+
+		$page->render_translation_edit_pot_generation_script( 'post.php' );
+
+		$this->assertTrue( $resolver->called );
 	}
 }
