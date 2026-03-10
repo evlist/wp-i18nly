@@ -156,8 +156,9 @@ Core principles for this repository:
 
 1. Add actions on `All translations` (for example trash/untrash) with minimal status handling.
 2. Expand `Edit translation` page from read-only details to first editable translation entries.
-3. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
-4. Repeat with the same loop: implement → validate → commit.
+3. Continue Slice 3 admin decomposition until `AdminPage` is a thin admin facade only.
+4. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
+5. Repeat with the same loop: implement → validate → commit.
 
 ## 11) Psalm Compatibility & Usage
 
@@ -292,7 +293,8 @@ phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
 ### Contribution Rules For New Classes
 
 - place new runtime classes under `plugin/includes/WP_I18nly/`,
-- use `namespace WP_I18nly;`,
+- use `namespace WP_I18nly\\...;` with explicit sub-namespaces by responsibility,
+- prefer domain-oriented namespaces (`Admin`, `Admin\\UI`, `Support`, `Build`) over generic buckets,
 - use PSR-4 class/file naming (for example `FooBar.php` for `WP_I18nly\\FooBar`),
 - avoid reintroducing legacy `I18nly_*` class names for runtime code,
 - keep tests updated to require or reference the namespaced classes.
@@ -300,6 +302,22 @@ phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
 ## 15) Slice 3 Decomposition Direction (Admin)
 
 Primary architectural concern identified after PSR-4 migration: current `AdminPage` and `AdminPageHelper` remain too broad and mix UI orchestration with technical utilities.
+
+### Current status (March 2026)
+
+Slice 3 is **in progress**, not closed.
+
+Implemented so far:
+
+- edit-screen behavior has been extracted into `WP_I18nly\\Admin\\TranslationEditController`,
+- UI-specific collaborators exist under `WP_I18nly\\Admin\\UI` (messages, list columns, edit assets),
+- technical collaborators exist under `WP_I18nly\\Support`.
+
+Still pending:
+
+- `WP_I18nly\\AdminPage` remains a large multi-responsibility class,
+- admin orchestration, UI wiring, and technical glue are still partially concentrated in that facade,
+- therefore Slice 3 should be tracked as ongoing until `AdminPage` is reduced to thin composition/root wiring.
 
 ### Target decomposition
 
@@ -313,6 +331,8 @@ Primary architectural concern identified after PSR-4 migration: current `AdminPa
 - `WP_I18nly\\Admin\\UI\\...` for renderers/list table/view helpers,
 - `WP_I18nly\\Support\\...` (or `Infrastructure`) for technical utilities and integration details.
 
+`AdminPage` specifically should remain in an admin/application namespace (facade/controller role), **not** in `Admin\\UI`.
+
 ### Incremental migration strategy
 
 1. extract translation edit flow from `AdminPage` into a dedicated class,
@@ -321,6 +341,30 @@ Primary architectural concern identified after PSR-4 migration: current `AdminPa
 4. keep behavior stable with tests at each extraction step.
 
 This direction is intended to reduce static coupling, improve readability, and prepare upcoming admin features (including future settings pages).
+
+## 16) Build Namespace Direction (POT Pipeline)
+
+To avoid a catch-all `Utils` namespace, POT pipeline classes should move toward an explicit build-oriented namespace.
+
+Recommended target:
+
+- `WP_I18nly\\Build\\PotGenerator`,
+- `WP_I18nly\\Build\\PotSourceImporter`,
+- `WP_I18nly\\Build\\PotSourceEntryExtractor`.
+
+Rationale:
+
+- these classes express a domain workflow (artifact build/import),
+- `Build` is more explicit and maintainable than generic `Utils`,
+- it aligns with the same responsibility-first namespace strategy used for `Admin` and `Support`.
+
+Suggested migration pattern (small XP slices):
+
+1. move one class,
+2. update imports/usages/tests,
+3. run focused checks (`php -l`, `phpunit`),
+4. commit,
+5. repeat.
 
 ## 10) Session Safety Checklist for Future Runs
 
