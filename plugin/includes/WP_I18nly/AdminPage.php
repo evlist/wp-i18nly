@@ -546,7 +546,7 @@ class AdminPage {
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
 			? (string) $translation['target_language']
 			: '';
-		$form_count  = \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
+		$form_count  = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
 			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
@@ -554,10 +554,10 @@ class AdminPage {
 
 		if ( method_exists( $repository, 'list_translation_entries_by_plugin_slug' ) ) {
 			$entries       = $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug, 500, $form_count );
-			$forms         = \WP_I18nly\PluralFormsRegistry::get_forms_for_locale( $locale );
-			$form_labels   = \WP_I18nly\PluralFormsRegistry::get_form_labels_for_locale( $locale );
-			$form_markers  = \WP_I18nly\PluralFormsRegistry::get_form_markers_for_locale( $locale );
-			$form_tooltips = \WP_I18nly\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
+			$forms         = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( $locale );
+			$form_labels   = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( $locale );
+			$form_markers  = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( $locale );
+			$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
 
 			foreach ( $entries as &$entry ) {
 				if ( ! is_array( $entry ) ) {

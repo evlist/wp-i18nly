@@ -31,7 +31,7 @@ class TranslationEntriesPersister {
 		$repository = new \WP_I18nly\Storage\SourceWpdbRepository( $schema_manager );
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
 		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
-		$form_count = \WP_I18nly\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
+		$form_count = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
 		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
 			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
