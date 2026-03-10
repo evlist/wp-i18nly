@@ -156,7 +156,7 @@ Core principles for this repository:
 
 1. Add actions on `All translations` (for example trash/untrash) with minimal status handling.
 2. Expand `Edit translation` page from read-only details to first editable translation entries.
-3. Continue Slice 3 admin decomposition until `AdminPage` is a thin admin facade only.
+3. Continue Slice 3 admin decomposition until `WP_I18nly\\Admin\\AdminPage` is a thin admin facade only.
 4. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
 5. Repeat with the same loop: implement → validate → commit.
 
@@ -310,12 +310,15 @@ Slice 3 is **in progress**, not closed.
 Implemented so far:
 
 - edit-screen behavior has been extracted into `WP_I18nly\\Admin\\TranslationEditController`,
-- UI-specific collaborators exist under `WP_I18nly\\Admin\\UI` (messages, list columns, edit assets),
-- technical collaborators exist under `WP_I18nly\\Support`.
+- admin orchestration classes now live under `WP_I18nly\\Admin` (`AdminPage`, `TranslationAjaxController`, `TranslationSaveHandler`),
+- UI-specific collaborators exist under `WP_I18nly\\Admin\\UI` (messages, list columns, edit assets, meta box renderer, entries list table),
+- technical collaborators exist under `WP_I18nly\\Support`,
+- storage collaborators exist under `WP_I18nly\\Storage`,
+- plural rules now live under `WP_I18nly\\Plurals\\PluralFormsRegistry`.
 
 Still pending:
 
-- `WP_I18nly\\AdminPage` remains a large multi-responsibility class,
+- `WP_I18nly\\Admin\\AdminPage` remains a large multi-responsibility class,
 - admin orchestration, UI wiring, and technical glue are still partially concentrated in that facade,
 - therefore Slice 3 should be tracked as ongoing until `AdminPage` is reduced to thin composition/root wiring.
 
@@ -331,7 +334,7 @@ Still pending:
 - `WP_I18nly\\Admin\\UI\\...` for renderers/list table/view helpers,
 - `WP_I18nly\\Support\\...` (or `Infrastructure`) for technical utilities and integration details.
 
-`AdminPage` specifically should remain in an admin/application namespace (facade/controller role), **not** in `Admin\\UI`.
+`AdminPage` specifically belongs in an admin/application namespace (facade/controller role), **not** in `Admin\\UI`.
 
 ### Incremental migration strategy
 
@@ -344,13 +347,14 @@ This direction is intended to reduce static coupling, improve readability, and p
 
 ## 16) Build Namespace Direction (POT Pipeline)
 
-To avoid a catch-all `Utils` namespace, POT pipeline classes should move toward an explicit build-oriented namespace.
+To avoid a catch-all `Utils` namespace, POT pipeline classes have been moved toward an explicit build-oriented namespace.
 
-Recommended target:
+Implemented target:
 
 - `WP_I18nly\\Build\\PotGenerator`,
 - `WP_I18nly\\Build\\PotSourceImporter`,
-- `WP_I18nly\\Build\\PotSourceEntryExtractor`.
+- `WP_I18nly\\Build\\PotSourceEntryExtractor`,
+- `WP_I18nly\\Build\\PotWorkspaceService`.
 
 Rationale:
 
@@ -358,7 +362,7 @@ Rationale:
 - `Build` is more explicit and maintainable than generic `Utils`,
 - it aligns with the same responsibility-first namespace strategy used for `Admin` and `Support`.
 
-Suggested migration pattern (small XP slices):
+Migration pattern used successfully (small XP slices):
 
 1. move one class,
 2. update imports/usages/tests,
