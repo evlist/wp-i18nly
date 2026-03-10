@@ -21,13 +21,13 @@ class TranslationEntriesListTableTest extends TestCase {
 	 */
 	public function test_translation_entries_list_table_class_exists_and_extends_wp_list_table() {
 		$this->assertTrue(
-			class_exists( 'WP_I18nly\\TranslationEntriesListTable', false ),
-			'Expected WP_I18nly\\TranslationEntriesListTable class to be defined.'
+			class_exists( 'WP_I18nly\\Admin\\UI\\TranslationEntriesListTable', false ),
+			'Expected WP_I18nly\\Admin\\UI\\TranslationEntriesListTable class to be defined.'
 		);
 
 		$this->assertTrue(
-			is_subclass_of( 'WP_I18nly\\TranslationEntriesListTable', 'WP_List_Table' ),
-			'Expected WP_I18nly\\TranslationEntriesListTable to extend WP_List_Table.'
+			is_subclass_of( 'WP_I18nly\\Admin\\UI\\TranslationEntriesListTable', 'WP_List_Table' ),
+			'Expected WP_I18nly\\Admin\\UI\\TranslationEntriesListTable to extend WP_List_Table.'
 		);
 	}
 
@@ -104,7 +104,7 @@ class TranslationEntriesListTableTest extends TestCase {
 	 * @return void
 	 */
 	public function test_list_table_renders_compact_cells_without_plural_values() {
-		$list_table = new \WP_I18nly\TranslationEntriesListTable(
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
 			array(
 				array(
 					'source_entry_id' => 21,
@@ -141,7 +141,7 @@ class TranslationEntriesListTableTest extends TestCase {
 	 * @return void
 	 */
 	public function test_translation_column_uses_source_plural_to_enable_stacked_rendering() {
-		$list_table = new \WP_I18nly\TranslationEntriesListTable(
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
 			array(
 				array(
 					'source_entry_id' => 31,

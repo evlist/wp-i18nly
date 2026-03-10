@@ -150,10 +150,10 @@ class AdminPage {
 	/**
 	 * Returns translation meta box renderer.
 	 *
-	 * @return \WP_I18nly\TranslationMetaBoxRenderer
+	 * @return \WP_I18nly\Admin\UI\TranslationMetaBoxRenderer
 	 */
 	protected function get_meta_box_renderer() {
-		return new \WP_I18nly\TranslationMetaBoxRenderer();
+		return new \WP_I18nly\Admin\UI\TranslationMetaBoxRenderer();
 	}
 
 	/**
