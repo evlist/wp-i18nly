@@ -13,199 +13,178 @@ use ReturnTypeWillChange;
 /**
  * Class to manage a collection of translations under the same domain.
  */
-class Translations implements Countable, IteratorAggregate
-{
-    protected $description;
-    protected $translations = [];
-    protected $headers;
-    protected $flags;
+class Translations implements Countable, IteratorAggregate {
 
-    public static function create(?string $domain = null, ?string $language = null): Translations
-    {
-        $translations = new static();
+	protected $description;
+	protected $translations = array();
+	protected $headers;
+	protected $flags;
 
-        if (isset($domain)) {
-            $translations->setDomain($domain);
-        }
+	public static function create( ?string $domain = null, ?string $language = null ): Translations {
+		$translations = new static();
 
-        if (isset($language)) {
-            $translations->setLanguage($language);
-        }
+		if ( isset( $domain ) ) {
+			$translations->setDomain( $domain );
+		}
 
-        return $translations;
-    }
+		if ( isset( $language ) ) {
+			$translations->setLanguage( $language );
+		}
 
-    protected function __construct()
-    {
-        $this->headers = new Headers();
-        $this->flags = new Flags();
-    }
+		return $translations;
+	}
 
-    public function __clone()
-    {
-        foreach ($this->translations as $id => $translation) {
-            $this->translations[$id] = clone $translation;
-        }
+	protected function __construct() {
+		$this->headers = new Headers();
+		$this->flags   = new Flags();
+	}
 
-        $this->headers = clone $this->headers;
-    }
+	public function __clone() {
+		foreach ( $this->translations as $id => $translation ) {
+			$this->translations[ $id ] = clone $translation;
+		}
 
-    public function setDescription(?string $description): self
-    {
-        $this->description = $description;
+		$this->headers = clone $this->headers;
+	}
 
-        return $this;
-    }
+	public function setDescription( ?string $description ): self {
+		$this->description = $description;
 
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
+		return $this;
+	}
 
-    public function getFlags(): Flags
-    {
-        return $this->flags;
-    }
+	public function getDescription(): ?string {
+		return $this->description;
+	}
 
-    public function toArray(): array
-    {
-        return [
-            'description' => $this->description,
-            'headers' => $this->headers->toArray(),
-            'flags' => $this->flags->toArray(),
-            'translations' => array_map(
-                function ($translation) {
-                    return $translation->toArray();
-                },
-                array_values($this->translations)
-            ),
-        ];
-    }
+	public function getFlags(): Flags {
+		return $this->flags;
+	}
 
-    #[ReturnTypeWillChange]
-    public function getIterator()
-    {
-        return new ArrayIterator($this->translations);
-    }
+	public function toArray(): array {
+		return array(
+			'description'  => $this->description,
+			'headers'      => $this->headers->toArray(),
+			'flags'        => $this->flags->toArray(),
+			'translations' => array_map(
+				function ( $translation ) {
+					return $translation->toArray();
+				},
+				array_values( $this->translations )
+			),
+		);
+	}
 
-    public function getTranslations(): array
-    {
-        return $this->translations;
-    }
+	#[ReturnTypeWillChange]
+	public function getIterator() {
+		return new ArrayIterator( $this->translations );
+	}
 
-    public function count(): int
-    {
-        return count($this->translations);
-    }
+	public function getTranslations(): array {
+		return $this->translations;
+	}
 
-    public function getHeaders(): Headers
-    {
-        return $this->headers;
-    }
+	public function count(): int {
+		return count( $this->translations );
+	}
 
-    public function add(Translation $translation): self
-    {
-        $id = $translation->getId();
+	public function getHeaders(): Headers {
+		return $this->headers;
+	}
 
-        $this->translations[$id] = $translation;
+	public function add( Translation $translation ): self {
+		$id = $translation->getId();
 
-        return $this;
-    }
+		$this->translations[ $id ] = $translation;
 
-    public function addOrMerge(Translation $translation, int $mergeStrategy = 0): Translation
-    {
-        $id = $translation->getId();
+		return $this;
+	}
 
-        if (isset($this->translations[$id])) {
-            return $this->translations[$id] = $this->translations[$id]->mergeWith($translation, $mergeStrategy);
-        }
+	public function addOrMerge( Translation $translation, int $mergeStrategy = 0 ): Translation {
+		$id = $translation->getId();
 
-        return $this->translations[$id] = $translation;
-    }
+		if ( isset( $this->translations[ $id ] ) ) {
+			return $this->translations[ $id ] = $this->translations[ $id ]->mergeWith( $translation, $mergeStrategy );
+		}
 
-    public function remove(Translation $translation): self
-    {
-        unset($this->translations[$translation->getId()]);
+		return $this->translations[ $id ] = $translation;
+	}
 
-        return $this;
-    }
+	public function remove( Translation $translation ): self {
+		unset( $this->translations[ $translation->getId() ] );
 
-    public function setDomain(string $domain): self
-    {
-        $this->getHeaders()->setDomain($domain);
+		return $this;
+	}
 
-        return $this;
-    }
+	public function setDomain( string $domain ): self {
+		$this->getHeaders()->setDomain( $domain );
 
-    public function getDomain(): ?string
-    {
-        return $this->getHeaders()->getDomain();
-    }
+		return $this;
+	}
 
-    public function setLanguage(string $language): self
-    {
-        $info = Language::getById($language);
+	public function getDomain(): ?string {
+		return $this->getHeaders()->getDomain();
+	}
 
-        if (empty($info)) {
-            throw new InvalidArgumentException(sprintf('The language "%s" is not valid', $language));
-        }
+	public function setLanguage( string $language ): self {
+		$info = Language::getById( $language );
 
-        $this->getHeaders()
-            ->setLanguage($language)
-            ->setPluralForm(count($info->categories), $info->formula);
+		if ( empty( $info ) ) {
+			throw new InvalidArgumentException( sprintf( 'The language "%s" is not valid', $language ) );
+		}
 
-        return $this;
-    }
+		$this->getHeaders()
+			->setLanguage( $language )
+			->setPluralForm( count( $info->categories ), $info->formula );
 
-    public function getLanguage(): ?string
-    {
-        return $this->getHeaders()->getLanguage();
-    }
+		return $this;
+	}
 
-    public function find(?string $context, string $original): ?Translation
-    {
-        return $this->translations[(Translation::create($context, $original))->getId()] ?? null;
-    }
+	public function getLanguage(): ?string {
+		return $this->getHeaders()->getLanguage();
+	}
 
-    public function has(Translation $translation): bool
-    {
-        return (bool) ($this->translations[$translation->getId()] ?? false);
-    }
+	public function find( ?string $context, string $original ): ?Translation {
+		return $this->translations[ ( Translation::create( $context, $original ) )->getId() ] ?? null;
+	}
 
-    public function mergeWith(Translations $translations, int $strategy = 0): Translations
-    {
-        $merged = clone $this;
+	public function has( Translation $translation ): bool {
+		return (bool) ( $this->translations[ $translation->getId() ] ?? false );
+	}
 
-        if ($strategy & Merge::HEADERS_THEIRS) {
-            $merged->headers = clone $translations->headers;
-        } elseif (!($strategy & Merge::HEADERS_OURS)) {
-            $merged->headers = $merged->headers->mergeWith($translations->headers);
-        }
+	public function mergeWith( Translations $translations, int $strategy = 0 ): Translations {
+		$merged = clone $this;
 
-        if ($strategy & Merge::FLAGS_THEIRS) {
-            $merged->flags = clone $translations->flags;
-        } elseif (!($strategy & Merge::FLAGS_OURS)) {
-            $merged->flags = $merged->flags->mergeWith($translations->flags);
-        }
+		if ( $strategy & Merge::HEADERS_THEIRS ) {
+			$merged->headers = clone $translations->headers;
+		} elseif ( ! ( $strategy & Merge::HEADERS_OURS ) ) {
+			$merged->headers = $merged->headers->mergeWith( $translations->headers );
+		}
 
-        if (!$merged->description) {
-            $merged->description = $translations->description;
-        }
+		if ( $strategy & Merge::FLAGS_THEIRS ) {
+			$merged->flags = clone $translations->flags;
+		} elseif ( ! ( $strategy & Merge::FLAGS_OURS ) ) {
+			$merged->flags = $merged->flags->mergeWith( $translations->flags );
+		}
 
-        foreach ($translations as $id => $translation) {
-            if (isset($merged->translations[$id])) {
-                $translation = $merged->translations[$id]->mergeWith($translation, $strategy);
-            }
+		if ( ! $merged->description ) {
+			$merged->description = $translations->description;
+		}
 
-            $merged->add($translation);
-        }
+		foreach ( $translations as $id => $translation ) {
+			if ( isset( $merged->translations[ $id ] ) ) {
+				$translation = $merged->translations[ $id ]->mergeWith( $translation, $strategy );
+			}
 
-        if ($strategy & Merge::TRANSLATIONS_THEIRS) {
-            $merged->translations = array_intersect_key($merged->translations, $translations->translations);
-        } elseif ($strategy & Merge::TRANSLATIONS_OURS) {
-            $merged->translations = array_intersect_key($merged->translations, $this->translations);
-        }
+			$merged->add( $translation );
+		}
 
-        return $merged;
-    }
+		if ( $strategy & Merge::TRANSLATIONS_THEIRS ) {
+			$merged->translations = array_intersect_key( $merged->translations, $translations->translations );
+		} elseif ( $strategy & Merge::TRANSLATIONS_OURS ) {
+			$merged->translations = array_intersect_key( $merged->translations, $this->translations );
+		}
+
+		return $merged;
+	}
 }

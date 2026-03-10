@@ -8,5 +8,5 @@
  * These fill gaps not covered by generic WordPress stubs.
  */
 
-defined('WP_LANG_DIR') || define('WP_LANG_DIR', '/tmp');
-defined('OBJECT') || define('OBJECT', 'OBJECT');
+defined( 'WP_LANG_DIR' ) || define( 'WP_LANG_DIR', '/tmp' );
+defined( 'OBJECT' ) || define( 'OBJECT', 'OBJECT' );

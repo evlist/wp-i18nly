@@ -9,10 +9,10 @@ use WP_CLI;
 final class BladeCodeExtractor extends BladeGettextExtractor {
 	use IterableCodeExtractor;
 
-	public static $options = [
-		'extractComments' => [ 'translators', 'Translators' ],
-		'constants'       => [],
-		'functions'       => [
+	public static $options = array(
+		'extractComments' => array( 'translators', 'Translators' ),
+		'constants'       => array(),
+		'functions'       => array(
 			'__'              => 'text_domain',
 			'esc_attr__'      => 'text_domain',
 			'esc_html__'      => 'text_domain',
@@ -39,19 +39,19 @@ final class BladeCodeExtractor extends BladeGettextExtractor {
 			'_nc'             => 'single_plural_number_domain',
 			'__ngettext'      => 'single_plural_number_domain',
 			'__ngettext_noop' => 'single_plural_domain',
-		],
-	];
+		),
+	);
 
 	protected static $functionsScannerClass = 'WP_CLI\I18n\PhpFunctionsScanner';
 
 	/**
 	 * {@inheritdoc}
 	 */
-	public static function fromString( $text, Translations $translations, array $options = [] ) {
+	public static function fromString( $text, Translations $translations, array $options = array() ) {
 		WP_CLI::debug( "Parsing file {$options['file']}", 'make-pot' );
 
 		try {
-			self::fromStringMultiple( $text, [ $translations ], $options );
+			self::fromStringMultiple( $text, array( $translations ), $options );
 		} catch ( Exception $exception ) {
 			WP_CLI::debug(
 				sprintf(

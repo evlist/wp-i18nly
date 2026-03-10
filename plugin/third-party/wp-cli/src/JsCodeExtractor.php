@@ -11,27 +11,27 @@ use WP_CLI;
 final class JsCodeExtractor extends JsCode {
 	use IterableCodeExtractor;
 
-	public static $options = [
-		'extractComments' => [ 'translators', 'Translators' ],
-		'constants'       => [],
-		'functions'       => [
+	public static $options = array(
+		'extractComments' => array( 'translators', 'Translators' ),
+		'constants'       => array(),
+		'functions'       => array(
 			'__'  => 'text_domain',
 			'_x'  => 'text_context_domain',
 			'_n'  => 'single_plural_number_domain',
 			'_nx' => 'single_plural_number_context_domain',
-		],
-	];
+		),
+	);
 
 	protected static $functionsScannerClass = 'WP_CLI\I18n\JsFunctionsScanner';
 
 	/**
 	 * @inheritdoc
 	 */
-	public static function fromString( $text, Translations $translations, array $options = [] ) {
+	public static function fromString( $text, Translations $translations, array $options = array() ) {
 		WP_CLI::debug( "Parsing file {$options['file']}", 'make-pot' );
 
 		try {
-			self::fromStringMultiple( $text, [ $translations ], $options );
+			self::fromStringMultiple( $text, array( $translations ), $options );
 		} catch ( PeastException $exception ) {
 			WP_CLI::debug(
 				sprintf(
@@ -58,7 +58,7 @@ final class JsCodeExtractor extends JsCode {
 	/**
 	 * @inheritDoc
 	 */
-	public static function fromStringMultiple( $text, array $translations, array $options = [] ) {
+	public static function fromStringMultiple( $text, array $translations, array $options = array() ) {
 		$options += self::$options;
 
 		/** @var JsFunctionsScanner $functions */

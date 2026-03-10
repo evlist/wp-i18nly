@@ -11,9 +11,9 @@ namespace Peast\Syntax\Node;
 
 /**
  * Common interface for function import and export nodes.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-interface ModuleDeclaration
-{
+interface ModuleDeclaration {
+
 }

@@ -11,185 +11,185 @@ namespace Peast\Syntax;
 
 /**
  * Parser features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features
-{
-    /**
-     * Exponentiation operator
-     *
-     * @var bool
-     */
-    public $exponentiationOperator = false;
+class Features {
 
-    /**
-     * Async/await
-     *
-     * @var bool
-     */
-    public $asyncAwait = false;
+	/**
+	 * Exponentiation operator
+	 *
+	 * @var bool
+	 */
+	public $exponentiationOperator = false;
 
-    /**
-     * Trailing comma in function calls and declarations
-     *
-     * @var bool
-     */
-    public $trailingCommaFunctionCallDeclaration = false;
+	/**
+	 * Async/await
+	 *
+	 * @var bool
+	 */
+	public $asyncAwait = false;
 
-    /**
-     * For-in initializer
-     *
-     * @var bool
-     */
-    public $forInInitializer = false;
+	/**
+	 * Trailing comma in function calls and declarations
+	 *
+	 * @var bool
+	 */
+	public $trailingCommaFunctionCallDeclaration = false;
 
-    /**
-     * Async iteration and generators
-     *
-     * @var bool
-     */
-    public $asyncIterationGenerators = false;
+	/**
+	 * For-in initializer
+	 *
+	 * @var bool
+	 */
+	public $forInInitializer = false;
 
-    /**
-     * Rest/spread properties
-     *
-     * @var bool
-     */
-    public $restSpreadProperties = false;
+	/**
+	 * Async iteration and generators
+	 *
+	 * @var bool
+	 */
+	public $asyncIterationGenerators = false;
 
-    /**
-     * Skip escape sequences checks in tagged template
-     *
-     * @var bool
-     */
-    public $skipEscapeSeqCheckInTaggedTemplates = false;
+	/**
+	 * Rest/spread properties
+	 *
+	 * @var bool
+	 */
+	public $restSpreadProperties = false;
 
-    /**
-     * Optional catch binding
-     *
-     * @var bool
-     */
-    public $optionalCatchBinding = false;
+	/**
+	 * Skip escape sequences checks in tagged template
+	 *
+	 * @var bool
+	 */
+	public $skipEscapeSeqCheckInTaggedTemplates = false;
 
-    /**
-     * Paragraph and line separator in strings
-     *
-     * @var bool
-     */
-    public $paragraphLineSepInStrings = false;
+	/**
+	 * Optional catch binding
+	 *
+	 * @var bool
+	 */
+	public $optionalCatchBinding = false;
 
-    /**
-     * Dynamic import
-     *
-     * @var bool
-     */
-    public $dynamicImport = false;
+	/**
+	 * Paragraph and line separator in strings
+	 *
+	 * @var bool
+	 */
+	public $paragraphLineSepInStrings = false;
 
-    /**
-     * BigInt literals
-     *
-     * @var bool
-     */
-    public $bigInt = false;
+	/**
+	 * Dynamic import
+	 *
+	 * @var bool
+	 */
+	public $dynamicImport = false;
 
-    /**
-     * Exported name for export all declarations
-     *
-     * @var bool
-     */
-    public $exportedNameInExportAll = false;
+	/**
+	 * BigInt literals
+	 *
+	 * @var bool
+	 */
+	public $bigInt = false;
 
-    /**
-     * Import.meta
-     *
-     * @var bool
-     */
-    public $importMeta = false;
+	/**
+	 * Exported name for export all declarations
+	 *
+	 * @var bool
+	 */
+	public $exportedNameInExportAll = false;
 
-    /**
-     * Coalescing operator
-     *
-     * @var bool
-     */
-    public $coalescingOperator = false;
+	/**
+	 * Import.meta
+	 *
+	 * @var bool
+	 */
+	public $importMeta = false;
 
-    /**
-     * Optional chaining
-     *
-     * @var bool
-     */
-    public $optionalChaining = false;
+	/**
+	 * Coalescing operator
+	 *
+	 * @var bool
+	 */
+	public $coalescingOperator = false;
 
-    /**
-     * Logical assignment operators
-     *
-     * @var bool
-     */
-    public $logicalAssignmentOperators = false;
+	/**
+	 * Optional chaining
+	 *
+	 * @var bool
+	 */
+	public $optionalChaining = false;
 
-    /**
-     * Numeric literal separator
-     *
-     * @var bool
-     */
-    public $numericLiteralSeparator = false;
+	/**
+	 * Logical assignment operators
+	 *
+	 * @var bool
+	 */
+	public $logicalAssignmentOperators = false;
 
-    /**
-     * Private methods and fields
-     *
-     * @var bool
-     */
-    public $privateMethodsAndFields = false;
+	/**
+	 * Numeric literal separator
+	 *
+	 * @var bool
+	 */
+	public $numericLiteralSeparator = false;
 
-    /**
-     * Class fields
-     *
-     * @var bool
-     */
-    public $classFields = false;
+	/**
+	 * Private methods and fields
+	 *
+	 * @var bool
+	 */
+	public $privateMethodsAndFields = false;
 
-    /**
-     * "in" operator for private fields
-     *
-     * @var bool
-     */
-    public $classFieldsPrivateIn = false;
+	/**
+	 * Class fields
+	 *
+	 * @var bool
+	 */
+	public $classFields = false;
 
-    /**
-     * Top level await
-     *
-     * @var bool
-     */
-    public $topLevelAwait = false;
+	/**
+	 * "in" operator for private fields
+	 *
+	 * @var bool
+	 */
+	public $classFieldsPrivateIn = false;
 
-    /**
-     * Class static block
-     *
-     * @var bool
-     */
-    public $classStaticBlock = false;
+	/**
+	 * Top level await
+	 *
+	 * @var bool
+	 */
+	public $topLevelAwait = false;
 
-    /**
-     * Arbitrary module namespace identifier names
-     *
-     * @var bool
-     */
-    public $arbitraryModuleNSNames = false;
+	/**
+	 * Class static block
+	 *
+	 * @var bool
+	 */
+	public $classStaticBlock = false;
 
-    /**
-     * Hashbang comments
-     *
-     * @var bool
-     */
-    public $hashbangComments = false;
+	/**
+	 * Arbitrary module namespace identifier names
+	 *
+	 * @var bool
+	 */
+	public $arbitraryModuleNSNames = false;
 
-    /**
-     * Import attributes
-     *
-     * @var bool
-     */
-    public $importAttributes = false;
+	/**
+	 * Hashbang comments
+	 *
+	 * @var bool
+	 */
+	public $hashbangComments = false;
+
+	/**
+	 * Import attributes
+	 *
+	 * @var bool
+	 */
+	public $importAttributes = false;
 }

@@ -12,22 +12,21 @@ namespace Peast\Syntax\Node;
 /**
  * A node that represents a class declaration.
  * For example: class test {}
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class ClassDeclaration extends Class_ implements Declaration
-{
-    /**
-     * Sets the class identifier
-     * 
-     * @param Identifier $id Class identifier
-     * 
-     * @return $this
-     */
-    public function setId($id)
-    {
-        $this->assertType($id, "Identifier");
-        $this->id = $id;
-        return $this;
-    }
+class ClassDeclaration extends Class_ implements Declaration {
+
+	/**
+	 * Sets the class identifier
+	 *
+	 * @param Identifier $id Class identifier
+	 *
+	 * @return $this
+	 */
+	public function setId( $id ) {
+		$this->assertType( $id, 'Identifier' );
+		$this->id = $id;
+		return $this;
+	}
 }

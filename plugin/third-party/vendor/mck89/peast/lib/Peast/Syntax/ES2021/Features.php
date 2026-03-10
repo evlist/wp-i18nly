@@ -11,24 +11,24 @@ namespace Peast\Syntax\ES2021;
 
 /**
  * ES2021 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\ES2020\Features
-{
-    /**
-     * Logical assignment operators
-     *
-     * @var bool
-     */
-    public $logicalAssignmentOperators = true;
+class Features extends \Peast\Syntax\ES2020\Features {
 
-    /**
-     * Numeric literal separator
-     *
-     * @var bool
-     */
-    public $numericLiteralSeparator = true;
+	/**
+	 * Logical assignment operators
+	 *
+	 * @var bool
+	 */
+	public $logicalAssignmentOperators = true;
+
+	/**
+	 * Numeric literal separator
+	 *
+	 * @var bool
+	 */
+	public $numericLiteralSeparator = true;
 }

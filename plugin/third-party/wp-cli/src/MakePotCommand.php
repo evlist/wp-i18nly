@@ -27,12 +27,12 @@ class MakePotCommand extends WP_CLI_Command {
 	/**
 	 * @var array
 	 */
-	protected $merge = [];
+	protected $merge = array();
 
 	/**
 	 * @var Translations[]
 	 */
-	protected $exceptions = [];
+	protected $exceptions = array();
 
 	/**
 	 * @var bool
@@ -42,12 +42,12 @@ class MakePotCommand extends WP_CLI_Command {
 	/**
 	 * @var array
 	 */
-	protected $include = [];
+	protected $include = array();
 
 	/**
 	 * @var array
 	 */
-	protected $exclude = [ 'node_modules', '.*', 'vendor', 'Gruntfile.js', 'webpack.config.js', '*.min.js', 'test', 'tests' ];
+	protected $exclude = array( 'node_modules', '.*', 'vendor', 'Gruntfile.js', 'webpack.config.js', '*.min.js', 'test', 'tests' );
 
 	/**
 	 * @var string
@@ -57,7 +57,7 @@ class MakePotCommand extends WP_CLI_Command {
 	/**
 	 * @var array
 	 */
-	protected $main_file_data = [];
+	protected $main_file_data = array();
 
 	/**
 	 * @var string
@@ -102,7 +102,7 @@ class MakePotCommand extends WP_CLI_Command {
 	/**
 	 * @var array
 	 */
-	protected $headers = [];
+	protected $headers = array();
 
 	/**
 	 * @var string
@@ -384,7 +384,7 @@ class MakePotCommand extends WP_CLI_Command {
 
 		if ( isset( $assoc_args['merge'] ) ) {
 			if ( true === $assoc_args['merge'] ) {
-				$this->merge = [ $this->destination ];
+				$this->merge = array( $this->destination );
 			} elseif ( ! empty( $assoc_args['merge'] ) ) {
 				$this->merge = explode( ',', $assoc_args['merge'] );
 			}
@@ -434,7 +434,7 @@ class MakePotCommand extends WP_CLI_Command {
 
 		if ( isset( $assoc_args['include'] ) ) {
 			$this->include = array_filter( explode( ',', $assoc_args['include'] ) );
-			$this->include = array_map( [ $this, 'unslashit' ], $this->include );
+			$this->include = array_map( array( $this, 'unslashit' ), $this->include );
 			$this->include = array_unique( $this->include );
 
 			WP_CLI::debug( sprintf( 'Only including the following files: %s', implode( ',', $this->include ) ), 'make-pot' );
@@ -442,7 +442,7 @@ class MakePotCommand extends WP_CLI_Command {
 
 		if ( isset( $assoc_args['exclude'] ) ) {
 			$this->exclude = array_filter( array_merge( $this->exclude, explode( ',', $assoc_args['exclude'] ) ) );
-			$this->exclude = array_map( [ $this, 'unslashit' ], $this->exclude );
+			$this->exclude = array_map( array( $this, 'unslashit' ), $this->exclude );
 			$this->exclude = array_unique( $this->exclude );
 		}
 
@@ -538,7 +538,7 @@ class MakePotCommand extends WP_CLI_Command {
 
 		WP_CLI::debug( 'No valid theme stylesheet or plugin file found, treating as a regular project.', 'make-pot' );
 
-		return [];
+		return array();
 	}
 
 	/**
@@ -551,7 +551,7 @@ class MakePotCommand extends WP_CLI_Command {
 	protected function get_file_headers( $type ) {
 		switch ( $type ) {
 			case 'plugin':
-				return [
+				return array(
 					'Plugin Name',
 					'Plugin URI',
 					'Description',
@@ -561,9 +561,9 @@ class MakePotCommand extends WP_CLI_Command {
 					'License',
 					'Domain Path',
 					'Text Domain',
-				];
+				);
 			case 'theme':
-				return [
+				return array(
 					'Theme Name',
 					'Theme URI',
 					'Description',
@@ -573,9 +573,9 @@ class MakePotCommand extends WP_CLI_Command {
 					'License',
 					'Domain Path',
 					'Text Domain',
-				];
+				);
 			default:
-				return [];
+				return array();
 		}
 	}
 
@@ -643,26 +643,26 @@ class MakePotCommand extends WP_CLI_Command {
 
 		try {
 			if ( ! $this->skip_php ) {
-				$options = [
+				$options = array(
 					// Extract 'Template Name' headers in theme files.
 					'wpExtractTemplates' => $is_theme,
 					// Extract 'Title' and 'Description' headers from pattern files.
 					'wpExtractPatterns'  => $is_theme,
 					'include'            => $this->include,
 					'exclude'            => $this->exclude,
-					'extensions'         => [ 'php' ],
+					'extensions'         => array( 'php' ),
 					'addReferences'      => $this->location,
-				];
+				);
 				PhpCodeExtractor::fromDirectory( $this->source, $translations, $options );
 			}
 
 			if ( ! $this->skip_blade ) {
-				$options = [
+				$options = array(
 					'include'       => $this->include,
 					'exclude'       => $this->exclude,
-					'extensions'    => [ 'blade.php' ],
+					'extensions'    => array( 'blade.php' ),
 					'addReferences' => $this->location,
-				];
+				);
 				BladeCodeExtractor::fromDirectory( $this->source, $translations, $options );
 			}
 
@@ -670,23 +670,23 @@ class MakePotCommand extends WP_CLI_Command {
 				JsCodeExtractor::fromDirectory(
 					$this->source,
 					$translations,
-					[
+					array(
 						'include'       => $this->include,
 						'exclude'       => $this->exclude,
-						'extensions'    => [ 'js', 'jsx' ],
+						'extensions'    => array( 'js', 'jsx' ),
 						'addReferences' => $this->location,
-					]
+					)
 				);
 
 				MapCodeExtractor::fromDirectory(
 					$this->source,
 					$translations,
-					[
+					array(
 						'include'       => $this->include,
 						'exclude'       => $this->exclude,
-						'extensions'    => [ 'map' ],
+						'extensions'    => array( 'map' ),
 						'addReferences' => $this->location,
-					]
+					)
 				);
 			}
 
@@ -694,16 +694,16 @@ class MakePotCommand extends WP_CLI_Command {
 				BlockExtractor::fromDirectory(
 					$this->source,
 					$translations,
-					[
+					array(
 						'schema'            => JsonSchemaExtractor::BLOCK_JSON_SOURCE,
 						'schemaFallback'    => JsonSchemaExtractor::BLOCK_JSON_FALLBACK,
 						// Only look for block.json files in any folder, nothing else.
-						'restrictFileNames' => [ 'block.json' ],
+						'restrictFileNames' => array( 'block.json' ),
 						'include'           => $this->include,
 						'exclude'           => $this->exclude,
-						'extensions'        => [ 'json' ],
+						'extensions'        => array( 'json' ),
 						'addReferences'     => $this->location,
-					]
+					)
 				);
 			}
 
@@ -711,16 +711,16 @@ class MakePotCommand extends WP_CLI_Command {
 				JsonSchemaExtractor::fromDirectory(
 					$this->source,
 					$translations,
-					[
+					array(
 						// Only look for theme.json files in any folder, nothing else.
-						'restrictFileNames' => [ 'theme.json' ],
+						'restrictFileNames' => array( 'theme.json' ),
 						'schema'            => JsonSchemaExtractor::THEME_JSON_SOURCE,
 						'schemaFallback'    => JsonSchemaExtractor::THEME_JSON_FALLBACK,
 						'include'           => $this->include,
 						'exclude'           => $this->exclude,
-						'extensions'        => [ 'json' ],
+						'extensions'        => array( 'json' ),
 						'addReferences'     => $this->location,
-					]
+					)
 				);
 
 				// Themes can have style variations in the top-level "styles" folder.
@@ -729,15 +729,15 @@ class MakePotCommand extends WP_CLI_Command {
 					JsonSchemaExtractor::fromDirectory(
 						$this->source,
 						$translations,
-						[
-							'restrictDirectories' => [ 'styles' ],
+						array(
+							'restrictDirectories' => array( 'styles' ),
 							'schema'              => JsonSchemaExtractor::THEME_JSON_SOURCE,
 							'schemaFallback'      => JsonSchemaExtractor::THEME_JSON_FALLBACK,
 							'include'             => $this->include,
 							'exclude'             => $this->exclude,
-							'extensions'          => [ 'json' ],
+							'extensions'          => array( 'json' ),
 							'addReferences'       => $this->location,
-						]
+						)
 					);
 				}
 			}

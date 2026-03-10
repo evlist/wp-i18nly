@@ -6,100 +6,86 @@ namespace Gettext\Scanner;
 /**
  * Class to handle the info of a parsed function.
  */
-final class ParsedFunction
-{
-    private $name;
-    private $filename;
-    private $line;
-    private $lastLine;
-    private $arguments = [];
-    private $comments = [];
-    private $flags = [];
+final class ParsedFunction {
 
-    public function __construct(string $name, string $filename, int $line, ?int $lastLine = null)
-    {
-        $this->name = $name;
-        $this->filename = $filename;
-        $this->line = $line;
-        $this->lastLine = isset($lastLine) ? $lastLine : $line;
-    }
+	private $name;
+	private $filename;
+	private $line;
+	private $lastLine;
+	private $arguments = array();
+	private $comments  = array();
+	private $flags     = array();
 
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
+	public function __construct( string $name, string $filename, int $line, ?int $lastLine = null ) {
+		$this->name     = $name;
+		$this->filename = $filename;
+		$this->line     = $line;
+		$this->lastLine = isset( $lastLine ) ? $lastLine : $line;
+	}
 
-    public function toArray(): array
-    {
-        return [
-            'name' => $this->name,
-            'filename' => $this->filename,
-            'line' => $this->line,
-            'lastLine' => $this->lastLine,
-            'arguments' => $this->arguments,
-            'comments' => $this->comments,
-            'flags' => $this->flags,
-        ];
-    }
+	public function __debugInfo() {
+		return $this->toArray();
+	}
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
+	public function toArray(): array {
+		return array(
+			'name'      => $this->name,
+			'filename'  => $this->filename,
+			'line'      => $this->line,
+			'lastLine'  => $this->lastLine,
+			'arguments' => $this->arguments,
+			'comments'  => $this->comments,
+			'flags'     => $this->flags,
+		);
+	}
 
-    public function getLine(): int
-    {
-        return $this->line;
-    }
+	public function getName(): string {
+		return $this->name;
+	}
 
-    public function getLastLine(): int
-    {
-        return $this->lastLine;
-    }
+	public function getLine(): int {
+		return $this->line;
+	}
 
-    public function getFilename(): string
-    {
-        return $this->filename;
-    }
+	public function getLastLine(): int {
+		return $this->lastLine;
+	}
 
-    public function getArguments(): array
-    {
-        return $this->arguments;
-    }
+	public function getFilename(): string {
+		return $this->filename;
+	}
 
-    public function countArguments(): int
-    {
-        return count($this->arguments);
-    }
+	public function getArguments(): array {
+		return $this->arguments;
+	}
 
-    public function getComments(): array
-    {
-        return $this->comments;
-    }
+	public function countArguments(): int {
+		return count( $this->arguments );
+	}
 
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+	public function getComments(): array {
+		return $this->comments;
+	}
 
-    public function addArgument($argument = null): self
-    {
-        $this->arguments[] = $argument;
+	public function getFlags(): array {
+		return $this->flags;
+	}
 
-        return $this;
-    }
+	public function addArgument( $argument = null ): self {
+		$this->arguments[] = $argument;
 
-    public function addComment(string $comment): self
-    {
-        $this->comments[] = $comment;
+		return $this;
+	}
 
-        return $this;
-    }
+	public function addComment( string $comment ): self {
+		$this->comments[] = $comment;
 
-    public function addFlag(string $flag): self
-    {
-        $this->flags[] = $flag;
+		return $this;
+	}
 
-        return $this;
-    }
+	public function addFlag( string $flag ): self {
+		$this->flags[] = $flag;
+
+		return $this;
+	}
 }

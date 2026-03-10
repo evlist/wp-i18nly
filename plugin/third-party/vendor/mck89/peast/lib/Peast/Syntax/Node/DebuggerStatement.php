@@ -12,9 +12,9 @@ namespace Peast\Syntax\Node;
 /**
  * A node that represents a debugger statement.
  * For example: debugger;
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class DebuggerStatement extends Node implements Statement
-{
+class DebuggerStatement extends Node implements Statement {
+
 }

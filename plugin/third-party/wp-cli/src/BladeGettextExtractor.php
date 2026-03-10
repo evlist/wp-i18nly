@@ -78,7 +78,7 @@ class BladeGettextExtractor extends \Gettext\Extractors\PhpCode {
 	 *
 	 * Note: In the parent PhpCode class fromString() uses fromStringMultiple() (overridden here)
 	 */
-	public static function fromStringMultiple( $text, array $translations, array $options = [] ) {
+	public static function fromStringMultiple( $text, array $translations, array $options = array() ) {
 		$php_string  = static::compileBladeToPhp( $text );
 		$php_string .= static::extractComponentPropExpressions( $text );
 		return parent::fromStringMultiple( $php_string, $translations, $options );

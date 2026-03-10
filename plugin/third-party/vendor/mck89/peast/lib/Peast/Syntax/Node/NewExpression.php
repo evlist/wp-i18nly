@@ -12,9 +12,9 @@ namespace Peast\Syntax\Node;
 /**
  * A node that represents a "new" expression.
  * For example: new test()
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class NewExpression extends CallExpression
-{
+class NewExpression extends CallExpression {
+
 }

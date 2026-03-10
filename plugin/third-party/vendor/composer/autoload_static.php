@@ -4,54 +4,56 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitee3afda1362aace0b551a9b55af940c1
-{
-    public static $prefixLengthsPsr4 = array (
-        'W' =>
-        array (
-            'WP_I18nly\\' => 10,
-        ),
-        'P' =>
-        array (
-            'Peast\\' => 6,
-        ),
-        'G' =>
-        array (
-            'Gettext\\Languages\\' => 18,
-            'Gettext\\' => 8,
-        ),
-    );
+class ComposerStaticInitee3afda1362aace0b551a9b55af940c1 {
 
-    public static $prefixDirsPsr4 = array (
-        'WP_I18nly\\' =>
-        array (
-            0 => __DIR__ . '/../../..' . '/includes/WP_I18nly',
-        ),
-        'Peast\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/mck89/peast/lib/Peast',
-        ),
-        'Gettext\\Languages\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/gettext/languages/src',
-        ),
-        'Gettext\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/gettext/gettext/src',
-        ),
-    );
+	public static $prefixLengthsPsr4 = array(
+		'W' =>
+		array(
+			'WP_I18nly\\' => 10,
+		),
+		'P' =>
+		array(
+			'Peast\\' => 6,
+		),
+		'G' =>
+		array(
+			'Gettext\\Languages\\' => 18,
+			'Gettext\\'            => 8,
+		),
+	);
 
-    public static $classMap = array (
-        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-    );
+	public static $prefixDirsPsr4 = array(
+		'WP_I18nly\\'          =>
+		array(
+			0 => __DIR__ . '/../../..' . '/includes/WP_I18nly',
+		),
+		'Peast\\'              =>
+		array(
+			0 => __DIR__ . '/..' . '/mck89/peast/lib/Peast',
+		),
+		'Gettext\\Languages\\' =>
+		array(
+			0 => __DIR__ . '/..' . '/gettext/languages/src',
+		),
+		'Gettext\\'            =>
+		array(
+			0 => __DIR__ . '/..' . '/gettext/gettext/src',
+		),
+	);
 
-    public static function getInitializer(ClassLoader $loader)
-    {
-        return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$classMap;
+	public static $classMap = array(
+		'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+	);
 
-        }, null, ClassLoader::class);
-    }
+	public static function getInitializer( ClassLoader $loader ) {
+		return \Closure::bind(
+			function () use ( $loader ) {
+				$loader->prefixLengthsPsr4 = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$prefixLengthsPsr4;
+				$loader->prefixDirsPsr4    = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$prefixDirsPsr4;
+				$loader->classMap          = ComposerStaticInitee3afda1362aace0b551a9b55af940c1::$classMap;
+			},
+			null,
+			ClassLoader::class
+		);
+	}
 }

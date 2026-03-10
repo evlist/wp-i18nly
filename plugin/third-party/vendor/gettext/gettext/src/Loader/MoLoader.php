@@ -9,133 +9,127 @@ use Gettext\Translations;
 /**
  * Class to load a MO file.
  */
-final class MoLoader extends Loader
-{
-    private $string;
-    private $position;
-    private $length;
+final class MoLoader extends Loader {
 
-    private const MAGIC1 = -1794895138;
-    private const MAGIC2 = -569244523;
-    private const MAGIC3 = 2500072158;
+	private $string;
+	private $position;
+	private $length;
 
-    public function loadString(string $string, ?Translations $translations = null): Translations
-    {
-        $translations = parent::loadString($string, $translations);
-        $this->init($string);
+	private const MAGIC1 = -1794895138;
+	private const MAGIC2 = -569244523;
+	private const MAGIC3 = 2500072158;
 
-        $magic = $this->readInt('V');
+	public function loadString( string $string, ?Translations $translations = null ): Translations {
+		$translations = parent::loadString( $string, $translations );
+		$this->init( $string );
 
-        if (($magic === self::MAGIC1) || ($magic === self::MAGIC3)) { //to make sure it works for 64-bit platforms
-            $byteOrder = 'V'; //low endian
-        } elseif ($magic === (self::MAGIC2 & 0xFFFFFFFF)) {
-            $byteOrder = 'N'; //big endian
-        } else {
-            throw new Exception('Not MO file');
-        }
+		$magic = $this->readInt( 'V' );
 
-        $this->readInt($byteOrder);
+		if ( ( $magic === self::MAGIC1 ) || ( $magic === self::MAGIC3 ) ) { // to make sure it works for 64-bit platforms
+			$byteOrder = 'V'; // low endian
+		} elseif ( $magic === ( self::MAGIC2 & 0xFFFFFFFF ) ) {
+			$byteOrder = 'N'; // big endian
+		} else {
+			throw new Exception( 'Not MO file' );
+		}
 
-        $total = $this->readInt($byteOrder); //total string count
-        $originals = $this->readInt($byteOrder); //offset of original table
-        $tran = $this->readInt($byteOrder); //offset of translation table
+		$this->readInt( $byteOrder );
 
-        $this->seekto($originals);
-        $table_originals = $this->readIntArray($byteOrder, $total * 2);
+		$total     = $this->readInt( $byteOrder ); // total string count
+		$originals = $this->readInt( $byteOrder ); // offset of original table
+		$tran      = $this->readInt( $byteOrder ); // offset of translation table
 
-        $this->seekto($tran);
-        $table_translations = $this->readIntArray($byteOrder, $total * 2);
+		$this->seekto( $originals );
+		$table_originals = $this->readIntArray( $byteOrder, $total * 2 );
 
-        for ($i = 0; $i < $total; ++$i) {
-            $next = $i * 2;
+		$this->seekto( $tran );
+		$table_translations = $this->readIntArray( $byteOrder, $total * 2 );
 
-            $this->seekto($table_originals[$next + 2]);
-            $original = $this->read($table_originals[$next + 1]);
+		for ( $i = 0; $i < $total; ++$i ) {
+			$next = $i * 2;
 
-            $this->seekto($table_translations[$next + 2]);
-            $translated = $this->read($table_translations[$next + 1]);
+			$this->seekto( $table_originals[ $next + 2 ] );
+			$original = $this->read( $table_originals[ $next + 1 ] );
 
-            // Headers
-            if ($original === '') {
-                foreach (explode("\n", $translated) as $headerLine) {
-                    if ($headerLine === '') {
-                        continue;
-                    }
+			$this->seekto( $table_translations[ $next + 2 ] );
+			$translated = $this->read( $table_translations[ $next + 1 ] );
 
-                    $headerChunks = preg_split('/:\s*/', $headerLine, 2);
-                    $translations->getHeaders()->set($headerChunks[0], isset($headerChunks[1]) ? $headerChunks[1] : '');
-                }
+			// Headers
+			if ( $original === '' ) {
+				foreach ( explode( "\n", $translated ) as $headerLine ) {
+					if ( $headerLine === '' ) {
+						continue;
+					}
 
-                continue;
-            }
+					$headerChunks = preg_split( '/:\s*/', $headerLine, 2 );
+					$translations->getHeaders()->set( $headerChunks[0], isset( $headerChunks[1] ) ? $headerChunks[1] : '' );
+				}
 
-            $context = $plural = null;
-            $chunks = explode("\x04", $original, 2);
+				continue;
+			}
 
-            if (isset($chunks[1])) {
-                list($context, $original) = $chunks;
-            }
+			$context = $plural = null;
+			$chunks  = explode( "\x04", $original, 2 );
 
-            $chunks = explode("\x00", $original, 2);
+			if ( isset( $chunks[1] ) ) {
+				list($context, $original) = $chunks;
+			}
 
-            if (isset($chunks[1])) {
-                list($original, $plural) = $chunks;
-            }
+			$chunks = explode( "\x00", $original, 2 );
 
-            $translation = $this->createTranslation($context, $original, $plural);
-            $translations->add($translation);
+			if ( isset( $chunks[1] ) ) {
+				list($original, $plural) = $chunks;
+			}
 
-            if ($translated === '') {
-                continue;
-            }
+			$translation = $this->createTranslation( $context, $original, $plural );
+			$translations->add( $translation );
 
-            if ($plural === null) {
-                $translation->translate($translated);
-                continue;
-            }
+			if ( $translated === '' ) {
+				continue;
+			}
 
-            $v = explode("\x00", $translated);
-            $translation->translate(array_shift($v));
-            $translation->translatePlural(...array_filter($v));
-        }
+			if ( $plural === null ) {
+				$translation->translate( $translated );
+				continue;
+			}
 
-        return $translations;
-    }
+			$v = explode( "\x00", $translated );
+			$translation->translate( array_shift( $v ) );
+			$translation->translatePlural( ...array_filter( $v ) );
+		}
 
-    private function init(string $string): void
-    {
-        $this->string = $string;
-        $this->position = 0;
-        $this->length = strlen($string);
-    }
+		return $translations;
+	}
 
-    private function read(int $bytes): string
-    {
-        $data = substr($this->string, $this->position, $bytes);
+	private function init( string $string ): void {
+		$this->string   = $string;
+		$this->position = 0;
+		$this->length   = strlen( $string );
+	}
 
-        $this->seekTo($this->position + $bytes);
+	private function read( int $bytes ): string {
+		$data = substr( $this->string, $this->position, $bytes );
 
-        return $data;
-    }
+		$this->seekTo( $this->position + $bytes );
 
-    private function seekTo(int $position): void
-    {
-        $this->position = ($this->length < $position) ? $this->length : $position;
-    }
+		return $data;
+	}
 
-    private function readInt(string $byteOrder): int
-    {
-        if (($read = $this->read(4)) === false) {
-            return 0;
-        }
+	private function seekTo( int $position ): void {
+		$this->position = ( $this->length < $position ) ? $this->length : $position;
+	}
 
-        $read = (array) unpack($byteOrder, $read);
+	private function readInt( string $byteOrder ): int {
+		if ( ( $read = $this->read( 4 ) ) === false ) {
+			return 0;
+		}
 
-        return (int) array_shift($read);
-    }
+		$read = (array) unpack( $byteOrder, $read );
 
-    private function readIntArray(string $byteOrder, int $count): array
-    {
-        return unpack($byteOrder.$count, $this->read(4 * $count)) ?: [];
-    }
+		return (int) array_shift( $read );
+	}
+
+	private function readIntArray( string $byteOrder, int $count ): array {
+		return unpack( $byteOrder . $count, $this->read( 4 * $count ) ) ?: array();
+	}
 }

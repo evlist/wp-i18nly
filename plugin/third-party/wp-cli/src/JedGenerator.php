@@ -15,28 +15,28 @@ class JedGenerator extends Jed {
 	/**
 	 * {@parentDoc}.
 	 */
-	public static function toString( Translations $translations, array $options = [] ) {
+	public static function toString( Translations $translations, array $options = array() ) {
 		$options += static::$options;
 		$domain   = $translations->getDomain() ?: 'messages';
 		$messages = static::buildMessages( $translations );
 
-		$configuration = [
-			'' => [
+		$configuration = array(
+			'' => array(
 				'domain'       => $domain,
 				'lang'         => $translations->getLanguage() ?: 'en',
 				'plural-forms' => $translations->getHeader( 'Plural-Forms' ) ?: 'nplurals=2; plural=(n != 1);',
-			],
-		];
+			),
+		);
 
-		$data = [
+		$data = array(
 			'translation-revision-date' => $translations->getHeader( 'PO-Revision-Date' ),
 			'generator'                 => 'WP-CLI/' . WP_CLI_VERSION,
 			'source'                    => $options['source'],
 			'domain'                    => $domain,
-			'locale_data'               => [
+			'locale_data'               => array(
 				$domain => $configuration + $messages,
-			],
-		];
+			),
+		);
 
 		return json_encode( $data, $options['json'] );
 	}
@@ -51,7 +51,7 @@ class JedGenerator extends Jed {
 	public static function buildMessages( Translations $translations ) {
 		$plural_forms      = $translations->getPluralForms();
 		$number_of_plurals = is_array( $plural_forms ) ? ( $plural_forms[0] - 1 ) : null;
-		$messages          = [];
+		$messages          = array();
 		$context_glue      = chr( 4 );
 
 		foreach ( $translations as $translation ) {
@@ -71,7 +71,7 @@ class JedGenerator extends Jed {
 				$message = $translation->getPluralTranslations( $number_of_plurals );
 				array_unshift( $message, $translation->getTranslation() );
 			} else {
-				$message = [ $translation->getTranslation() ];
+				$message = array( $translation->getTranslation() );
 			}
 
 			$messages[ $key ] = $message;

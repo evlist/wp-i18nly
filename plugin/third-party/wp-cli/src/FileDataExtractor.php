@@ -16,7 +16,7 @@ class FileDataExtractor {
 	 * @see get_file_data()
 	 *
 	 * @param string $file Path to the file.
-	 * @param array $headers List of headers, in the format array('HeaderKey' => 'Header Name').
+	 * @param array  $headers List of headers, in the format array('HeaderKey' => 'Header Name').
 	 *
 	 * @return array Array of file headers in `HeaderKey => ['value' => Header Value, 'line' => Line Number]` format.
 	 */
@@ -40,7 +40,7 @@ class FileDataExtractor {
 	 * Retrieves metadata from a string.
 	 *
 	 * @param string $text String to look for metadata in.
-	 * @param array $headers List of headers.
+	 * @param array  $headers List of headers.
 	 *
 	 * @return array Array of file headers in `HeaderKey => ['value' => Header Value, 'line' => Line Number]` format.
 	 */
@@ -51,15 +51,15 @@ class FileDataExtractor {
 
 				// Calculate line number from the offset
 				$line_num          = substr_count( $text, "\n", 0, $match[0][1] ) + 1;
-				$headers[ $field ] = [
+				$headers[ $field ] = array(
 					'value' => $value,
 					'line'  => $line_num,
-				];
+				);
 			} else {
-				$headers[ $field ] = [
+				$headers[ $field ] = array(
 					'value' => '',
 					'line'  => 0,
-				];
+				);
 			}
 		}
 

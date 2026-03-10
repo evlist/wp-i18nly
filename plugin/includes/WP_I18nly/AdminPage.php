@@ -14,6 +14,10 @@ use WP_I18nly\Admin\TranslationEditController;
 use WP_I18nly\Admin\UI\TranslationListColumns;
 use WP_I18nly\Admin\UI\TranslationMessages;
 use WP_I18nly\Admin\UI\EditScreenAssets;
+use WP_I18nly\Support\TranslationRepository;
+use WP_I18nly\Support\PluginMetadataProvider;
+use WP_I18nly\Support\LanguageOptionsProvider;
+use WP_I18nly\Support\TranslationEntriesPersister;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -56,8 +60,8 @@ class AdminPage {
 	 *
 	 * @return array<string, string>
 	 */
-	private function get_plugin_options() {
-		return AdminPageHelper::get_plugin_options();
+	protected function get_plugin_options() {
+		return $this->get_plugin_metadata_provider()->get_plugin_options();
 	}
 
 	/**
@@ -68,8 +72,8 @@ class AdminPage {
 	 *
 	 * @return array<int, array{value: string, label: string, disabled: bool}>
 	 */
-	private function get_target_language_options() {
-		return AdminPageHelper::get_target_language_options( self::SOURCE_LOCALE );
+	protected function get_target_language_options() {
+		return $this->get_language_options_provider()->get_target_language_options( self::SOURCE_LOCALE );
 	}
 
 	/**
@@ -193,7 +197,7 @@ class AdminPage {
 	 * @return void
 	 */
 	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
-		AdminPageHelper::persist_translation_entries( (int) $translation_id, (string) $source_slug, $entries_payload );
+		$this->get_translation_entries_persister()->persist( (int) $translation_id, (string) $source_slug, $entries_payload );
 	}
 
 	/**
@@ -250,7 +254,7 @@ class AdminPage {
 	protected function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
 		wp_trash_post( (int) $new_post_id );
 
-		$open_url   = AdminPageHelper::get_standard_edit_translation_url( (int) $existing_translation_id );
+		$open_url   = $this->get_translation_repository()->get_edit_url( (int) $existing_translation_id );
 		$cancel_url = admin_url( self::NEW_SCREEN_SLUG );
 
 		$message = sprintf(
@@ -344,8 +348,8 @@ class AdminPage {
 	 * @param int $translation_id Translation ID.
 	 * @return array<string, mixed>|null
 	 */
-	private function get_translation( $translation_id ) {
-		return AdminPageHelper::get_translation(
+	protected function get_translation( $translation_id ) {
+		return $this->get_translation_repository()->get_translation(
 			$translation_id,
 			self::POST_TYPE,
 			self::META_SOURCE_SLUG,
@@ -359,7 +363,7 @@ class AdminPage {
 	 * @return string
 	 */
 	private function get_native_list_url() {
-		return AdminPageHelper::get_native_list_url( self::LIST_SCREEN_SLUG );
+		return $this->get_translation_repository()->get_list_url( self::LIST_SCREEN_SLUG );
 	}
 
 	/**
@@ -582,7 +586,7 @@ class AdminPage {
 	 * @return string
 	 */
 	private function infer_text_domain_from_source_slug( $source_slug ) {
-		return AdminPageHelper::infer_text_domain_from_source_slug( $source_slug );
+		return $this->get_plugin_metadata_provider()->infer_text_domain( $source_slug );
 	}
 
 	/**
@@ -593,7 +597,7 @@ class AdminPage {
 	 * @return array<string, string>
 	 */
 	private function build_pot_header_overrides_from_source_slug( $source_slug, $text_domain ) {
-		return AdminPageHelper::build_pot_header_overrides_from_source_slug( $source_slug, $text_domain );
+		return $this->get_plugin_metadata_provider()->build_pot_header_overrides( $source_slug, $text_domain );
 	}
 
 	/**
@@ -626,5 +630,41 @@ class AdminPage {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Returns translation repository.
+	 *
+	 * @return \WP_I18nly\Support\TranslationRepository
+	 */
+	protected function get_translation_repository() {
+		return new TranslationRepository();
+	}
+
+	/**
+	 * Returns plugin metadata provider.
+	 *
+	 * @return \WP_I18nly\Support\PluginMetadataProvider
+	 */
+	protected function get_plugin_metadata_provider() {
+		return new PluginMetadataProvider();
+	}
+
+	/**
+	 * Returns language options provider.
+	 *
+	 * @return \WP_I18nly\Support\LanguageOptionsProvider
+	 */
+	protected function get_language_options_provider() {
+		return new LanguageOptionsProvider();
+	}
+
+	/**
+	 * Returns translation entries persister.
+	 *
+	 * @return \WP_I18nly\Support\TranslationEntriesPersister
+	 */
+	protected function get_translation_entries_persister() {
+		return new TranslationEntriesPersister();
 	}
 }

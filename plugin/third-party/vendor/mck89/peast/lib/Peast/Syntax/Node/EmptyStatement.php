@@ -11,9 +11,9 @@ namespace Peast\Syntax\Node;
 
 /**
  * A node that represents an empty statement (;).
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class EmptyStatement extends Node implements Statement
-{
+class EmptyStatement extends Node implements Statement {
+
 }

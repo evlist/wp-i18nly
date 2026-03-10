@@ -62,7 +62,7 @@ class MakePhpCommand extends WP_CLI_Command {
 		}
 
 		if ( is_file( $source ) ) {
-			$files = [ new SplFileInfo( $source ) ];
+			$files = array( new SplFileInfo( $source ) );
 		} else {
 			$files = new IteratorIterator( new DirectoryIterator( $source ) );
 		}
@@ -89,7 +89,7 @@ class MakePhpCommand extends WP_CLI_Command {
 			// Remove JS-only strings from PHP files to keep them small.
 			$this->remove_js_only_strings( $translations );
 
-			$options = [ 'prettyPrint' => $pretty_print ];
+			$options = array( 'prettyPrint' => $pretty_print );
 			if ( ! PhpArrayGenerator::toFile( $translations, $destination_file, $options ) ) {
 				WP_CLI::warning( sprintf( 'Could not create file %s', $destination_file ) );
 				continue;

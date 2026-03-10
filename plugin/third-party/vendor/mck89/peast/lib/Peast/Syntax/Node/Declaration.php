@@ -11,9 +11,9 @@ namespace Peast\Syntax\Node;
 
 /**
  * Interface that every declaration node must implement.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-interface Declaration extends Statement
-{
+interface Declaration extends Statement {
+
 }

@@ -24,7 +24,7 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 	 *
 	 * @var Node\Comment[] $comments_cache
 	 */
-	private $comments_cache = [];
+	private $comments_cache = array();
 
 	/**
 	 * Enable extracting comments that start with a tag (if $tag is empty all the comments will be extracted).
@@ -52,16 +52,16 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 			$translations = $translations[0];
 		}
 
-		$peast_options = [
+		$peast_options = array(
 			'sourceType' => Peast::SOURCE_TYPE_MODULE,
 			'comments'   => false !== $this->extract_comments,
 			'jsx'        => true,
-		];
+		);
 		$ast           = Peast::latest( $this->code, $peast_options )->parse();
 
 		$traverser = new Traverser();
 
-		$all_comments = [];
+		$all_comments = array();
 
 		/**
 		 * Traverse through JS code to find and extract gettext functions.
@@ -105,7 +105,7 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 				$original = null;
 				$context  = null;
 				$plural   = null;
-				$args     = [];
+				$args     = array();
 
 				/** @var Node\Node $argument */
 				foreach ( $node->getArguments() as $argument ) {
@@ -210,7 +210,7 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 				}
 
 				if ( isset( $parsed_comment ) ) {
-					$all_comments = [];
+					$all_comments = array();
 				}
 			}
 		);
@@ -272,10 +272,10 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 		// If the callee is a simple identifier it can simply be returned.
 		// For example: __( "translation" ).
 		if ( 'Identifier' === $callee->getType() ) {
-			return [
+			return array(
 				'name'     => $callee->getName(),
 				'comments' => $callee->getLeadingComments(),
-			];
+			);
 		}
 
 		// If the callee is a member expression resolve it to the property.
@@ -289,10 +289,10 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 				? $callee->getObject()->getObject()->getLeadingComments()
 				: $callee->getObject()->getLeadingComments();
 
-			return [
+			return array(
 				'name'     => $callee->getProperty()->getName(),
 				'comments' => $comments,
-			];
+			);
 		}
 
 		// If the callee is a call expression as created by Webpack resolve it.
@@ -301,17 +301,17 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 			'CallExpression' === $callee->getType() &&
 			'Identifier' === $callee->getCallee()->getType() &&
 			'Object' === $callee->getCallee()->getName() &&
-			[] !== $callee->getArguments() &&
+			array() !== $callee->getArguments() &&
 			'MemberExpression' === $callee->getArguments()[0]->getType()
 		) {
 			$property = $callee->getArguments()[0]->getProperty();
 
 			// Matches minified webpack statements: Object(u.__)( "translation" ).
 			if ( 'Identifier' === $property->getType() ) {
-				return [
+				return array(
 					'name'     => $property->getName(),
 					'comments' => $callee->getCallee()->getLeadingComments(),
-				];
+				);
 			}
 
 			// Matches unminified webpack statements:
@@ -326,10 +326,10 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 					$name = trim( $leading_property_comments[0]->getText() );
 				}
 
-				return [
+				return array(
 					'name'     => $name,
 					'comments' => $callee->getCallee()->getLeadingComments(),
-				];
+				);
 			}
 		}
 
@@ -340,14 +340,14 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 			&& 'SequenceExpression' === $callee->getExpression()->getType()
 			&& 2 === count( $callee->getExpression()->getExpressions() )
 			&& 'Literal' === $callee->getExpression()->getExpressions()[0]->getType()
-			&& [] !== $node->getArguments()
+			&& array() !== $node->getArguments()
 		) {
 			// Matches any general indirect function call: `(0, __)( "translation" )`.
 			if ( 'Identifier' === $callee->getExpression()->getExpressions()[1]->getType() ) {
-				return [
+				return array(
 					'name'     => $callee->getExpression()->getExpressions()[1]->getName(),
 					'comments' => $callee->getLeadingComments(),
-				];
+				);
 			}
 
 			// Matches indirect function calls used by babel for module imports: `(0, _i18n.__)( "translation" )`.
@@ -355,10 +355,10 @@ final class JsFunctionsScanner extends GettextJsFunctionsScanner {
 				$property = $callee->getExpression()->getExpressions()[1]->getProperty();
 
 				if ( 'Identifier' === $property->getType() ) {
-					return [
+					return array(
 						'name'     => $property->getName(),
 						'comments' => $callee->getLeadingComments(),
-					];
+					);
 				}
 			}
 		}

@@ -6,35 +6,35 @@ namespace Gettext;
 /**
  * Merge constants.
  */
-final class Merge
-{
-    public const TRANSLATIONS_OURS = 1 << 0;
-    public const TRANSLATIONS_THEIRS = 1 << 1;
-    public const TRANSLATIONS_OVERRIDE = 1 << 2;
+final class Merge {
 
-    public const HEADERS_OURS = 1 << 3;
-    public const HEADERS_THEIRS = 1 << 4;
-    public const HEADERS_OVERRIDE = 1 << 5;
+	public const TRANSLATIONS_OURS     = 1 << 0;
+	public const TRANSLATIONS_THEIRS   = 1 << 1;
+	public const TRANSLATIONS_OVERRIDE = 1 << 2;
 
-    public const COMMENTS_OURS = 1 << 6;
-    public const COMMENTS_THEIRS = 1 << 7;
+	public const HEADERS_OURS     = 1 << 3;
+	public const HEADERS_THEIRS   = 1 << 4;
+	public const HEADERS_OVERRIDE = 1 << 5;
 
-    public const EXTRACTED_COMMENTS_OURS = 1 << 8;
-    public const EXTRACTED_COMMENTS_THEIRS = 1 << 9;
+	public const COMMENTS_OURS   = 1 << 6;
+	public const COMMENTS_THEIRS = 1 << 7;
 
-    public const FLAGS_OURS = 1 << 10;
-    public const FLAGS_THEIRS = 1 << 11;
+	public const EXTRACTED_COMMENTS_OURS   = 1 << 8;
+	public const EXTRACTED_COMMENTS_THEIRS = 1 << 9;
 
-    public const REFERENCES_OURS = 1 << 12;
-    public const REFERENCES_THEIRS = 1 << 13;
+	public const FLAGS_OURS   = 1 << 10;
+	public const FLAGS_THEIRS = 1 << 11;
 
-    //Merge strategies
-    public const SCAN_AND_LOAD =
-          Merge::HEADERS_OVERRIDE
-        | Merge::TRANSLATIONS_OURS
-        | Merge::TRANSLATIONS_OVERRIDE
-        | Merge::EXTRACTED_COMMENTS_OURS
-        | Merge::REFERENCES_OURS
-        | Merge::FLAGS_THEIRS
-        | Merge::COMMENTS_THEIRS;
+	public const REFERENCES_OURS   = 1 << 12;
+	public const REFERENCES_THEIRS = 1 << 13;
+
+	// Merge strategies
+	public const SCAN_AND_LOAD =
+			self::HEADERS_OVERRIDE
+		| self::TRANSLATIONS_OURS
+		| self::TRANSLATIONS_OVERRIDE
+		| self::EXTRACTED_COMMENTS_OURS
+		| self::REFERENCES_OURS
+		| self::FLAGS_THEIRS
+		| self::COMMENTS_THEIRS;
 }

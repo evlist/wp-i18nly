@@ -55,25 +55,25 @@ abstract class TestCase {
 	public function assertSame( $expected, $actual, string $message = '' ): void {}
 
 	/**
-	 * @param int         $expectedCount Expected item count.
+	 * @param int                       $expectedCount Expected item count.
 	 * @param iterable<mixed>|Countable $haystack Countable value.
-	 * @param string      $message Failure message.
+	 * @param string                    $message Failure message.
 	 * @return void
 	 */
 	public function assertCount( int $expectedCount, $haystack, string $message = '' ): void {}
 
 	/**
-	 * @param array-key $key Key expected to exist.
+	 * @param array-key                              $key Key expected to exist.
 	 * @param array<mixed>|ArrayAccess<mixed, mixed> $array Array or ArrayAccess value.
-	 * @param string $message Failure message.
+	 * @param string                                 $message Failure message.
 	 * @return void
 	 */
 	public function assertArrayHasKey( $key, $array, string $message = '' ): void {}
 
 	/**
-	 * @param mixed  $needle Needle.
+	 * @param mixed           $needle Needle.
 	 * @param iterable<mixed> $haystack Haystack.
-	 * @param string $message Failure message.
+	 * @param string          $message Failure message.
 	 * @return void
 	 */
 	public function assertContains( $needle, iterable $haystack, string $message = '' ): void {}

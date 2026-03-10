@@ -11,24 +11,24 @@ namespace Peast\Syntax\ES2019;
 
 /**
  * ES2019 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\ES2018\Features
-{
-    /**
-     * Optional catch binding
-     *
-     * @var bool
-     */
-    public $optionalCatchBinding = true;
+class Features extends \Peast\Syntax\ES2018\Features {
 
-    /**
-     * Paragraph and line separator in strings
-     *
-     * @var bool
-     */
-    public $paragraphLineSepInStrings = true;
+	/**
+	 * Optional catch binding
+	 *
+	 * @var bool
+	 */
+	public $optionalCatchBinding = true;
+
+	/**
+	 * Paragraph and line separator in strings
+	 *
+	 * @var bool
+	 */
+	public $paragraphLineSepInStrings = true;
 }

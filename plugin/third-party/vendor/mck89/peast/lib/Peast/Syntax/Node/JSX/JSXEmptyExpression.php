@@ -13,9 +13,9 @@ use Peast\Syntax\Node\Node;
 
 /**
  * A node that represents a JSX empty expression.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class JSXEmptyExpression extends Node
-{
+class JSXEmptyExpression extends Node {
+
 }

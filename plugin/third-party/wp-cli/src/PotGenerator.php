@@ -13,7 +13,7 @@ use Gettext\Utils\ParsedComment;
  * adds some comments at the very beginning of the file.
  */
 class PotGenerator extends PoGenerator {
-	protected static $comments_before_headers = [];
+	protected static $comments_before_headers = array();
 
 	/**
 	 * Text to include as a comment before the start of the PO contents
@@ -35,7 +35,7 @@ class PotGenerator extends PoGenerator {
 	/**
 	 * {@parentDoc}.
 	 */
-	public static function toString( Translations $translations, array $options = [] ) {
+	public static function toString( Translations $translations, array $options = array() ) {
 		$lines   = static::$comments_before_headers;
 		$lines[] = 'msgid ""';
 		$lines[] = 'msgstr ""';

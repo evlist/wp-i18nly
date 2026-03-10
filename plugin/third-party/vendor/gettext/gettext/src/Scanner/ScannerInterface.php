@@ -5,18 +5,18 @@ namespace Gettext\Scanner;
 
 use Gettext\Translations;
 
-interface ScannerInterface
-{
-    public function setDefaultDomain(string $domain): void;
+interface ScannerInterface {
 
-    public function getDefaultDomain(): string;
+	public function setDefaultDomain( string $domain ): void;
 
-    /**
-     * @return Translations[]
-     */
-    public function getTranslations(): array;
+	public function getDefaultDomain(): string;
 
-    public function scanFile(string $filename): void;
+	/**
+	 * @return Translations[]
+	 */
+	public function getTranslations(): array;
 
-    public function scanString(string $string, string $filename): void;
+	public function scanFile( string $filename ): void;
+
+	public function scanString( string $string, string $filename ): void;
 }

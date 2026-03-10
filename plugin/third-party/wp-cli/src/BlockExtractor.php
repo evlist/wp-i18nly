@@ -9,7 +9,7 @@ final class BlockExtractor extends JsonSchemaExtractor {
 	/**
 	 * @inheritdoc
 	 */
-	public static function fromString( $text, Translations $translations, array $options = [] ) {
+	public static function fromString( $text, Translations $translations, array $options = array() ) {
 		$file = $options['file'];
 		WP_CLI::debug( "Parsing file $file", 'make-pot' );
 

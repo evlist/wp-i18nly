@@ -6,285 +6,255 @@ namespace Gettext;
 /**
  * Class to manage an individual translation.
  */
-class Translation
-{
-    protected $id;
-    protected $context;
-    protected $original;
-    protected $plural;
-    protected $translation;
-    protected $pluralTranslations = [];
-    protected $disabled = false;
-    protected $references;
-    protected $flags;
-    protected $comments;
-    protected $extractedComments;
-    protected $previousContext;
-    protected $previousOriginal;
-    protected $previousPlural;
+class Translation {
 
-    public static function create(?string $context, string $original): Translation
-    {
-        $id = static::generateId($context, $original);
+	protected $id;
+	protected $context;
+	protected $original;
+	protected $plural;
+	protected $translation;
+	protected $pluralTranslations = array();
+	protected $disabled           = false;
+	protected $references;
+	protected $flags;
+	protected $comments;
+	protected $extractedComments;
+	protected $previousContext;
+	protected $previousOriginal;
+	protected $previousPlural;
 
-        $translation = new static($id);
-        $translation->context = $context;
-        $translation->original = $original;
+	public static function create( ?string $context, string $original ): Translation {
+		$id = static::generateId( $context, $original );
 
-        return $translation;
-    }
+		$translation           = new static( $id );
+		$translation->context  = $context;
+		$translation->original = $original;
 
-    protected static function generateId(?string $context, string $original): string
-    {
-        return "{$context}\004{$original}";
-    }
+		return $translation;
+	}
 
-    protected function __construct(string $id)
-    {
-        $this->id = $id;
+	protected static function generateId( ?string $context, string $original ): string {
+		return "{$context}\004{$original}";
+	}
 
-        $this->references = new References();
-        $this->flags = new Flags();
-        $this->comments = new Comments();
-        $this->extractedComments = new Comments();
-    }
+	protected function __construct( string $id ) {
+		$this->id = $id;
 
-    public function __clone()
-    {
-        $this->references = clone $this->references;
-        $this->flags = clone $this->flags;
-        $this->comments = clone $this->comments;
-        $this->extractedComments = clone $this->extractedComments;
-    }
+		$this->references        = new References();
+		$this->flags             = new Flags();
+		$this->comments          = new Comments();
+		$this->extractedComments = new Comments();
+	}
 
-    public function toArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'context' => $this->context,
-            'original' => $this->original,
-            'translation' => $this->translation,
-            'plural' => $this->plural,
-            'pluralTranslations' => $this->pluralTranslations,
-            'disabled' => $this->disabled,
-            'previousContext' => $this->previousContext,
-            'previousOriginal' => $this->previousOriginal,
-            'previousPlural' => $this->previousPlural,
-            'references' => $this->getReferences()->toArray(),
-            'flags' => $this->getFlags()->toArray(),
-            'comments' => $this->getComments()->toArray(),
-            'extractedComments' => $this->getExtractedComments()->toArray(),
-        ];
-    }
+	public function __clone() {
+		$this->references        = clone $this->references;
+		$this->flags             = clone $this->flags;
+		$this->comments          = clone $this->comments;
+		$this->extractedComments = clone $this->extractedComments;
+	}
 
-    public function getId(): string
-    {
-        return $this->id;
-    }
+	public function toArray(): array {
+		return array(
+			'id'                 => $this->id,
+			'context'            => $this->context,
+			'original'           => $this->original,
+			'translation'        => $this->translation,
+			'plural'             => $this->plural,
+			'pluralTranslations' => $this->pluralTranslations,
+			'disabled'           => $this->disabled,
+			'previousContext'    => $this->previousContext,
+			'previousOriginal'   => $this->previousOriginal,
+			'previousPlural'     => $this->previousPlural,
+			'references'         => $this->getReferences()->toArray(),
+			'flags'              => $this->getFlags()->toArray(),
+			'comments'           => $this->getComments()->toArray(),
+			'extractedComments'  => $this->getExtractedComments()->toArray(),
+		);
+	}
 
-    public function getContext(): ?string
-    {
-        return $this->context;
-    }
+	public function getId(): string {
+		return $this->id;
+	}
 
-    public function withContext(?string $context): Translation
-    {
-        $clone = clone $this;
-        $clone->context = $context;
-        $clone->id = static::generateId($clone->getContext(), $clone->getOriginal());
+	public function getContext(): ?string {
+		return $this->context;
+	}
 
-        return $clone;
-    }
+	public function withContext( ?string $context ): Translation {
+		$clone          = clone $this;
+		$clone->context = $context;
+		$clone->id      = static::generateId( $clone->getContext(), $clone->getOriginal() );
 
-    public function getOriginal(): string
-    {
-        return $this->original;
-    }
+		return $clone;
+	}
 
-    public function withOriginal(string $original): Translation
-    {
-        $clone = clone $this;
-        $clone->original = $original;
-        $clone->id = static::generateId($clone->getContext(), $clone->getOriginal());
+	public function getOriginal(): string {
+		return $this->original;
+	}
 
-        return $clone;
-    }
+	public function withOriginal( string $original ): Translation {
+		$clone           = clone $this;
+		$clone->original = $original;
+		$clone->id       = static::generateId( $clone->getContext(), $clone->getOriginal() );
 
-    public function setPlural(string $plural): self
-    {
-        $this->plural = $plural;
+		return $clone;
+	}
 
-        return $this;
-    }
+	public function setPlural( string $plural ): self {
+		$this->plural = $plural;
 
-    public function getPlural(): ?string
-    {
-        return $this->plural;
-    }
+		return $this;
+	}
 
-    public function setPreviousOriginal(?string $previousOriginal): self
-    {
-        $this->previousOriginal = $previousOriginal;
+	public function getPlural(): ?string {
+		return $this->plural;
+	}
 
-        return $this;
-    }
+	public function setPreviousOriginal( ?string $previousOriginal ): self {
+		$this->previousOriginal = $previousOriginal;
 
-    public function getPreviousOriginal(): ?string
-    {
-        return $this->previousOriginal;
-    }
+		return $this;
+	}
 
-    public function setPreviousContext(?string $previousContext): self
-    {
-        $this->previousContext = $previousContext;
+	public function getPreviousOriginal(): ?string {
+		return $this->previousOriginal;
+	}
 
-        return $this;
-    }
+	public function setPreviousContext( ?string $previousContext ): self {
+		$this->previousContext = $previousContext;
 
-    public function getPreviousContext(): ?string
-    {
-        return $this->previousContext;
-    }
+		return $this;
+	}
 
-    public function setPreviousPlural(?string $previousPlural): self
-    {
-        $this->previousPlural = $previousPlural;
+	public function getPreviousContext(): ?string {
+		return $this->previousContext;
+	}
 
-        return $this;
-    }
+	public function setPreviousPlural( ?string $previousPlural ): self {
+		$this->previousPlural = $previousPlural;
 
-    public function getPreviousPlural(): ?string
-    {
-        return $this->previousPlural;
-    }
+		return $this;
+	}
 
-    public function disable(bool $disabled = true): self
-    {
-        $this->disabled = $disabled;
+	public function getPreviousPlural(): ?string {
+		return $this->previousPlural;
+	}
 
-        return $this;
-    }
+	public function disable( bool $disabled = true ): self {
+		$this->disabled = $disabled;
 
-    public function isDisabled(): bool
-    {
-        return $this->disabled;
-    }
+		return $this;
+	}
 
-    public function translate(string $translation): self
-    {
-        $this->translation = $translation;
+	public function isDisabled(): bool {
+		return $this->disabled;
+	}
 
-        return $this;
-    }
+	public function translate( string $translation ): self {
+		$this->translation = $translation;
 
-    public function getTranslation(): ?string
-    {
-        return $this->translation;
-    }
+		return $this;
+	}
 
-    public function isTranslated(): bool
-    {
-        return isset($this->translation) && $this->translation !== '';
-    }
+	public function getTranslation(): ?string {
+		return $this->translation;
+	}
 
-    public function translatePlural(string ...$translations): self
-    {
-        $this->pluralTranslations = $translations;
+	public function isTranslated(): bool {
+		return isset( $this->translation ) && $this->translation !== '';
+	}
 
-        return $this;
-    }
+	public function translatePlural( string ...$translations ): self {
+		$this->pluralTranslations = $translations;
 
-    public function getPluralTranslations(?int $size = null): array
-    {
-        if ($size === null) {
-            return $this->pluralTranslations;
-        }
+		return $this;
+	}
 
-        $length = count($this->pluralTranslations);
+	public function getPluralTranslations( ?int $size = null ): array {
+		if ( $size === null ) {
+			return $this->pluralTranslations;
+		}
 
-        if ($size > $length) {
-            return $this->pluralTranslations + array_fill(0, $size, '');
-        }
+		$length = count( $this->pluralTranslations );
 
-        return array_slice($this->pluralTranslations, 0, $size);
-    }
+		if ( $size > $length ) {
+			return $this->pluralTranslations + array_fill( 0, $size, '' );
+		}
 
-    public function getReferences(): References
-    {
-        return $this->references;
-    }
+		return array_slice( $this->pluralTranslations, 0, $size );
+	}
 
-    public function getFlags(): Flags
-    {
-        return $this->flags;
-    }
+	public function getReferences(): References {
+		return $this->references;
+	}
 
-    public function getComments(): Comments
-    {
-        return $this->comments;
-    }
+	public function getFlags(): Flags {
+		return $this->flags;
+	}
 
-    public function getExtractedComments(): Comments
-    {
-        return $this->extractedComments;
-    }
+	public function getComments(): Comments {
+		return $this->comments;
+	}
 
-    public function mergeWith(Translation $translation, int $strategy = 0): Translation
-    {
-        $merged = clone $this;
+	public function getExtractedComments(): Comments {
+		return $this->extractedComments;
+	}
 
-        if ($strategy & Merge::COMMENTS_THEIRS) {
-            $merged->comments = clone $translation->comments;
-        } elseif (!($strategy & Merge::COMMENTS_OURS)) {
-            $merged->comments = $merged->comments->mergeWith($translation->comments);
-        }
+	public function mergeWith( Translation $translation, int $strategy = 0 ): Translation {
+		$merged = clone $this;
 
-        if ($strategy & Merge::EXTRACTED_COMMENTS_THEIRS) {
-            $merged->extractedComments = clone $translation->extractedComments;
-        } elseif (!($strategy & Merge::EXTRACTED_COMMENTS_OURS)) {
-            $merged->extractedComments = $merged->extractedComments->mergeWith($translation->extractedComments);
-        }
+		if ( $strategy & Merge::COMMENTS_THEIRS ) {
+			$merged->comments = clone $translation->comments;
+		} elseif ( ! ( $strategy & Merge::COMMENTS_OURS ) ) {
+			$merged->comments = $merged->comments->mergeWith( $translation->comments );
+		}
 
-        if ($strategy & Merge::REFERENCES_THEIRS) {
-            $merged->references = clone $translation->references;
-        } elseif (!($strategy & Merge::REFERENCES_OURS)) {
-            $merged->references = $merged->references->mergeWith($translation->references);
-        }
+		if ( $strategy & Merge::EXTRACTED_COMMENTS_THEIRS ) {
+			$merged->extractedComments = clone $translation->extractedComments;
+		} elseif ( ! ( $strategy & Merge::EXTRACTED_COMMENTS_OURS ) ) {
+			$merged->extractedComments = $merged->extractedComments->mergeWith( $translation->extractedComments );
+		}
 
-        if ($strategy & Merge::FLAGS_THEIRS) {
-            $merged->flags = clone $translation->flags;
-        } elseif (!($strategy & Merge::FLAGS_OURS)) {
-            $merged->flags = $merged->flags->mergeWith($translation->flags);
-        }
+		if ( $strategy & Merge::REFERENCES_THEIRS ) {
+			$merged->references = clone $translation->references;
+		} elseif ( ! ( $strategy & Merge::REFERENCES_OURS ) ) {
+			$merged->references = $merged->references->mergeWith( $translation->references );
+		}
 
-        $override = (bool) ($strategy & Merge::TRANSLATIONS_OVERRIDE);
+		if ( $strategy & Merge::FLAGS_THEIRS ) {
+			$merged->flags = clone $translation->flags;
+		} elseif ( ! ( $strategy & Merge::FLAGS_OURS ) ) {
+			$merged->flags = $merged->flags->mergeWith( $translation->flags );
+		}
 
-        if (!$merged->translation || ($translation->translation && $override)) {
-            $merged->translation = $translation->translation;
-        }
+		$override = (bool) ( $strategy & Merge::TRANSLATIONS_OVERRIDE );
 
-        if (!$merged->plural || ($translation->plural && $override)) {
-            $merged->plural = $translation->plural;
-        }
+		if ( ! $merged->translation || ( $translation->translation && $override ) ) {
+			$merged->translation = $translation->translation;
+		}
 
-        if (!$merged->previousContext || ($translation->previousContext && $override)) {
-            $merged->previousContext = $translation->previousContext;
-        }
+		if ( ! $merged->plural || ( $translation->plural && $override ) ) {
+			$merged->plural = $translation->plural;
+		}
 
-        if (!$merged->previousOriginal || ($translation->previousOriginal && $override)) {
-            $merged->previousOriginal = $translation->previousOriginal;
-        }
+		if ( ! $merged->previousContext || ( $translation->previousContext && $override ) ) {
+			$merged->previousContext = $translation->previousContext;
+		}
 
-        if (!$merged->previousPlural || ($translation->previousPlural && $override)) {
-            $merged->previousPlural = $translation->previousPlural;
-        }
+		if ( ! $merged->previousOriginal || ( $translation->previousOriginal && $override ) ) {
+			$merged->previousOriginal = $translation->previousOriginal;
+		}
 
-        if (empty($merged->pluralTranslations) || (!empty($translation->pluralTranslations) && $override)) {
-            $merged->pluralTranslations = $translation->pluralTranslations;
-        }
+		if ( ! $merged->previousPlural || ( $translation->previousPlural && $override ) ) {
+			$merged->previousPlural = $translation->previousPlural;
+		}
 
-        $merged->disable($translation->isDisabled());
+		if ( empty( $merged->pluralTranslations ) || ( ! empty( $translation->pluralTranslations ) && $override ) ) {
+			$merged->pluralTranslations = $translation->pluralTranslations;
+		}
 
-        return $merged;
-    }
+		$merged->disable( $translation->isDisabled() );
+
+		return $merged;
+	}
 }

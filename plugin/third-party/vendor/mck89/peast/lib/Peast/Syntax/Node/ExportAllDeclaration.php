@@ -12,111 +12,106 @@ namespace Peast\Syntax\Node;
 /**
  * A node that represents an "export all" declaration.
  * For example: export * from "test"
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class ExportAllDeclaration extends Node implements ModuleDeclaration
-{
-    /**
-     * Map of node properties
-     * 
-     * @var array 
-     */
-    protected $propertiesMap = array(
-        "source" => true,
-        "exported" => true,
-        "attributes" => true
-    );
+class ExportAllDeclaration extends Node implements ModuleDeclaration {
 
-    /**
-     * The export source
-     *
-     * @var Literal
-     */
-    protected $source;
+	/**
+	 * Map of node properties
+	 *
+	 * @var array
+	 */
+	protected $propertiesMap = array(
+		'source'     => true,
+		'exported'   => true,
+		'attributes' => true,
+	);
 
-    /**
-     * The exported name
-     *
-     * @var Identifier|StringLiteral
-     */
-    protected $exported;
-    
-    /**
-     * Attributes array
-     * 
-     * @var array
-     */
-    protected $attributes = array();
+	/**
+	 * The export source
+	 *
+	 * @var Literal
+	 */
+	protected $source;
 
-    /**
-     * Returns the export source
-     *
-     * @return Literal
-     */
-    public function getSource()
-    {
-        return $this->source;
-    }
+	/**
+	 * The exported name
+	 *
+	 * @var Identifier|StringLiteral
+	 */
+	protected $exported;
 
-    /**
-     * Sets the export source
-     *
-     * @param Literal $source Export source
-     *
-     * @return $this
-     */
-    public function setSource(Literal $source)
-    {
-        $this->source = $source;
-        return $this;
-    }
+	/**
+	 * Attributes array
+	 *
+	 * @var array
+	 */
+	protected $attributes = array();
 
-    /**
-     * Returns the exported name
-     *
-     * @return Identifier|StringLiteral
-     */
-    public function getExported()
-    {
-        return $this->exported;
-    }
+	/**
+	 * Returns the export source
+	 *
+	 * @return Literal
+	 */
+	public function getSource() {
+		return $this->source;
+	}
 
-    /**
-     * Sets the exported name
-     *W
-     * @param Identifier|StringLiteral $exported Exported name
-     *
-     * @return $this
-     */
-    public function setExported($exported)
-    {
-        $this->assertType($exported, array("Identifier", "StringLiteral"), true);
-        $this->exported = $exported;
-        return $this;
-    }
-    
-    /**
-     * Returns the attributes array
-     * 
-     * @return array
-     */
-    public function getAttributes()
-    {
-        return $this->attributes;
-    }
-    
-    /**
-     * Sets the attributes array
-     * 
-     * @param array $attributes Attributes array
-     * 
-     * @return $this
-     */
-    public function setAttributes($attributes)
-    {
-        $this->assertArrayOf($attributes, "ImportAttribute");
-        $this->attributes = $attributes;
-        return $this;
-    }
+	/**
+	 * Sets the export source
+	 *
+	 * @param Literal $source Export source
+	 *
+	 * @return $this
+	 */
+	public function setSource( Literal $source ) {
+		$this->source = $source;
+		return $this;
+	}
+
+	/**
+	 * Returns the exported name
+	 *
+	 * @return Identifier|StringLiteral
+	 */
+	public function getExported() {
+		return $this->exported;
+	}
+
+	/**
+	 * Sets the exported name
+	 * W
+	 *
+	 * @param Identifier|StringLiteral $exported Exported name
+	 *
+	 * @return $this
+	 */
+	public function setExported( $exported ) {
+		$this->assertType( $exported, array( 'Identifier', 'StringLiteral' ), true );
+		$this->exported = $exported;
+		return $this;
+	}
+
+	/**
+	 * Returns the attributes array
+	 *
+	 * @return array
+	 */
+	public function getAttributes() {
+		return $this->attributes;
+	}
+
+	/**
+	 * Sets the attributes array
+	 *
+	 * @param array $attributes Attributes array
+	 *
+	 * @return $this
+	 */
+	public function setAttributes( $attributes ) {
+		$this->assertArrayOf( $attributes, 'ImportAttribute' );
+		$this->attributes = $attributes;
+		return $this;
+	}
 }

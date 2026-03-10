@@ -5,142 +5,139 @@ namespace Gettext\Generator;
 
 use Gettext\Translations;
 
-final class PoGenerator extends Generator
-{
-    public function generateString(Translations $translations): string
-    {
-        $pluralForm = $translations->getHeaders()->getPluralForm();
-        $pluralSize = is_array($pluralForm) ? ($pluralForm[0] - 1) : null;
-        $lines = [];
+final class PoGenerator extends Generator {
 
-        //Description and flags
-        if ($translations->getDescription()) {
-            $description = explode("\n", $translations->getDescription());
+	public function generateString( Translations $translations ): string {
+		$pluralForm = $translations->getHeaders()->getPluralForm();
+		$pluralSize = is_array( $pluralForm ) ? ( $pluralForm[0] - 1 ) : null;
+		$lines      = array();
 
-            foreach ($description as $line) {
-                $lines[] = sprintf('# %s', $line);
-            }
+		// Description and flags
+		if ( $translations->getDescription() ) {
+			$description = explode( "\n", $translations->getDescription() );
 
-            $lines[] = '#';
-        }
+			foreach ( $description as $line ) {
+				$lines[] = sprintf( '# %s', $line );
+			}
 
-        if (count($translations->getFlags())) {
-            $lines[] = sprintf('#, %s', implode(',', $translations->getFlags()->toArray()));
-        }
+			$lines[] = '#';
+		}
 
-        //Headers
-        $lines[] = 'msgid ""';
-        $lines[] = 'msgstr ""';
+		if ( count( $translations->getFlags() ) ) {
+			$lines[] = sprintf( '#, %s', implode( ',', $translations->getFlags()->toArray() ) );
+		}
 
-        foreach ($translations->getHeaders() as $name => $value) {
-            $lines[] = sprintf('"%s: %s\\n"', $name, $value);
-        }
+		// Headers
+		$lines[] = 'msgid ""';
+		$lines[] = 'msgstr ""';
 
-        $lines[] = '';
+		foreach ( $translations->getHeaders() as $name => $value ) {
+			$lines[] = sprintf( '"%s: %s\\n"', $name, $value );
+		}
 
-        //Translations
-        foreach ($translations as $translation) {
-            foreach ($translation->getComments() as $comment) {
-                $lines[] = sprintf('# %s', $comment);
-            }
+		$lines[] = '';
 
-            foreach ($translation->getExtractedComments() as $comment) {
-                $lines[] = sprintf('#. %s', $comment);
-            }
+		// Translations
+		foreach ( $translations as $translation ) {
+			foreach ( $translation->getComments() as $comment ) {
+				$lines[] = sprintf( '# %s', $comment );
+			}
 
-            foreach ($translation->getReferences() as $filename => $lineNumbers) {
-                if (empty($lineNumbers)) {
-                    $lines[] = sprintf('#: %s', $filename);
-                    continue;
-                }
+			foreach ( $translation->getExtractedComments() as $comment ) {
+				$lines[] = sprintf( '#. %s', $comment );
+			}
 
-                foreach ($lineNumbers as $number) {
-                    $lines[] = sprintf('#: %s:%d', $filename, $number);
-                }
-            }
+			foreach ( $translation->getReferences() as $filename => $lineNumbers ) {
+				if ( empty( $lineNumbers ) ) {
+					$lines[] = sprintf( '#: %s', $filename );
+					continue;
+				}
 
-            if (count($translation->getFlags())) {
-                $lines[] = sprintf('#, %s', implode(',', $translation->getFlags()->toArray()));
-            }
+				foreach ( $lineNumbers as $number ) {
+					$lines[] = sprintf( '#: %s:%d', $filename, $number );
+				}
+			}
 
-            $prefix = $translation->isDisabled() ? '#~ ' : '';
+			if ( count( $translation->getFlags() ) ) {
+				$lines[] = sprintf( '#, %s', implode( ',', $translation->getFlags()->toArray() ) );
+			}
 
-            if ($context = $translation->getPreviousContext()) {
-                $lines[] = sprintf('%s#| msgctxt %s', $prefix, self::encode($context));
-            }
+			$prefix = $translation->isDisabled() ? '#~ ' : '';
 
-            if ($original = $translation->getPreviousOriginal()) {
-                $lines[] = sprintf('%s#| msgid %s', $prefix, self::encode($original));
-            }
+			if ( $context = $translation->getPreviousContext() ) {
+				$lines[] = sprintf( '%s#| msgctxt %s', $prefix, self::encode( $context ) );
+			}
 
-            if ($plural = $translation->getPreviousPlural()) {
-                $lines[] = sprintf('%s#| msgid_plural %s', $prefix, self::encode($plural));
-            }
+			if ( $original = $translation->getPreviousOriginal() ) {
+				$lines[] = sprintf( '%s#| msgid %s', $prefix, self::encode( $original ) );
+			}
 
-            if ($context = $translation->getContext()) {
-                $lines[] = sprintf('%smsgctxt %s', $prefix, self::encode($context));
-            }
+			if ( $plural = $translation->getPreviousPlural() ) {
+				$lines[] = sprintf( '%s#| msgid_plural %s', $prefix, self::encode( $plural ) );
+			}
 
-            self::appendLines($lines, $prefix, 'msgid', $translation->getOriginal());
+			if ( $context = $translation->getContext() ) {
+				$lines[] = sprintf( '%smsgctxt %s', $prefix, self::encode( $context ) );
+			}
 
-            if ($plural = $translation->getPlural()) {
-                self::appendLines($lines, $prefix, 'msgid_plural', $plural);
-                self::appendLines($lines, $prefix, 'msgstr[0]', $translation->getTranslation() ?: '');
+			self::appendLines( $lines, $prefix, 'msgid', $translation->getOriginal() );
 
-                foreach ($translation->getPluralTranslations($pluralSize) as $k => $v) {
-                    self::appendLines($lines, $prefix, sprintf('msgstr[%d]', $k + 1), $v);
-                }
-            } else {
-                self::appendLines($lines, $prefix, 'msgstr', $translation->getTranslation() ?: '');
-            }
+			if ( $plural = $translation->getPlural() ) {
+				self::appendLines( $lines, $prefix, 'msgid_plural', $plural );
+				self::appendLines( $lines, $prefix, 'msgstr[0]', $translation->getTranslation() ?: '' );
 
-            $lines[] = '';
-        }
+				foreach ( $translation->getPluralTranslations( $pluralSize ) as $k => $v ) {
+					self::appendLines( $lines, $prefix, sprintf( 'msgstr[%d]', $k + 1 ), $v );
+				}
+			} else {
+				self::appendLines( $lines, $prefix, 'msgstr', $translation->getTranslation() ?: '' );
+			}
 
-        return implode("\n", $lines);
-    }
+			$lines[] = '';
+		}
 
-    /**
-     * Add one or more lines depending whether the string is multiline or not.
-     */
-    private static function appendLines(array &$lines, string $prefix, string $name, string $value): void
-    {
-        $newLines = explode("\n", $value);
-        $total = count($newLines);
+		return implode( "\n", $lines );
+	}
 
-        if ($total === 1) {
-            $lines[] = sprintf('%s%s %s', $prefix, $name, self::encode($newLines[0]));
+	/**
+	 * Add one or more lines depending whether the string is multiline or not.
+	 */
+	private static function appendLines( array &$lines, string $prefix, string $name, string $value ): void {
+		$newLines = explode( "\n", $value );
+		$total    = count( $newLines );
 
-            return;
-        }
+		if ( $total === 1 ) {
+			$lines[] = sprintf( '%s%s %s', $prefix, $name, self::encode( $newLines[0] ) );
 
-        $lines[] = sprintf('%s%s ""', $prefix, $name);
+			return;
+		}
 
-        $last = $total - 1;
-        foreach ($newLines as $k => $line) {
-            if ($k < $last) {
-                $line .= "\n";
-            }
+		$lines[] = sprintf( '%s%s ""', $prefix, $name );
 
-            $lines[] = self::encode($line);
-        }
-    }
+		$last = $total - 1;
+		foreach ( $newLines as $k => $line ) {
+			if ( $k < $last ) {
+				$line .= "\n";
+			}
 
-    /**
-     * Convert a string to its PO representation.
-     */
-    public static function encode(string $value): string
-    {
-        return '"'.strtr(
-            $value,
-            [
-                "\x00" => '',
-                '\\' => '\\\\',
-                "\t" => '\t',
-                "\r" => '\r',
-                "\n" => '\n',
-                '"' => '\\"',
-            ]
-        ).'"';
-    }
+			$lines[] = self::encode( $line );
+		}
+	}
+
+	/**
+	 * Convert a string to its PO representation.
+	 */
+	public static function encode( string $value ): string {
+		return '"' . strtr(
+			$value,
+			array(
+				"\x00" => '',
+				'\\'   => '\\\\',
+				"\t"   => '\t',
+				"\r"   => '\r',
+				"\n"   => '\n',
+				'"'    => '\\"',
+			)
+		) . '"';
+	}
 }

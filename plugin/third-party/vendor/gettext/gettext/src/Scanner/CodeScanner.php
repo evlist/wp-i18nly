@@ -9,162 +9,150 @@ use Gettext\Translation;
 /**
  * Base class with common functions to scan files with code and get gettext translations.
  */
-abstract class CodeScanner extends Scanner
-{
-    protected $ignoreInvalidFunctions = false;
+abstract class CodeScanner extends Scanner {
 
-    protected $addReferences = true;
+	protected $ignoreInvalidFunctions = false;
 
-    protected $commentsPrefixes = [];
+	protected $addReferences = true;
 
-    protected $functions = [];
+	protected $commentsPrefixes = array();
 
-    /**
-     * @param array $functions [fnName => handler]
-     */
-    public function setFunctions(array $functions): self
-    {
-        $this->functions = $functions;
+	protected $functions = array();
 
-        return $this;
-    }
+	/**
+	 * @param array $functions [fnName => handler]
+	 */
+	public function setFunctions( array $functions ): self {
+		$this->functions = $functions;
 
-    /**
-     * @return array [fnName => handler]
-     */
-    public function getFunctions(): array
-    {
-        return $this->functions;
-    }
+		return $this;
+	}
 
-    public function ignoreInvalidFunctions($ignore = true): self
-    {
-        $this->ignoreInvalidFunctions = $ignore;
+	/**
+	 * @return array [fnName => handler]
+	 */
+	public function getFunctions(): array {
+		return $this->functions;
+	}
 
-        return $this;
-    }
+	public function ignoreInvalidFunctions( $ignore = true ): self {
+		$this->ignoreInvalidFunctions = $ignore;
 
-    public function addReferences($enabled = true): self
-    {
-        $this->addReferences = $enabled;
+		return $this;
+	}
 
-        return $this;
-    }
+	public function addReferences( $enabled = true ): self {
+		$this->addReferences = $enabled;
 
-    public function extractCommentsStartingWith(string ...$prefixes): self
-    {
-        $this->commentsPrefixes = $prefixes;
+		return $this;
+	}
 
-        return $this;
-    }
+	public function extractCommentsStartingWith( string ...$prefixes ): self {
+		$this->commentsPrefixes = $prefixes;
 
-    public function scanString(string $string, string $filename): void
-    {
-        $functionsScanner = $this->getFunctionsScanner();
-        $functions = $functionsScanner->scan($string, $filename);
+		return $this;
+	}
 
-        foreach ($functions as $function) {
-            $this->handleFunction($function);
-        }
-    }
+	public function scanString( string $string, string $filename ): void {
+		$functionsScanner = $this->getFunctionsScanner();
+		$functions        = $functionsScanner->scan( $string, $filename );
 
-    abstract public function getFunctionsScanner(): FunctionsScannerInterface;
+		foreach ( $functions as $function ) {
+			$this->handleFunction( $function );
+		}
+	}
 
-    protected function handleFunction(ParsedFunction $function)
-    {
-        $handler = $this->getFunctionHandler($function);
+	abstract public function getFunctionsScanner(): FunctionsScannerInterface;
 
-        if (is_null($handler)) {
-            return;
-        }
+	protected function handleFunction( ParsedFunction $function ) {
+		$handler = $this->getFunctionHandler( $function );
 
-        $translation = call_user_func($handler, $function);
+		if ( is_null( $handler ) ) {
+			return;
+		}
 
-        if ($translation && $this->addReferences) {
-            $translation->getReferences()->add($function->getFilename(), $function->getLine());
-        }
-    }
+		$translation = call_user_func( $handler, $function );
 
-    protected function getFunctionHandler(ParsedFunction $function): ?callable
-    {
-        $name = $function->getName();
-        $handler = $this->functions[$name] ?? null;
+		if ( $translation && $this->addReferences ) {
+			$translation->getReferences()->add( $function->getFilename(), $function->getLine() );
+		}
+	}
 
-        return is_null($handler) ? null : [$this, $handler];
-    }
+	protected function getFunctionHandler( ParsedFunction $function ): ?callable {
+		$name    = $function->getName();
+		$handler = $this->functions[ $name ] ?? null;
 
-    protected function addComments(ParsedFunction $function, ?Translation $translation): ?Translation
-    {
-        if (empty($this->commentsPrefixes) || empty($translation)) {
-            return $translation;
-        }
+		return is_null( $handler ) ? null : array( $this, $handler );
+	}
 
-        foreach ($function->getComments() as $comment) {
-            if ($this->checkComment($comment)) {
-                $translation->getExtractedComments()->add($comment);
-            }
-        }
+	protected function addComments( ParsedFunction $function, ?Translation $translation ): ?Translation {
+		if ( empty( $this->commentsPrefixes ) || empty( $translation ) ) {
+			return $translation;
+		}
 
-        return $translation;
-    }
+		foreach ( $function->getComments() as $comment ) {
+			if ( $this->checkComment( $comment ) ) {
+				$translation->getExtractedComments()->add( $comment );
+			}
+		}
 
-    protected function addFlags(ParsedFunction $function, ?Translation $translation): ?Translation
-    {
-        if (empty($translation)) {
-            return $translation;
-        }
+		return $translation;
+	}
 
-        foreach ($function->getFlags() as $flag) {
-            $translation->getFlags()->add($flag);
-        }
+	protected function addFlags( ParsedFunction $function, ?Translation $translation ): ?Translation {
+		if ( empty( $translation ) ) {
+			return $translation;
+		}
 
-        return $translation;
-    }
+		foreach ( $function->getFlags() as $flag ) {
+			$translation->getFlags()->add( $flag );
+		}
 
-    protected function checkFunction(ParsedFunction $function, int $minLength): bool
-    {
-        if ($function->countArguments() < $minLength) {
-            if ($this->ignoreInvalidFunctions) {
-                return false;
-            }
+		return $translation;
+	}
 
-            throw new Exception(
-                sprintf(
-                    'Invalid gettext function in %s:%d. At least %d arguments are required',
-                    $function->getFilename(),
-                    $function->getLine(),
-                    $minLength
-                )
-            );
-        }
+	protected function checkFunction( ParsedFunction $function, int $minLength ): bool {
+		if ( $function->countArguments() < $minLength ) {
+			if ( $this->ignoreInvalidFunctions ) {
+				return false;
+			}
 
-        $arguments = array_slice($function->getArguments(), 0, $minLength);
+			throw new Exception(
+				sprintf(
+					'Invalid gettext function in %s:%d. At least %d arguments are required',
+					$function->getFilename(),
+					$function->getLine(),
+					$minLength
+				)
+			);
+		}
 
-        if (in_array(null, $arguments, true)) {
-            if ($this->ignoreInvalidFunctions) {
-                return false;
-            }
+		$arguments = array_slice( $function->getArguments(), 0, $minLength );
 
-            throw new Exception(
-                sprintf(
-                    'Invalid gettext function in %s:%d. Some required arguments are not valid',
-                    $function->getFilename(),
-                    $function->getLine()
-                )
-            );
-        }
+		if ( in_array( null, $arguments, true ) ) {
+			if ( $this->ignoreInvalidFunctions ) {
+				return false;
+			}
 
-        return true;
-    }
+			throw new Exception(
+				sprintf(
+					'Invalid gettext function in %s:%d. Some required arguments are not valid',
+					$function->getFilename(),
+					$function->getLine()
+				)
+			);
+		}
 
-    protected function checkComment(string $comment): bool
-    {
-        foreach ($this->commentsPrefixes as $prefix) {
-            if ($prefix === '' || strpos($comment, $prefix) === 0) {
-                return true;
-            }
-        }
+		return true;
+	}
 
-        return false;
-    }
+	protected function checkComment( string $comment ): bool {
+		foreach ( $this->commentsPrefixes as $prefix ) {
+			if ( $prefix === '' || strpos( $comment, $prefix ) === 0 ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

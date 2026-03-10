@@ -11,24 +11,24 @@ namespace Peast\Formatter;
 
 /**
  * Compact formatter.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class Expanded extends Base
-{
-    /**
-     * Boolean that indicates if open curly brackets in code blocks must be
-     * on a new line
-     * 
-     * @var bool
-     */
-    protected $newLineBeforeCurlyBracket = true;
-    
-    /**
-     * Boolean that indicates if content inside round brackets must be
-     * surrounded by spaces
-     * 
-     * @var bool
-     */
-    protected $spacesInsideRoundBrackets = true;
+class Expanded extends Base {
+
+	/**
+	 * Boolean that indicates if open curly brackets in code blocks must be
+	 * on a new line
+	 *
+	 * @var bool
+	 */
+	protected $newLineBeforeCurlyBracket = true;
+
+	/**
+	 * Boolean that indicates if content inside round brackets must be
+	 * surrounded by spaces
+	 *
+	 * @var bool
+	 */
+	protected $spacesInsideRoundBrackets = true;
 }

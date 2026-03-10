@@ -11,52 +11,52 @@ namespace Peast\Syntax\ES2020;
 
 /**
  * ES2020 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\ES2019\Features
-{
-    /**
-     * Dynamic import
-     *
-     * @var bool
-     */
-    public $dynamicImport = true;
+class Features extends \Peast\Syntax\ES2019\Features {
 
-    /**
-     * BigInt literals
-     *
-     * @var bool
-     */
-    public $bigInt = true;
+	/**
+	 * Dynamic import
+	 *
+	 * @var bool
+	 */
+	public $dynamicImport = true;
 
-    /**
-     * Exported name for export all declarations
-     *
-     * @var bool
-     */
-    public $exportedNameInExportAll = true;
+	/**
+	 * BigInt literals
+	 *
+	 * @var bool
+	 */
+	public $bigInt = true;
 
-    /**
-     * Import.meta
-     *
-     * @var bool
-     */
-    public $importMeta = true;
+	/**
+	 * Exported name for export all declarations
+	 *
+	 * @var bool
+	 */
+	public $exportedNameInExportAll = true;
 
-    /**
-     * Coalescing operator
-     *
-     * @var bool
-     */
-    public $coalescingOperator = true;
+	/**
+	 * Import.meta
+	 *
+	 * @var bool
+	 */
+	public $importMeta = true;
 
-    /**
-     * Optional chaining
-     *
-     * @var bool
-     */
-    public $optionalChaining = true;
+	/**
+	 * Coalescing operator
+	 *
+	 * @var bool
+	 */
+	public $coalescingOperator = true;
+
+	/**
+	 * Optional chaining
+	 *
+	 * @var bool
+	 */
+	public $optionalChaining = true;
 }

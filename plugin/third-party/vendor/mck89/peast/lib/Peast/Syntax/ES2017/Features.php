@@ -11,31 +11,31 @@ namespace Peast\Syntax\ES2017;
 
 /**
  * ES2017 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\ES2016\Features
-{
-    /**
-     * Async/await
-     *
-     * @var bool
-     */
-    public $asyncAwait = true;
+class Features extends \Peast\Syntax\ES2016\Features {
 
-    /**
-     * Trailing comma in function calls and declarations
-     *
-     * @var bool
-     */
-    public $trailingCommaFunctionCallDeclaration = true;
+	/**
+	 * Async/await
+	 *
+	 * @var bool
+	 */
+	public $asyncAwait = true;
 
-    /**
-     * For-in initializer
-     *
-     * @var bool
-     */
-    public $forInInitializer = true;
+	/**
+	 * Trailing comma in function calls and declarations
+	 *
+	 * @var bool
+	 */
+	public $trailingCommaFunctionCallDeclaration = true;
+
+	/**
+	 * For-in initializer
+	 *
+	 * @var bool
+	 */
+	public $forInInitializer = true;
 }

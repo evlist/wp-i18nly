@@ -12,15 +12,15 @@ use Gettext\Translations;
  * Returns output in the form WordPress uses.
  */
 class PhpArrayGenerator extends PhpArray {
-	public static $options = [
+	public static $options = array(
 		'includeHeaders' => false,
 		'prettyPrint'    => false,
-	];
+	);
 
 	/**
 	 * {@inheritdoc}
 	 */
-	public static function toString( Translations $translations, array $options = [] ) {
+	public static function toString( Translations $translations, array $options = array() ) {
 		$options = array_merge( static::$options, $options );
 		$array   = static::generate( $translations, $options );
 
@@ -35,7 +35,7 @@ class PhpArrayGenerator extends PhpArray {
 	 *
 	 * @return array
 	 */
-	public static function generate( Translations $translations, array $options = [] ) {
+	public static function generate( Translations $translations, array $options = array() ) {
 		$options += static::$options;
 
 		return static::toArray( $translations, $options['includeHeaders'] );
@@ -51,24 +51,24 @@ class PhpArrayGenerator extends PhpArray {
 	 * @return array
 	 */
 	protected static function toArray( Translations $translations, $include_headers, $force_array = false ) {
-		$messages = [];
+		$messages = array();
 
-		$result = [
+		$result = array(
 			'domain'       => $translations->getDomain(),
 			'plural-forms' => $translations->getHeader( 'Plural-Forms' ),
-		];
+		);
 
 		$language = $translations->getLanguage();
 		if ( null !== $language ) {
 			$result['language'] = $language;
 		}
 
-		$headers_allowlist = [
+		$headers_allowlist = array(
 			'POT-Creation-Date'  => 'pot-creation-date',
 			'PO-Revision-Date'   => 'po-revision-date',
 			'Project-Id-Version' => 'project-id-version',
 			'X-Generator'        => 'x-generator',
-		];
+		);
 
 		foreach ( $translations->getHeaders() as $name => $value ) {
 			if ( isset( $headers_allowlist[ $name ] ) ) {

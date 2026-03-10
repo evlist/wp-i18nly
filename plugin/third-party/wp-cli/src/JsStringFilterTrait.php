@@ -11,7 +11,7 @@ trait JsStringFilterTrait {
 	 *
 	 * @var string[]
 	 */
-	protected static $js_extensions = [ '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs' ];
+	protected static $js_extensions = array( '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs' );
 
 	/**
 	 * Removes strings from translations that only occur in JavaScript files.

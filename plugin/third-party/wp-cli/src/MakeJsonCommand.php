@@ -110,7 +110,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 		$result_count = 0;
 
 		if ( is_file( $source ) ) {
-			$files = [ new SplFileInfo( $source ) ];
+			$files = array( new SplFileInfo( $source ) );
 		} else {
 			$files = new IteratorIterator( new DirectoryIterator( $source ) );
 		}
@@ -137,11 +137,11 @@ class MakeJsonCommand extends WP_CLI_Command {
 			return null;
 		}
 
-		$map = [];
+		$map = array();
 
 		// not an array: single value could also be object (associative array)
 		if ( ! is_array( $paths_or_maps ) || empty( array_filter( array_keys( $paths_or_maps ), 'is_int' ) ) ) {
-			$paths_or_maps = [ $paths_or_maps ];
+			$paths_or_maps = array( $paths_or_maps );
 		}
 		$paths = array_filter( $paths_or_maps, 'is_string' );
 		WP_CLI::debug( sprintf( 'Using %d map files: %s', count( $paths ), implode( ', ', $paths ) ), 'make-json' );
@@ -151,7 +151,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 
 		$to_transform = array_map(
 			static function ( $value, $index ) {
-				return [ $value, sprintf( 'inline object %d', $index ) ];
+				return array( $value, sprintf( 'inline object %d', $index ) );
 			},
 			$maps,
 			array_keys( $maps )
@@ -169,7 +169,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 				continue;
 			}
 
-			$to_transform[] = [ $json, $path ];
+			$to_transform[] = array( $json, $path );
 		}
 
 		foreach ( $to_transform as $transform ) {
@@ -186,7 +186,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 					}
 
 					if ( is_string( $value ) ) {
-						return [ $value ];
+						return array( $value );
 					}
 
 					return null;
@@ -213,10 +213,10 @@ class MakeJsonCommand extends WP_CLI_Command {
 	 */
 	protected function make_json( $source_file, $destination, $map, $domain, $extensions ) {
 		/** @var Translations[] $mapping */
-		$mapping      = [];
+		$mapping      = array();
 		$translations = new Translations();
-		$result       = [];
-		$extensions   = array_merge( [ 'js' ], $extensions );
+		$result       = array();
+		$extensions   = array_merge( array( 'js' ), $extensions );
 
 		PoExtractor::fromFile( $source_file, $translations );
 
@@ -300,7 +300,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 			$references
 		);
 		// this is now an array of arrays of sources, translate to array of sources
-		$references = [];
+		$references = array();
 		foreach ( $temp as $sources ) {
 			if ( is_null( $sources ) ) {
 				continue;
@@ -310,7 +310,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 		// and wrap to array
 		return array_map(
 			static function ( $value ) {
-				return [ $value ];
+				return array( $value );
 			},
 			$references
 		);
@@ -328,7 +328,7 @@ class MakeJsonCommand extends WP_CLI_Command {
 	 * @return array List of created JSON files.
 	 */
 	protected function build_json_files( $mapping, $base_file_name, $destination ) {
-		$result = [];
+		$result = array();
 
 		foreach ( $mapping as $file => $translations ) {
 			/** @var Translations $translations */
@@ -339,10 +339,10 @@ class MakeJsonCommand extends WP_CLI_Command {
 			$success = JedGenerator::toFile(
 				$translations,
 				$destination_file,
-				[
+				array(
 					'json'   => $this->json_options,
 					'source' => $file,
-				]
+				)
 			);
 
 			if ( ! $success ) {

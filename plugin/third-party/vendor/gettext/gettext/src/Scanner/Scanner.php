@@ -10,79 +10,73 @@ use Gettext\Translations;
 /**
  * Base class with common functions for all scanners.
  */
-abstract class Scanner implements ScannerInterface
-{
-    protected $translations;
-    protected $defaultDomain;
+abstract class Scanner implements ScannerInterface {
 
-    public function __construct(Translations ...$allTranslations)
-    {
-        foreach ($allTranslations as $translations) {
-            $domain = $translations->getDomain();
-            $this->translations[$domain] = $translations;
-        }
-    }
+	protected $translations;
+	protected $defaultDomain;
 
-    public function setDefaultDomain(string $defaultDomain): void
-    {
-        $this->defaultDomain = $defaultDomain;
-    }
+	public function __construct( Translations ...$allTranslations ) {
+		foreach ( $allTranslations as $translations ) {
+			$domain                        = $translations->getDomain();
+			$this->translations[ $domain ] = $translations;
+		}
+	}
 
-    public function getDefaultDomain(): string
-    {
-        return $this->defaultDomain;
-    }
+	public function setDefaultDomain( string $defaultDomain ): void {
+		$this->defaultDomain = $defaultDomain;
+	}
 
-    public function getTranslations(): array
-    {
-        return $this->translations;
-    }
+	public function getDefaultDomain(): string {
+		return $this->defaultDomain;
+	}
 
-    public function scanFile(string $filename): void
-    {
-        $string = static::readFile($filename);
+	public function getTranslations(): array {
+		return $this->translations;
+	}
 
-        $this->scanString($string, $filename);
-    }
+	public function scanFile( string $filename ): void {
+		$string = static::readFile( $filename );
 
-    abstract public function scanString(string $string, string $filename): void;
+		$this->scanString( $string, $filename );
+	}
 
-    protected function saveTranslation(
-        ?string $domain,
-        ?string $context,
-        string $original,
-        ?string $plural = null
-    ): ?Translation {
-        if (is_null($domain)) {
-            $domain = $this->defaultDomain;
-        }
+	abstract public function scanString( string $string, string $filename ): void;
 
-        if (!isset($this->translations[$domain])) {
-            return null;
-        }
+	protected function saveTranslation(
+		?string $domain,
+		?string $context,
+		string $original,
+		?string $plural = null
+	): ?Translation {
+		if ( is_null( $domain ) ) {
+			$domain = $this->defaultDomain;
+		}
 
-        $translation = $this->translations[$domain]->addOrMerge(
-            Translation::create($context, $original)
-        );
+		if ( ! isset( $this->translations[ $domain ] ) ) {
+			return null;
+		}
 
-        if (isset($plural)) {
-            $translation->setPlural($plural);
-        }
+		$translation = $this->translations[ $domain ]->addOrMerge(
+			Translation::create( $context, $original )
+		);
 
-        return $translation;
-    }
+		if ( isset( $plural ) ) {
+			$translation->setPlural( $plural );
+		}
 
-    /**
-     * Reads and returns the content of a file.
-     */
-    protected static function readFile(string $file): string
-    {
-        $content = @file_get_contents($file);
+		return $translation;
+	}
 
-        if (false === $content) {
-            throw new Exception("Cannot read the file '$file', probably permissions");
-        }
+	/**
+	 * Reads and returns the content of a file.
+	 */
+	protected static function readFile( string $file ): string {
+		$content = @file_get_contents( $file );
 
-        return $content;
-    }
+		if ( false === $content ) {
+			throw new Exception( "Cannot read the file '$file', probably permissions" );
+		}
+
+		return $content;
+	}
 }

@@ -11,9 +11,9 @@ namespace Peast\Syntax\Node;
 
 /**
  * A node that represents the "this" keyword.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class ThisExpression extends Node implements Expression
-{
+class ThisExpression extends Node implements Expression {
+
 }

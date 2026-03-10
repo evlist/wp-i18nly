@@ -5,9 +5,9 @@ namespace Gettext\Generator;
 
 use Gettext\Translations;
 
-interface GeneratorInterface
-{
-    public function generateFile(Translations $translations, string $filename): bool;
+interface GeneratorInterface {
 
-    public function generateString(Translations $translations): string;
+	public function generateFile( Translations $translations, string $filename ): bool;
+
+	public function generateString( Translations $translations ): string;
 }

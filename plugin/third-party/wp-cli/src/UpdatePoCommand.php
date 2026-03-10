@@ -66,7 +66,7 @@ class UpdatePoCommand extends WP_CLI_Command {
 		}
 
 		if ( is_file( $destination ) ) {
-			$files = [ new SplFileInfo( $destination ) ];
+			$files = array( new SplFileInfo( $destination ) );
 		} else {
 			$files = new IteratorIterator( new DirectoryIterator( $destination ) );
 		}

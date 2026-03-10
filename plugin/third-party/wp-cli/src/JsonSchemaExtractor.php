@@ -43,10 +43,11 @@ class JsonSchemaExtractor extends Extractor {
 	 *
 	 * @var array<string, string>
 	 */
-	protected static $schema_cache = [];
+	protected static $schema_cache = array();
 
 	/**
 	 * Load the i18n from a remote URL or fall back to a local schema in case of an error.
+	 *
 	 * @param string $schema i18n schema URL.
 	 * @param string $fallback Fallback i18n schema JSON file.
 	 * @return array|mixed
@@ -67,11 +68,11 @@ class JsonSchemaExtractor extends Extractor {
 
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			WP_CLI::debug( 'Error when decoding theme-i18n.json file', 'make-pot' );
-			return [];
+			return array();
 		}
 
 		if ( ! is_object( $file_structure ) ) {
-			return [];
+			return array();
 		}
 
 		self::$schema_cache[ $schema ] = $file_structure;
@@ -82,7 +83,7 @@ class JsonSchemaExtractor extends Extractor {
 	/**
 	 * @inheritdoc
 	 */
-	public static function fromString( $text, Translations $translations, array $options = [] ) {
+	public static function fromString( $text, Translations $translations, array $options = array() ) {
 		$file = $options['file'];
 		WP_CLI::debug( "Parsing file {$file}", 'make-pot' );
 
@@ -167,8 +168,8 @@ class JsonSchemaExtractor extends Extractor {
 			return '';
 		}
 
-		$headers  = [ 'Content-type: application/json' ];
-		$options  = [ 'halt_on_error' => false ];
+		$headers  = array( 'Content-type: application/json' );
+		$options  = array( 'halt_on_error' => false );
 		$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
 		if (

@@ -30,7 +30,7 @@ trait IterableCodeExtractor {
 	 * }
 	 * @return null
 	 */
-	public static function fromFile( $file_or_files, Translations $translations, array $options = [] ) {
+	public static function fromFile( $file_or_files, Translations $translations, array $options = array() ) {
 		foreach ( static::getFiles( $file_or_files ) as $file ) {
 			if ( ! empty( $options['restrictFileNames'] ) ) {
 				$basename = Utils\basename( $file );
@@ -67,7 +67,7 @@ trait IterableCodeExtractor {
 			}
 
 			if ( ! empty( $options['wpExtractTemplates'] ) ) {
-				$headers = FileDataExtractor::get_file_data_from_string( $text, [ 'Template Name' => 'Template Name' ] );
+				$headers = FileDataExtractor::get_file_data_from_string( $text, array( 'Template Name' => 'Template Name' ) );
 
 				if ( ! empty( $headers['Template Name']['value'] ) ) {
 					$translation = new Translation( '', $headers['Template Name']['value'] );
@@ -86,10 +86,10 @@ trait IterableCodeExtractor {
 			if ( ! empty( $options['wpExtractPatterns'] ) && 0 === strpos( $options['file'], 'patterns/' ) ) {
 				$headers = FileDataExtractor::get_file_data_from_string(
 					$text,
-					[
+					array(
 						'Title'       => 'Title',
 						'Description' => 'Description',
-					]
+					)
 				);
 
 				if ( ! empty( $headers['Title']['value'] ) ) {
@@ -126,7 +126,7 @@ trait IterableCodeExtractor {
 	/**
 	 * Extract the translations from a file.
 	 *
-	 * @param string $dir                Root path to start the recursive traversal in.
+	 * @param string       $dir                Root path to start the recursive traversal in.
 	 * @param Translations $translations The translations instance to append the new translations.
 	 * @param array        $options      {
 	 *     Optional. An array of options passed down to static::fromString()
@@ -137,13 +137,13 @@ trait IterableCodeExtractor {
 	 * }
 	 * @return void
 	 */
-	public static function fromDirectory( $dir, Translations $translations, array $options = [] ) {
+	public static function fromDirectory( $dir, Translations $translations, array $options = array() ) {
 		$dir = Utils\normalize_path( $dir );
 
 		static::$dir = $dir;
 
-		$include = isset( $options['include'] ) ? $options['include'] : [];
-		$exclude = isset( $options['exclude'] ) ? $options['exclude'] : [];
+		$include = isset( $options['include'] ) ? $options['include'] : array();
+		$exclude = isset( $options['exclude'] ) ? $options['exclude'] : array();
 
 		$files = static::getFilesFromDirectory( $dir, $include, $exclude, $options['extensions'] );
 
@@ -161,7 +161,7 @@ trait IterableCodeExtractor {
 	 * @param array       $matchers List of files and directories to match.
 	 * @return int How strongly the file is matched.
 	 */
-	protected static function calculateMatchScore( SplFileInfo $file, array $matchers = [] ) {
+	protected static function calculateMatchScore( SplFileInfo $file, array $matchers = array() ) {
 		if ( empty( $matchers ) ) {
 			return 0;
 		}
@@ -215,7 +215,7 @@ trait IterableCodeExtractor {
 	 * @param array       $matchers List of files and directories to match.
 	 * @return bool Whether or not there are any matchers for children of this directory.
 	 */
-	protected static function containsMatchingChildren( SplFileInfo $dir, array $matchers = [] ) {
+	protected static function containsMatchingChildren( SplFileInfo $dir, array $matchers = array() ) {
 		if ( empty( $matchers ) ) {
 			return false;
 		}
@@ -253,14 +253,14 @@ trait IterableCodeExtractor {
 	 * Recursively gets all PHP files within a directory.
 	 *
 	 * @param string $dir A path of a directory.
-	 * @param array $includes List of files and directories to include.
-	 * @param array $excludes List of files and directories to skip.
-	 * @param array $extensions List of filename extensions to process.
+	 * @param array  $includes List of files and directories to include.
+	 * @param array  $excludes List of files and directories to skip.
+	 * @param array  $extensions List of filename extensions to process.
 	 *
 	 * @return array File list.
 	 */
-	public static function getFilesFromDirectory( $dir, array $includes = [], array $excludes = [], $extensions = [] ) {
-		$filtered_files = [];
+	public static function getFilesFromDirectory( $dir, array $includes = array(), array $excludes = array(), $extensions = array() ) {
+		$filtered_files = array();
 
 		$files = new RecursiveIteratorIterator(
 			new RecursiveCallbackFilterIterator(

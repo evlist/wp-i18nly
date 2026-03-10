@@ -10,21 +10,21 @@ use WP_CLI;
 final class MapCodeExtractor extends JsCode {
 	use IterableCodeExtractor;
 
-	public static $options = [
-		'extractComments' => [ 'translators', 'Translators' ],
-		'constants'       => [],
-		'functions'       => [
+	public static $options = array(
+		'extractComments' => array( 'translators', 'Translators' ),
+		'constants'       => array(),
+		'functions'       => array(
 			'__'  => 'text_domain',
 			'_x'  => 'text_context_domain',
 			'_n'  => 'single_plural_number_domain',
 			'_nx' => 'single_plural_number_context_domain',
-		],
-	];
+		),
+	);
 
 	/**
 	 * {@inheritdoc}
 	 */
-	public static function fromString( $text, Translations $translations, array $options = [] ) {
+	public static function fromString( $text, Translations $translations, array $options = array() ) {
 		if ( ! array_key_exists( 'file', $options ) || substr( $options['file'], -7 ) !== '.js.map' ) {
 			return;
 		}

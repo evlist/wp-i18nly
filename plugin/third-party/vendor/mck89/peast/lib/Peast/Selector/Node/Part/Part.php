@@ -13,35 +13,34 @@ use Peast\Syntax\Node\Node;
 
 /**
  * Selector part base class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  *
  * @abstract
  */
-abstract class Part
-{
-    /**
-     * Priority
-     *
-     * @var int
-     */
-    protected $priority = 5;
+abstract class Part {
 
-    public function getPriority()
-    {
-        return $this->priority;
-    }
+	/**
+	 * Priority
+	 *
+	 * @var int
+	 */
+	protected $priority = 5;
 
-    /**
-     * Returns true if the selector part matches the given node,
-     * false otherwise
-     *
-     * @param Node $node    Node
-     * @param Node $parent  Parent node
-     *
-     * @return bool
-     *
-     * @abstract
-     */
-    abstract public function check(Node $node, $parent = null);
+	public function getPriority() {
+		return $this->priority;
+	}
+
+	/**
+	 * Returns true if the selector part matches the given node,
+	 * false otherwise
+	 *
+	 * @param Node $node    Node
+	 * @param Node $parent  Parent node
+	 *
+	 * @return bool
+	 *
+	 * @abstract
+	 */
+	abstract public function check( Node $node, $parent = null );
 }

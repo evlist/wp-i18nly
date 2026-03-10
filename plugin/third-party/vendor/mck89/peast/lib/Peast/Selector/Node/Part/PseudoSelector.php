@@ -15,52 +15,50 @@ use Peast\Syntax\Node\Node;
 
 /**
  * Selector part selector pseudo class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class PseudoSelector extends Pseudo
-{
-    /**
-     * Priority
-     *
-     * @var int
-     */
-    protected $priority = 1;
+class PseudoSelector extends Pseudo {
 
-    /**
-     * Selector
-     *
-     * @var Selector
-     */
-    protected $selector;
+	/**
+	 * Priority
+	 *
+	 * @var int
+	 */
+	protected $priority = 1;
 
-    /**
-     * Sets the selector
-     *
-     * @param Selector $selector Selector
-     *
-     * @return $this
-     */
-    public function setSelector(Selector $selector)
-    {
-        $this->selector = $selector;
-        return $this;
-    }
+	/**
+	 * Selector
+	 *
+	 * @var Selector
+	 */
+	protected $selector;
 
-    /**
-     * Returns true if the selector part matches the given node,
-     * false otherwise
-     *
-     * @param Node $node    Node
-     * @param Node $parent  Parent node
-     *
-     * @return bool
-     */
-    public function check(Node $node, $parent = null)
-    {
-        $match = new Matches();
-        $match->addMatch($node, $parent);
-        $res = $this->selector->exec($match)->count();
-        return $this->name === "not" ? $res === 0 : $res !== 0;
-    }
+	/**
+	 * Sets the selector
+	 *
+	 * @param Selector $selector Selector
+	 *
+	 * @return $this
+	 */
+	public function setSelector( Selector $selector ) {
+		$this->selector = $selector;
+		return $this;
+	}
+
+	/**
+	 * Returns true if the selector part matches the given node,
+	 * false otherwise
+	 *
+	 * @param Node $node    Node
+	 * @param Node $parent  Parent node
+	 *
+	 * @return bool
+	 */
+	public function check( Node $node, $parent = null ) {
+		$match = new Matches();
+		$match->addMatch( $node, $parent );
+		$res = $this->selector->exec( $match )->count();
+		return $this->name === 'not' ? $res === 0 : $res !== 0;
+	}
 }

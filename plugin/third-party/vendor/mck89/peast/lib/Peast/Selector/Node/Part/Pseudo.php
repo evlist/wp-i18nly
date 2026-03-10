@@ -11,30 +11,29 @@ namespace Peast\Selector\Node\Part;
 
 /**
  * Selector pseudo part base class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  *
  * @abstract
  */
-abstract class Pseudo extends Part
-{
-    /**
-     * Selector name
-     *
-     * @var string
-     */
-    protected $name;
+abstract class Pseudo extends Part {
 
-    /**
-     * Sets the name
-     *
-     * @param string $name Name
-     *
-     * @return $this
-     */
-    public function setName($name)
-    {
-        $this->name = $name;
-        return $this;
-    }
+	/**
+	 * Selector name
+	 *
+	 * @var string
+	 */
+	protected $name;
+
+	/**
+	 * Sets the name
+	 *
+	 * @param string $name Name
+	 *
+	 * @return $this
+	 */
+	public function setName( $name ) {
+		$this->name = $name;
+		return $this;
+	}
 }

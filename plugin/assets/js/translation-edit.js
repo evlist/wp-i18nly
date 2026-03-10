@@ -79,14 +79,14 @@
 		var hiddenField;
 
 		function rebuildPayload() {
-			var payload = {};
-			var index = 0;
+			var payload     = {};
+			var index       = 0;
 			var inputsCount = translationInputs.length;
 
 			for (index = 0; index < inputsCount; index++) {
-				var input = translationInputs[index];
+				var input         = translationInputs[index];
 				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
-				var formIndex = input.getAttribute( 'data-i18nly-form-index' );
+				var formIndex     = input.getAttribute( 'data-i18nly-form-index' );
 
 				if ( ! sourceEntryId) {
 					continue;
@@ -117,7 +117,7 @@
 
 		hiddenField = form.querySelector( 'input[name="i18nly_translation_entries_payload"]' );
 		if ( ! hiddenField) {
-			hiddenField = document.createElement( 'input' );
+			hiddenField      = document.createElement( 'input' );
 			hiddenField.type = 'hidden';
 			hiddenField.name = 'i18nly_translation_entries_payload';
 			form.appendChild( hiddenField );
@@ -126,7 +126,7 @@
 		translationInputs.forEach(
 			function (input) {
 				var sourceEntryId = input.getAttribute( 'data-i18nly-source-entry-id' );
-				var formIndex = input.getAttribute( 'data-i18nly-form-index' );
+				var formIndex     = input.getAttribute( 'data-i18nly-form-index' );
 
 				if ( ! sourceEntryId || ! formIndex) {
 					return;

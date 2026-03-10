@@ -66,7 +66,7 @@ class MakeMoCommand extends WP_CLI_Command {
 		}
 
 		if ( is_file( $source ) ) {
-			$files = [ new SplFileInfo( $source ) ];
+			$files = array( new SplFileInfo( $source ) );
 		} else {
 			$files = new IteratorIterator( new DirectoryIterator( $source ) );
 		}

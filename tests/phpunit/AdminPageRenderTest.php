@@ -1506,4 +1506,357 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( '_i18nly_target_language', $query->get( 'meta_key' ) );
 		$this->assertSame( 'meta_value', $query->get( 'orderby' ) );
 	}
+
+	/**
+	 * Delegates translation repository access to dedicated repository.
+	 *
+	 * @return void
+	 */
+	public function test_delegates_translation_access_to_repository() {
+		$repository = new class() {
+			/**
+			 * Whether called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures repository call.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $post_type Post type.
+			 * @param string $meta_source_key Source meta key.
+			 * @param string $meta_target_key Target meta key.
+			 * @return array<string, mixed>|null
+			 */
+			public function get_translation( $translation_id, $post_type, $meta_source_key, $meta_target_key ) {
+				$this->called = true;
+				unset( $translation_id, $post_type, $meta_source_key, $meta_target_key );
+
+				return array(
+					'id'              => 42,
+					'source_slug'     => 'test/test.php',
+					'target_language' => 'fr_FR',
+					'created_at'      => '2026-03-02 00:00:00',
+				);
+			}
+
+			/**
+			 * Returns edit URL.
+			 *
+			 * @param int $translation_id Translation ID.
+			 * @return string
+			 */
+			public function get_edit_url( $translation_id ) {
+				unset( $translation_id );
+
+				return 'https://example.test/edit';
+			}
+
+			/**
+			 * Returns list URL.
+			 *
+			 * @param string $list_screen_slug List screen slug.
+			 * @return string
+			 */
+			public function get_list_url( $list_screen_slug ) {
+				unset( $list_screen_slug );
+
+				return 'https://example.test/list';
+			}
+		};
+
+		$page = new class( $repository ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Repository test double.
+			 *
+			 * @var object
+			 */
+			private $test_repository;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_repository Repository test double.
+			 */
+			public function __construct( $test_repository ) {
+				$this->test_repository = $test_repository;
+			}
+
+			/**
+			 * Returns repository test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_repository() {
+				return $this->test_repository;
+			}
+
+			/**
+			 * Exposes private method for testing.
+			 *
+			 * @param int $translation_id Translation ID.
+			 * @return array<string, mixed>|null
+			 */
+			public function expose_get_translation( $translation_id ) {
+				return $this->get_translation( $translation_id );
+			}
+		};
+
+		$page->expose_get_translation( 42 );
+
+		$this->assertTrue( $repository->called );
+	}
+
+	/**
+	 * Delegates plugin metadata access to dedicated provider.
+	 *
+	 * @return void
+	 */
+	public function test_delegates_plugin_metadata_to_provider() {
+		$provider = new class() {
+			/**
+			 * Whether called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures provider call.
+			 *
+			 * @return array<string, string>
+			 */
+			public function get_plugin_options() {
+				$this->called = true;
+
+				return array( 'test/test.php' => 'Test Plugin' );
+			}
+
+			/**
+			 * Returns plugin data.
+			 *
+			 * @param string $source_slug Source slug.
+			 * @return array<string, string>
+			 */
+			public function get_plugin_data( $source_slug ) {
+				unset( $source_slug );
+
+				return array( 'Name' => 'Test' );
+			}
+
+			/**
+			 * Infers text domain.
+			 *
+			 * @param string $source_slug Source slug.
+			 * @return string
+			 */
+			public function infer_text_domain( $source_slug ) {
+				unset( $source_slug );
+
+				return 'test-domain';
+			}
+
+			/**
+			 * Builds POT header overrides.
+			 *
+			 * @param string $source_slug Source slug.
+			 * @param string $text_domain Text domain.
+			 * @return array<string, string>
+			 */
+			public function build_pot_header_overrides( $source_slug, $text_domain ) {
+				unset( $source_slug, $text_domain );
+
+				return array( 'Project-Id-Version' => 'Test 1.0' );
+			}
+		};
+
+		$page = new class( $provider ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Provider test double.
+			 *
+			 * @var object
+			 */
+			private $test_provider;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_provider Provider test double.
+			 */
+			public function __construct( $test_provider ) {
+				$this->test_provider = $test_provider;
+			}
+
+			/**
+			 * Returns provider test double.
+			 *
+			 * @return object
+			 */
+			protected function get_plugin_metadata_provider() {
+				return $this->test_provider;
+			}
+
+			/**
+			 * Exposes private method for testing.
+			 *
+			 * @return array<string, string>
+			 */
+			public function expose_get_plugin_options() {
+				return $this->get_plugin_options();
+			}
+		};
+
+		$page->expose_get_plugin_options();
+
+		$this->assertTrue( $provider->called );
+	}
+
+	/**
+	 * Delegates language options to dedicated provider.
+	 *
+	 * @return void
+	 */
+	public function test_delegates_language_options_to_provider() {
+		$provider = new class() {
+			/**
+			 * Whether called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures provider call.
+			 *
+			 * @param string $source_locale Source locale.
+			 * @return array<int, array{value: string, label: string, disabled: bool}>
+			 */
+			public function get_target_language_options( $source_locale ) {
+				$this->called = true;
+				unset( $source_locale );
+
+				return array(
+					array(
+						'value'    => 'fr_FR',
+						'label'    => 'Français',
+						'disabled' => false,
+					),
+				);
+			}
+		};
+
+		$page = new class( $provider ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Provider test double.
+			 *
+			 * @var object
+			 */
+			private $test_provider;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_provider Provider test double.
+			 */
+			public function __construct( $test_provider ) {
+				$this->test_provider = $test_provider;
+			}
+
+			/**
+			 * Returns provider test double.
+			 *
+			 * @return object
+			 */
+			protected function get_language_options_provider() {
+				return $this->test_provider;
+			}
+
+			/**
+			 * Exposes private method for testing.
+			 *
+			 * @return array<int, array{value: string, label: string, disabled: bool}>
+			 */
+			public function expose_get_target_language_options() {
+				return $this->get_target_language_options();
+			}
+		};
+
+		$page->expose_get_target_language_options();
+
+		$this->assertTrue( $provider->called );
+	}
+
+	/**
+	 * Delegates translation entries persistence to dedicated persister.
+	 *
+	 * @return void
+	 */
+	public function test_delegates_entries_persistence_to_persister() {
+		$persister = new class() {
+			/**
+			 * Whether called.
+			 *
+			 * @var bool
+			 */
+			public $called = false;
+
+			/**
+			 * Captures persister call.
+			 *
+			 * @param int                                     $translation_id Translation ID.
+			 * @param string                                  $source_slug Source slug.
+			 * @param array<int|string, array<string, mixed>> $entries_payload Entries payload.
+			 * @return void
+			 */
+			public function persist( $translation_id, $source_slug, array $entries_payload ) {
+				$this->called = true;
+				unset( $translation_id, $source_slug, $entries_payload );
+			}
+		};
+
+		$page = new class( $persister ) extends \WP_I18nly\AdminPage {
+			/**
+			 * Persister test double.
+			 *
+			 * @var object
+			 */
+			private $test_persister;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param object $test_persister Persister test double.
+			 */
+			public function __construct( $test_persister ) {
+				$this->test_persister = $test_persister;
+			}
+
+			/**
+			 * Returns persister test double.
+			 *
+			 * @return object
+			 */
+			protected function get_translation_entries_persister() {
+				return $this->test_persister;
+			}
+
+			/**
+			 * Exposes protected method for testing.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $source_slug Source slug.
+			 * @param array  $entries_payload Entries payload.
+			 * @return void
+			 */
+			public function expose_persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+				$this->persist_translation_entries( $translation_id, $source_slug, $entries_payload );
+			}
+		};
+
+		$page->expose_persist_translation_entries( 42, 'test/test.php', array() );
+
+		$this->assertTrue( $persister->called );
+	}
 }

@@ -12,78 +12,74 @@ use ReturnTypeWillChange;
 /**
  * Class to manage the references of a translation.
  */
-class References implements JsonSerializable, Countable, IteratorAggregate
-{
-    protected $references = [];
+class References implements JsonSerializable, Countable, IteratorAggregate {
 
-    public static function __set_state(array $state): References
-    {
-        $references = new static();
-        $references->references = $state['references'];
+	protected $references = array();
 
-        return $references;
-    }
+	public static function __set_state( array $state ): References {
+		$references             = new static();
+		$references->references = $state['references'];
 
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
+		return $references;
+	}
 
-    public function add(string $filename, ?int $line = null): self
-    {
-        $fileReferences = $this->references[$filename] ?? [];
+	public function __debugInfo() {
+		return $this->toArray();
+	}
 
-        if (isset($line) && !in_array($line, $fileReferences)) {
-            $fileReferences[] = $line;
-        }
+	public function add( string $filename, ?int $line = null ): self {
+		$fileReferences = $this->references[ $filename ] ?? array();
 
-        $this->references[$filename] = $fileReferences;
+		if ( isset( $line ) && ! in_array( $line, $fileReferences ) ) {
+			$fileReferences[] = $line;
+		}
 
-        return $this;
-    }
+		$this->references[ $filename ] = $fileReferences;
 
-    #[ReturnTypeWillChange]
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
+		return $this;
+	}
 
-    #[ReturnTypeWillChange]
-    public function getIterator()
-    {
-        return new ArrayIterator($this->references);
-    }
+	#[ReturnTypeWillChange]
+	public function jsonSerialize() {
+		return $this->toArray();
+	}
 
-    public function count(): int
-    {
-        return array_reduce($this->references, function ($carry, $item) {
-            return $carry + (count($item) ?: 1);
-        }, 0);
-    }
+	#[ReturnTypeWillChange]
+	public function getIterator() {
+		return new ArrayIterator( $this->references );
+	}
 
-    public function toArray(): array
-    {
-        return $this->references;
-    }
+	public function count(): int {
+		return array_reduce(
+			$this->references,
+			function ( $carry, $item ) {
+				return $carry + ( count( $item ) ?: 1 );
+			},
+			0
+		);
+	}
 
-    public function mergeWith(References $references): References
-    {
-        $merged = clone $this;
+	public function toArray(): array {
+		return $this->references;
+	}
 
-        foreach ($references as $filename => $lines) {
-            //Set filename always to string
-            $filename = (string) $filename;
+	public function mergeWith( References $references ): References {
+		$merged = clone $this;
 
-            if (empty($lines)) {
-                $merged->add($filename);
-                continue;
-            }
+		foreach ( $references as $filename => $lines ) {
+			// Set filename always to string
+			$filename = (string) $filename;
 
-            foreach ($lines as $line) {
-                $merged->add($filename, $line);
-            }
-        }
+			if ( empty( $lines ) ) {
+				$merged->add( $filename );
+				continue;
+			}
 
-        return $merged;
-    }
+			foreach ( $lines as $line ) {
+				$merged->add( $filename, $line );
+			}
+		}
+
+		return $merged;
+	}
 }

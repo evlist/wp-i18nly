@@ -13,9 +13,9 @@ use Peast\Syntax\Node\Node;
 
 /**
  * A node that represents a JSX closing fragment tag.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-class JSXClosingFragment extends Node
-{
+class JSXClosingFragment extends Node {
+
 }

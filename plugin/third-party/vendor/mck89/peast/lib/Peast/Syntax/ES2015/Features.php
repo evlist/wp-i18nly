@@ -11,11 +11,11 @@ namespace Peast\Syntax\ES2015;
 
 /**
  * ES2015 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\Features
-{
+class Features extends \Peast\Syntax\Features {
+
 }

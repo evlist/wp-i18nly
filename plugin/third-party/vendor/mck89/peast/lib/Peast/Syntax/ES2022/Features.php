@@ -11,52 +11,52 @@ namespace Peast\Syntax\ES2022;
 
 /**
  * ES2022 features class
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
- * 
+ *
  * @codeCoverageIgnore
  */
-class Features extends \Peast\Syntax\ES2021\Features
-{
-    /**
-     * Private methods and fields
-     *
-     * @var bool
-     */
-    public $privateMethodsAndFields = true;
+class Features extends \Peast\Syntax\ES2021\Features {
 
-    /**
-     * Class fields
-     *
-     * @var bool
-     */
-    public $classFields = true;
+	/**
+	 * Private methods and fields
+	 *
+	 * @var bool
+	 */
+	public $privateMethodsAndFields = true;
 
-    /**
-     * "in" operator for private fields
-     *
-     * @var bool
-     */
-    public $classFieldsPrivateIn = true;
+	/**
+	 * Class fields
+	 *
+	 * @var bool
+	 */
+	public $classFields = true;
 
-    /**
-     * Top level await
-     *
-     * @var bool
-     */
-    public $topLevelAwait = true;
+	/**
+	 * "in" operator for private fields
+	 *
+	 * @var bool
+	 */
+	public $classFieldsPrivateIn = true;
 
-    /**
-     * Class static block
-     *
-     * @var bool
-     */
-    public $classStaticBlock = true;
+	/**
+	 * Top level await
+	 *
+	 * @var bool
+	 */
+	public $topLevelAwait = true;
 
-    /**
-     * Arbitrary module namespace identifier names
-     *
-     * @var bool
-     */
-    public $arbitraryModuleNSNames = true;
+	/**
+	 * Class static block
+	 *
+	 * @var bool
+	 */
+	public $classStaticBlock = true;
+
+	/**
+	 * Arbitrary module namespace identifier names
+	 *
+	 * @var bool
+	 */
+	public $arbitraryModuleNSNames = true;
 }

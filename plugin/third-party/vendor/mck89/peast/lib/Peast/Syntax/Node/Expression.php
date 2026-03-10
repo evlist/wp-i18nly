@@ -11,9 +11,9 @@ namespace Peast\Syntax\Node;
 
 /**
  * Interface that every expression node must implement.
- * 
+ *
  * @author Marco Marchiò <marco.mm89@gmail.com>
  */
-interface Expression
-{
+interface Expression {
+
 }

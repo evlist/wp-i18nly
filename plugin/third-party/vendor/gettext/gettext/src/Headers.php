@@ -13,132 +13,114 @@ use ReturnTypeWillChange;
 /**
  * Class to manage the headers of translations.
  */
-class Headers implements JsonSerializable, Countable, IteratorAggregate
-{
-    public const HEADER_LANGUAGE = 'Language';
-    public const HEADER_PLURAL = 'Plural-Forms';
-    public const HEADER_DOMAIN = 'X-Domain';
+class Headers implements JsonSerializable, Countable, IteratorAggregate {
 
-    protected $headers = [];
+	public const HEADER_LANGUAGE = 'Language';
+	public const HEADER_PLURAL   = 'Plural-Forms';
+	public const HEADER_DOMAIN   = 'X-Domain';
 
-    public static function __set_state(array $state): Headers
-    {
-        return new static($state['headers']);
-    }
+	protected $headers = array();
 
-    public function __construct(array $headers = [])
-    {
-        $this->headers = $headers;
-        ksort($this->headers);
-    }
+	public static function __set_state( array $state ): Headers {
+		return new static( $state['headers'] );
+	}
 
-    public function __debugInfo()
-    {
-        return $this->toArray();
-    }
+	public function __construct( array $headers = array() ) {
+		$this->headers = $headers;
+		ksort( $this->headers );
+	}
 
-    public function set(string $name, string $value): self
-    {
-        $this->headers[$name] = trim($value);
-        ksort($this->headers);
+	public function __debugInfo() {
+		return $this->toArray();
+	}
 
-        return $this;
-    }
+	public function set( string $name, string $value ): self {
+		$this->headers[ $name ] = trim( $value );
+		ksort( $this->headers );
 
-    public function get(string $name): ?string
-    {
-        return $this->headers[$name] ?? null;
-    }
+		return $this;
+	}
 
-    public function delete(string $name): self
-    {
-        unset($this->headers[$name]);
+	public function get( string $name ): ?string {
+		return $this->headers[ $name ] ?? null;
+	}
 
-        return $this;
-    }
+	public function delete( string $name ): self {
+		unset( $this->headers[ $name ] );
 
-    public function clear(): self
-    {
-        $this->headers = [];
+		return $this;
+	}
 
-        return $this;
-    }
+	public function clear(): self {
+		$this->headers = array();
 
-    #[ReturnTypeWillChange]
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
+		return $this;
+	}
 
-    #[ReturnTypeWillChange]
-    public function getIterator()
-    {
-        return new ArrayIterator($this->toArray());
-    }
+	#[ReturnTypeWillChange]
+	public function jsonSerialize() {
+		return $this->toArray();
+	}
 
-    public function count(): int
-    {
-        return count($this->headers);
-    }
+	#[ReturnTypeWillChange]
+	public function getIterator() {
+		return new ArrayIterator( $this->toArray() );
+	}
 
-    public function setLanguage(string $language): self
-    {
-        return $this->set(self::HEADER_LANGUAGE, $language);
-    }
+	public function count(): int {
+		return count( $this->headers );
+	}
 
-    public function getLanguage(): ?string
-    {
-        return $this->get(self::HEADER_LANGUAGE);
-    }
+	public function setLanguage( string $language ): self {
+		return $this->set( self::HEADER_LANGUAGE, $language );
+	}
 
-    public function setDomain(string $domain): self
-    {
-        return $this->set(self::HEADER_DOMAIN, $domain);
-    }
+	public function getLanguage(): ?string {
+		return $this->get( self::HEADER_LANGUAGE );
+	}
 
-    public function getDomain(): ?string
-    {
-        return $this->get(self::HEADER_DOMAIN);
-    }
+	public function setDomain( string $domain ): self {
+		return $this->set( self::HEADER_DOMAIN, $domain );
+	}
 
-    public function setPluralForm(int $count, string $rule): self
-    {
-        if (preg_match('/[a-z]/i', str_replace('n', '', $rule))) {
-            throw new InvalidArgumentException(sprintf('Invalid Plural form: "%s"', $rule));
-        }
+	public function getDomain(): ?string {
+		return $this->get( self::HEADER_DOMAIN );
+	}
 
-        return $this->set(self::HEADER_PLURAL, sprintf('nplurals=%d; plural=%s;', $count, $rule));
-    }
+	public function setPluralForm( int $count, string $rule ): self {
+		if ( preg_match( '/[a-z]/i', str_replace( 'n', '', $rule ) ) ) {
+			throw new InvalidArgumentException( sprintf( 'Invalid Plural form: "%s"', $rule ) );
+		}
 
-    /**
-     * Returns the parsed plural definition.
-     *
-     * @return array|null [count, rule]
-     */
-    public function getPluralForm(): ?array
-    {
-        $header = $this->get(self::HEADER_PLURAL);
+		return $this->set( self::HEADER_PLURAL, sprintf( 'nplurals=%d; plural=%s;', $count, $rule ) );
+	}
 
-        if (!empty($header) &&
-            preg_match('/^nplurals\s*=\s*(\d+)\s*;\s*plural\s*=\s*([^;]+)\s*;$/', $header, $matches)
-        ) {
-            return [intval($matches[1]), $matches[2]];
-        }
+	/**
+	 * Returns the parsed plural definition.
+	 *
+	 * @return array|null [count, rule]
+	 */
+	public function getPluralForm(): ?array {
+		$header = $this->get( self::HEADER_PLURAL );
 
-        return null;
-    }
+		if ( ! empty( $header ) &&
+			preg_match( '/^nplurals\s*=\s*(\d+)\s*;\s*plural\s*=\s*([^;]+)\s*;$/', $header, $matches )
+		) {
+			return array( intval( $matches[1] ), $matches[2] );
+		}
 
-    public function toArray(): array
-    {
-        return $this->headers;
-    }
+		return null;
+	}
 
-    public function mergeWith(Headers $headers): Headers
-    {
-        $merged = clone $this;
-        $merged->headers = $headers->headers + $merged->headers;
-        ksort($merged->headers);
+	public function toArray(): array {
+		return $this->headers;
+	}
 
-        return $merged;
-    }
+	public function mergeWith( Headers $headers ): Headers {
+		$merged          = clone $this;
+		$merged->headers = $headers->headers + $merged->headers;
+		ksort( $merged->headers );
+
+		return $merged;
+	}
 }
