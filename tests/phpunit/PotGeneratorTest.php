@@ -22,7 +22,7 @@ class PotGeneratorTest extends TestCase {
 	 * @return void
 	 */
 	public function test_generate_writes_expected_pot_file() {
-		$generator = new \WP_I18nly\PotGenerator();
+		$generator = new \WP_I18nly\Build\PotGenerator();
 
 		$temp_file = sys_get_temp_dir() . '/i18nly-pot-' . uniqid( '', true ) . '.pot';
 
@@ -66,7 +66,7 @@ class PotGeneratorTest extends TestCase {
 	 * @return void
 	 */
 	public function test_generate_creates_missing_destination_directory() {
-		$generator = new \WP_I18nly\PotGenerator();
+		$generator = new \WP_I18nly\Build\PotGenerator();
 
 		$base_dir    = sys_get_temp_dir() . '/i18nly-pot-dir-' . uniqid( '', true );
 		$nested_dir  = $base_dir . '/nested';

@@ -10,6 +10,8 @@
 
 namespace WP_I18nly;
 
+use WP_I18nly\Build\PotGenerator as BuildPotGenerator;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -26,24 +28,24 @@ class PotWorkspaceService {
 	/**
 	 * POT generator.
 	 *
-	 * @var PotGenerator
+	 * @var BuildPotGenerator
 	 */
 	private $pot_generator;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param TemporaryStorage|null $temporary_storage Storage service.
-	 * @param PotGenerator|null     $pot_generator POT generator service.
+	 * @param TemporaryStorage|null  $temporary_storage Storage service.
+	 * @param BuildPotGenerator|null $pot_generator POT generator service.
 	 */
 	public function __construct( $temporary_storage = null, $pot_generator = null ) {
 		$this->temporary_storage = $temporary_storage instanceof TemporaryStorage
 			? $temporary_storage
 			: new TemporaryStorage();
 
-		$this->pot_generator = $pot_generator instanceof PotGenerator
+		$this->pot_generator = $pot_generator instanceof BuildPotGenerator
 			? $pot_generator
-			: new PotGenerator();
+			: new BuildPotGenerator();
 	}
 
 	/**

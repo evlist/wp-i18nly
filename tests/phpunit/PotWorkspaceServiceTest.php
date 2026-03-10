@@ -25,7 +25,7 @@ class PotWorkspaceServiceTest extends TestCase {
 		$base_dir = sys_get_temp_dir() . '/i18nly-workspace-' . uniqid( '', true );
 
 		$storage = new \WP_I18nly\TemporaryStorage( $base_dir );
-		$service = new \WP_I18nly\PotWorkspaceService( $storage, new \WP_I18nly\PotGenerator() );
+		$service = new \WP_I18nly\PotWorkspaceService( $storage, new \WP_I18nly\Build\PotGenerator() );
 
 		$pot_path = $service->generate_temporary_pot(
 			12,

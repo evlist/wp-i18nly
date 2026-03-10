@@ -8,7 +8,7 @@
  * @package I18nly
  */
 
-namespace WP_I18nly;
+namespace WP_I18nly\Build;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -162,6 +162,6 @@ class PotGenerator {
 			return;
 		}
 
-		require_once dirname( __DIR__, 2 ) . '/third-party/vendor/autoload.php';
+		require_once dirname( __DIR__, 3 ) . '/third-party/vendor/autoload.php';
 	}
 }
