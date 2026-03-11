@@ -370,6 +370,80 @@ Migration pattern used successfully (small XP slices):
 4. commit,
 5. repeat.
 
+## 17) Plural Forms Data Source Strategy (Source Of Truth)
+
+### Problem Statement
+
+Current `PluralFormsRegistry` readability is impacted by mixed concerns:
+
+- language rules,
+- UI defaults (markers/tooltips),
+- fallback and normalization logic.
+
+This makes targeted changes (for example changing bullets/markers for one language) harder than necessary and reduces traceability to public references.
+
+### Transparency Requirement
+
+Plural data must be reproducible from documented public sources, not from implicit model knowledge.
+
+Reference direction agreed in session:
+
+- use public CLDR plural data as canonical language baseline,
+- keep I18nly-specific UI choices (markers/tooltips/overrides) explicit,
+- document provenance and generation steps.
+
+### Preferred Architecture
+
+Use a two-layer source model plus a build step:
+
+1. **Public baseline data** (CLDR-derived input snapshot with pinned version/source URL).
+2. **Project overrides in PHP** (rule-based transforms, not static-only key/value).
+3. **Generator script** in `scripts/` merges baseline + overrides.
+4. **Generated runtime artifact** in plugin code is PHP (autoload/OPcache-friendly).
+
+This keeps runtime simple and fast while preserving maintainable and auditable source inputs.
+
+### Why PHP Overrides (instead of JSON-only overrides)
+
+A PHP override layer enables expressive rules without building a custom DSL:
+
+- language-specific custom tooltips,
+- rule-based markers for language groups (for example all locales with `nplurals > 2`),
+- conditional transforms based on normalized spec.
+
+Maintainers of this plugin are expected to know PHP already, so this increases practical flexibility with low cognitive overhead.
+
+### Alternative Options Considered
+
+1. **Single JSON for all locales**
+	- pros: easy diffing and schema validation,
+	- cons: less expressive for conditional rules.
+
+2. **One JSON file per locale**
+	- pros: simple targeted edits,
+	- cons: many files and weaker support for global conditional policies.
+
+3. **Database source**
+	- pros: dynamic updates,
+	- cons: unnecessary runtime complexity for mostly static linguistic rules.
+
+4. **Runtime cache layer**
+	- useful as optimization,
+	- not a substitute for a clear and auditable source-of-truth model.
+
+### Suggested Repository Shape
+
+- `scripts/plurals/` for source baseline + PHP overrides + generator,
+- `plugin/includes/WP_I18nly/Plurals/` for generated runtime map and registry reader,
+- `docs/` references to CLDR version and provenance.
+
+### Governance Rules For This Strategy
+
+1. Treat baseline CLDR snapshot and override code as authoritative inputs.
+2. Keep generated plugin artifacts deterministic and reproducible.
+3. Require tests (golden/regression) around generation output for key locales.
+4. Document every baseline update with source version and changelog notes.
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
