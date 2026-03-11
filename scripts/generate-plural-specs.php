@@ -15,11 +15,10 @@ require_once __DIR__ . '/plurals/class-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-project-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-spec-contract-validator.php';
 
-$options = getopt( '', array( 'input::', 'output::', 'languages-dir::', 'dry-run' ) );
+$options = getopt( '', array( 'input::', 'languages-dir::', 'dry-run' ) );
 
 $input_path = isset( $options['input'] ) ? (string) $options['input'] : __DIR__ . '/plurals/cldr-baseline.sample.json';
-$output_path = isset( $options['output'] ) ? (string) $options['output'] : __DIR__ . '/plurals/generated/plural-spec-map.php';
-$languages_dir = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : '';
+$languages_dir = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : __DIR__ . '/../plugin/includes/WP_I18nly/Plurals/Languages';
 $dry_run    = array_key_exists( 'dry-run', $options );
 
 if ( ! is_file( $input_path ) ) {
@@ -67,28 +66,8 @@ if ( $dry_run ) {
 
 if ( '' !== $languages_dir ) {
 	generate_language_classes( $generated, $languages_dir );
+	fwrite( STDOUT, sprintf( 'Generated %d language classes to %s' . PHP_EOL, count( $generated ), $languages_dir ) );
 }
-
-$output_dir = dirname( $output_path );
-if ( ! is_dir( $output_dir ) && ! mkdir( $output_dir, 0777, true ) && ! is_dir( $output_dir ) ) {
-	fwrite( STDERR, "Cannot create output directory: {$output_dir}\n" );
-	exit( 1 );
-}
-
-$php = "<?php\n"
-	. "/**\n"
-	. " * Auto-generated plural specs map.\n"
-	. " *\n"
-	. " * DO NOT EDIT MANUALLY.\n"
-	. " */\n\n"
-	. 'return ' . var_export( $generated, true ) . ";\n";
-
-if ( false === file_put_contents( $output_path, $php ) ) {
-	fwrite( STDERR, "Cannot write output file: {$output_path}\n" );
-	exit( 1 );
-}
-
-fwrite( STDOUT, sprintf( 'Generated %d language specs to %s' . PHP_EOL, count( $generated ), $output_path ) );
 
 /**
  * Generates one class file per language.
