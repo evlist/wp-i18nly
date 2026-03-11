@@ -87,7 +87,12 @@ if ( ! empty( $wp_prefixes ) ) {
 		);
 	}
 } else {
-	fwrite( STDOUT, 'WP locale filter disabled or unavailable; generating all baseline languages.' . PHP_EOL );
+	fwrite(
+		STDOUT,
+		'WP locale filter disabled or unavailable; generating all baseline languages. ' .
+		'If WP exists outside current directory, pass --wp-locales-command="wp --path=/path/to/wp language core list --field=language".' .
+		PHP_EOL
+	);
 }
 
 if ( $dry_run ) {
@@ -188,7 +193,24 @@ function resolve_wp_language_prefixes( $command ) {
 		return array();
 	}
 
-	$raw = shell_exec( $command . ' 2>/dev/null' );
+	$raw = run_command_capture_output( $command );
+
+	if ( ( ! is_string( $raw ) || '' === trim( $raw ) ) && 0 === strpos( $command, 'wp ' ) ) {
+		$wp_path = discover_wordpress_path();
+
+		if ( '' !== $wp_path ) {
+			$command_with_path = preg_replace(
+				'/^wp\s+/',
+				'wp --path=' . escapeshellarg( $wp_path ) . ' ',
+				$command,
+				1
+			);
+
+			if ( is_string( $command_with_path ) ) {
+				$raw = run_command_capture_output( $command_with_path );
+			}
+		}
+	}
 
 	if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
 		return array();
@@ -213,6 +235,48 @@ function resolve_wp_language_prefixes( $command ) {
 	sort( $prefixes );
 
 	return $prefixes;
+}
+
+/**
+ * Runs one shell command and captures stdout.
+ *
+ * @param string $command Command.
+ * @return string|null
+ */
+function run_command_capture_output( $command ) {
+	$wrapped = 'env PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH" ' . $command . ' 2>/dev/null';
+
+	return shell_exec( $wrapped );
+}
+
+/**
+ * Tries to discover a local WordPress path.
+ *
+ * @return string
+ */
+function discover_wordpress_path() {
+	$candidates = array();
+
+	if ( isset( $_ENV['WP_PATH'] ) && is_string( $_ENV['WP_PATH'] ) ) {
+		$candidates[] = $_ENV['WP_PATH'];
+	}
+
+	if ( isset( $_ENV['WP_ROOT'] ) && is_string( $_ENV['WP_ROOT'] ) ) {
+		$candidates[] = $_ENV['WP_ROOT'];
+	}
+
+	$candidates[] = '/var/www/html';
+	$candidates[] = '/workspaces/wordpress';
+
+	foreach ( $candidates as $candidate ) {
+		$path = rtrim( (string) $candidate, '/\\' );
+
+		if ( '' !== $path && is_file( $path . '/wp-includes/version.php' ) ) {
+			return $path;
+		}
+	}
+
+	return '';
 }
 
 /**
