@@ -22,19 +22,10 @@ final class LanguageSpecDefault implements LanguageSpecProvider {
 	public static function get_spec() {
 		return array(
 			'nplurals'          => 2,
-			'categories'        => array( 'one', 'other' ),
 			'plural_expression' => '(n != 1)',
 			'forms'             => array(
-				array(
-					'marker'  => 'a',
-					'label'   => 'one',
-					'tooltip' => 'One',
-				),
-				array(
-					'marker'  => 'b',
-					'label'   => 'other',
-					'tooltip' => 'Other values',
-				),
+				'1' => 'One',
+				'n' => 'Other than one',
 			),
 		);
 	}

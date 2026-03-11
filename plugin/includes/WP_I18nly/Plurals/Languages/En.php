@@ -24,8 +24,11 @@ final class En implements LanguageSpecProvider {
 	public static function get_spec() {
 		return array(
 			'nplurals'          => 2,
-			'categories'        => array( 'one', 'other' ),
 			'plural_expression' => '(n != 1)',
+			'forms'             => array(
+				'1' => 'One',
+				'n' => 'Other than one',
+			),
 		);
 	}
 }

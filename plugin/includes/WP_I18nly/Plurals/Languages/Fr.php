@@ -24,7 +24,6 @@ final class Fr implements LanguageSpecProvider {
 	public static function get_spec() {
 		return array(
 			'nplurals'          => 2,
-			'categories'        => array( 'one', 'other' ),
 			'plural_expression' => '(n > 1)',
 			'forms'             => array(
 				'a' => 'Zero or one',

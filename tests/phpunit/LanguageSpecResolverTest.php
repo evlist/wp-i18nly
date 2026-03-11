@@ -25,6 +25,13 @@ class LanguageSpecResolverTest extends TestCase {
 
 		$this->assertSame( '(n != 1)', $spec['plural_expression'] );
 		$this->assertSame( 2, $spec['nplurals'] );
+		$this->assertSame(
+			array(
+				'1' => 'One',
+				'n' => 'Other than one',
+			),
+			$spec['forms']
+		);
 	}
 
 	/**
@@ -50,6 +57,12 @@ class LanguageSpecResolverTest extends TestCase {
 		$spec     = $resolver->resolve_spec_for_locale( 'zz_ZZ' );
 
 		$this->assertSame( '(n != 1)', $spec['plural_expression'] );
-		$this->assertSame( array( 'one', 'other' ), $spec['categories'] );
+		$this->assertSame(
+			array(
+				'1' => 'One',
+				'n' => 'Other than one',
+			),
+			$spec['forms']
+		);
 	}
 }
