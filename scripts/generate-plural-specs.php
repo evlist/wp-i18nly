@@ -15,10 +15,13 @@ require_once __DIR__ . '/plurals/class-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-project-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-spec-contract-validator.php';
 
-$options = getopt( '', array( 'input::', 'languages-dir::', 'dry-run' ) );
+$options = getopt( '', array( 'input::', 'languages-dir::', 'wp-locales-command::', 'dry-run' ) );
 
 $input_path = isset( $options['input'] ) ? (string) $options['input'] : __DIR__ . '/plurals/cldr-baseline.sample.json';
 $languages_dir = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : __DIR__ . '/../plugin/includes/WP_I18nly/Plurals/Languages';
+$wp_locales_command = isset( $options['wp-locales-command'] )
+	? (string) $options['wp-locales-command']
+	: 'wp language core list --field=language';
 $dry_run    = array_key_exists( 'dry-run', $options );
 
 if ( ! is_file( $input_path ) ) {
@@ -58,6 +61,34 @@ foreach ( $baseline as $language => $spec ) {
 }
 
 ksort( $generated );
+
+$wp_prefixes = resolve_wp_language_prefixes( $wp_locales_command );
+if ( ! empty( $wp_prefixes ) ) {
+	$all_generated = $generated;
+	$generated     = filter_generated_by_prefixes( $generated, $wp_prefixes );
+	$missing       = array_values( array_diff( $wp_prefixes, array_keys( $all_generated ) ) );
+
+	fwrite(
+		STDOUT,
+		sprintf(
+			'WP locale filter enabled: kept %d of %d language specs.' . PHP_EOL,
+			count( $generated ),
+			count( $all_generated )
+		)
+	);
+
+	if ( ! empty( $missing ) ) {
+		fwrite(
+			STDOUT,
+			sprintf(
+				'WP languages missing in CLDR baseline: %s' . PHP_EOL,
+				implode( ', ', $missing )
+			)
+		);
+	}
+} else {
+	fwrite( STDOUT, 'WP locale filter disabled or unavailable; generating all baseline languages.' . PHP_EOL );
+}
 
 if ( $dry_run ) {
 	fwrite( STDOUT, sprintf( 'Dry run OK: validated %d language specs.' . PHP_EOL, count( $generated ) ) );
@@ -142,4 +173,80 @@ function language_to_class_name( $language ) {
 	}
 
 	return ucfirst( $normalized );
+}
+
+/**
+ * Resolves WordPress language prefixes (first two letters).
+ *
+ * @param string $command WP-CLI command returning one locale per line.
+ * @return array<int, string>
+ */
+function resolve_wp_language_prefixes( $command ) {
+	$command = trim( (string) $command );
+
+	if ( '' === $command ) {
+		return array();
+	}
+
+	$raw = shell_exec( $command . ' 2>/dev/null' );
+
+	if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
+		return array();
+	}
+
+	$prefix_map = array();
+	$lines      = preg_split( '/\r?\n/', $raw );
+
+	if ( ! is_array( $lines ) ) {
+		return array();
+	}
+
+	foreach ( $lines as $line ) {
+		$prefix = normalize_language_prefix( $line );
+
+		if ( '' !== $prefix ) {
+			$prefix_map[ $prefix ] = true;
+		}
+	}
+
+	$prefixes = array_keys( $prefix_map );
+	sort( $prefixes );
+
+	return $prefixes;
+}
+
+/**
+ * Filters generated language specs by allowed prefixes.
+ *
+ * @param array<string, array<string, mixed>> $generated Generated specs.
+ * @param array<int, string>                  $prefixes Allowed prefixes.
+ * @return array<string, array<string, mixed>>
+ */
+function filter_generated_by_prefixes( array $generated, array $prefixes ) {
+	$allowed = array_fill_keys( $prefixes, true );
+	$result  = array();
+
+	foreach ( $generated as $language => $spec ) {
+		if ( isset( $allowed[ $language ] ) ) {
+			$result[ $language ] = $spec;
+		}
+	}
+
+	return $result;
+}
+
+/**
+ * Normalizes a locale/language string to a two-letter prefix.
+ *
+ * @param string $value Locale/language value.
+ * @return string
+ */
+function normalize_language_prefix( $value ) {
+	$value = strtolower( trim( (string) $value ) );
+
+	if ( ! preg_match( '/^[a-z]{2}/', $value, $matches ) ) {
+		return '';
+	}
+
+	return isset( $matches[0] ) ? (string) $matches[0] : '';
 }

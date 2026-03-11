@@ -77,6 +77,12 @@ Dry run (validation + merge, no output file):
 php scripts/generate-plural-specs.php --dry-run
 ```
 
+By default, the script tries to use WP-CLI to filter generated languages to
+WordPress-supported locales (`wp language core list --field=language`), reduced
+to two-letter prefixes.
+
+If WP-CLI is unavailable, the script falls back to generating all baseline languages.
+
 By default, the script writes one generated class per language to:
 
 - `plugin/includes/WP_I18nly/Plurals/Languages`
@@ -88,6 +94,22 @@ php scripts/generate-plural-specs.php \
   --input scripts/plurals/cldr-baseline.sample.json \
   --languages-dir plugin/includes/WP_I18nly/Plurals/Languages
 ```
+
+Override the WP locale command explicitly:
+
+```bash
+php scripts/generate-plural-specs.php \
+  --wp-locales-command="wp language core list --field=language"
+```
+
+Disable WP filtering explicitly:
+
+```bash
+php scripts/generate-plural-specs.php --wp-locales-command=""
+```
+
+When WP filtering is enabled, the script also reports prefixes supported by WP
+but missing from the current CLDR baseline snapshot.
 
 ## Notes
 
