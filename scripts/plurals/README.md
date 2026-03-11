@@ -13,12 +13,36 @@ This folder contains the future data pipeline for plural specs.
 This is an initial scaffold only:
 
 - baseline sample input: `cldr-baseline.sample.json`
+- upstream pinned source snapshot: `upstream/plurals-48.1.0.json`
 - override interface: `class-plural-spec-overrides.php`
 - default override implementation: `class-project-plural-spec-overrides.php`
 - contract validator: `class-spec-contract-validator.php`
 - generator CLI: `../generate-plural-specs.php`
 
 No runtime plugin file is modified in this slice.
+
+## Upstream Source And License
+
+Canonical upstream source:
+
+- CLDR XML (canonical): `https://github.com/unicode-org/cldr/blob/main/common/supplemental/plurals.xml`
+- CLDR JSON (ingestion-friendly): `https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-core/supplemental/plurals.json`
+
+Pinned snapshot currently used in this repository:
+
+- `scripts/plurals/upstream/plurals-48.1.0.json`
+
+License for CLDR and CLDR JSON data:
+
+- Unicode License v3
+- SPDX: `Unicode-3.0`
+
+Update command for latest CLDR JSON release snapshot:
+
+```bash
+TAG=$(curl -sSL https://api.github.com/repos/unicode-org/cldr-json/releases/latest | grep '"tag_name"' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+curl -sSL "https://raw.githubusercontent.com/unicode-org/cldr-json/${TAG}/cldr-json/cldr-core/supplemental/plurals.json" -o "scripts/plurals/upstream/plurals-${TAG}.json"
+```
 
 ## Baseline Input Format
 

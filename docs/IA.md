@@ -444,6 +444,13 @@ Maintainers of this plugin are expected to know PHP already, so this increases p
 3. Require tests (golden/regression) around generation output for key locales.
 4. Document every baseline update with source version and changelog notes.
 
+### Current Upstream Baseline Pin (March 2026)
+
+- Canonical CLDR source file: `common/supplemental/plurals.xml` in `unicode-org/cldr`.
+- JSON ingestion source: `cldr-core/supplemental/plurals.json` in `unicode-org/cldr-json`.
+- Current pinned snapshot in repository: `scripts/plurals/upstream/plurals-48.1.0.json`.
+- License for imported CLDR data: **Unicode License v3** (`Unicode-3.0`).
+
 ## 10) Session Safety Checklist for Future Runs
 
 Before editing:
