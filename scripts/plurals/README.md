@@ -58,6 +58,14 @@ php scripts/generate-plural-specs.php \
   --output scripts/plurals/generated/plural-spec-map.php
 ```
 
+Write one generated class per language (PSR-4 friendly):
+
+```bash
+php scripts/generate-plural-specs.php \
+  --input scripts/plurals/cldr-baseline.sample.json \
+  --languages-dir plugin/includes/WP_I18nly/Plurals/Languages
+```
+
 ## Notes
 
 - `ProjectPluralSpecOverrides` is intentionally conservative in this scaffold.

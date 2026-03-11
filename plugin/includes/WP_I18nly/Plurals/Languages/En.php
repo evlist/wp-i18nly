@@ -5,6 +5,8 @@
  *
  * English plural language spec.
  *
+ * Auto-generated file. Do not edit manually.
+ *
  * @package I18nly
  */
 
