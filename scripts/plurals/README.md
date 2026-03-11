@@ -27,8 +27,8 @@ Top-level object:
 - keys: language codes (`en`, `fr`, `ru`, ...)
 - values: objects with:
   - `nplurals` (int >= 1)
-  - `categories` (string[])
   - `plural_expression` (string)
+  - `forms` (map<string, string>)
 
 Example:
 
@@ -36,8 +36,11 @@ Example:
 {
   "en": {
     "nplurals": 2,
-    "categories": ["one", "other"],
-    "plural_expression": "(n != 1)"
+    "plural_expression": "(n != 1)",
+    "forms": {
+      "1": "One",
+      "n": "Other than one"
+    }
   }
 }
 ```
@@ -50,13 +53,9 @@ Dry run (validation + merge, no output file):
 php scripts/generate-plural-specs.php --dry-run
 ```
 
-Write generated map:
+By default, the script writes one generated class per language to:
 
-```bash
-php scripts/generate-plural-specs.php \
-  --input scripts/plurals/cldr-baseline.sample.json \
-  --output scripts/plurals/generated/plural-spec-map.php
-```
+- `plugin/includes/WP_I18nly/Plurals/Languages`
 
 Write one generated class per language (PSR-4 friendly):
 

@@ -14,18 +14,19 @@ use WP_I18nly\Plurals\LanguageSpecProvider;
 
 defined( 'ABSPATH' ) || exit;
 
-final class En implements LanguageSpecProvider {
+final class Ru implements LanguageSpecProvider {
 	/**
 	 * @return array<string, mixed>
 	 */
 	public static function get_spec() {
 		return array (
-  'nplurals' => 2,
-  'plural_expression' => '(n != 1)',
+  'nplurals' => 3,
+  'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
   'forms' => 
   array (
-    1 => 'One',
-    'n' => 'Other than one',
+    'a' => 'One',
+    'b' => 'Few',
+    'c' => 'Many',
   ),
 );
 	}

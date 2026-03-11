@@ -1,22 +1,39 @@
 {
   "en": {
     "nplurals": 2,
-    "categories": ["one", "other"],
-    "plural_expression": "(n != 1)"
+    "plural_expression": "(n != 1)",
+    "forms": {
+      "1": "One",
+      "n": "Other than one"
+    }
   },
   "fr": {
     "nplurals": 2,
-    "categories": ["one", "other"],
-    "plural_expression": "(n > 1)"
+    "plural_expression": "(n > 1)",
+    "forms": {
+      "a": "Zero or one",
+      "b": "More than one"
+    }
   },
   "ru": {
     "nplurals": 3,
-    "categories": ["one", "few", "many"],
-    "plural_expression": "(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)"
+    "plural_expression": "(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)",
+    "forms": {
+      "a": "One",
+      "b": "Few",
+      "c": "Many"
+    }
   },
   "ar": {
     "nplurals": 6,
-    "categories": ["zero", "one", "two", "few", "many", "other"],
-    "plural_expression": "(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5)"
+    "plural_expression": "(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5)",
+    "forms": {
+      "a": "Zero",
+      "b": "One",
+      "c": "Two",
+      "d": "Few",
+      "e": "Many",
+      "f": "Other"
+    }
   }
 }
