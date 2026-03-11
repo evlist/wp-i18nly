@@ -303,6 +303,21 @@ class PluralFormsRegistry {
 	}
 
 	/**
+	 * Returns plural form index for one locale and quantity.
+	 *
+	 * @param string $locale Target locale.
+	 * @param int    $quantity Quantity value.
+	 * @return int
+	 */
+	public static function get_form_index_for_locale( $locale, $quantity ) {
+		$language = self::normalize_language( $locale );
+		$n        = max( 0, (int) $quantity );
+		$index    = self::compute_form_index_by_language( $language, $n );
+
+		return self::clamp_form_index( $locale, $index );
+	}
+
+	/**
 	 * Computes form index for language-specific rule.
 	 *
 	 * @param string $language Normalized language code.
