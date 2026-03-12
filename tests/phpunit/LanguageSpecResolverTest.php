@@ -27,8 +27,14 @@ class LanguageSpecResolverTest extends TestCase {
 		$this->assertSame( 2, $spec['nplurals'] );
 		$this->assertSame(
 			array(
-				'1' => 'One',
-				'n' => 'Other than one',
+				array(
+					'label'   => '1',
+					'tooltip' => 'One',
+				),
+				array(
+					'label'   => 'n',
+					'tooltip' => 'Other than one',
+				),
 			),
 			$spec['forms']
 		);

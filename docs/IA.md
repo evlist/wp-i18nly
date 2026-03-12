@@ -444,6 +444,37 @@ Maintainers of this plugin are expected to know PHP already, so this increases p
 3. Require tests (golden/regression) around generation output for key locales.
 4. Document every baseline update with source version and changelog notes.
 
+### WordPress / Gettext Scope Clarification
+
+To avoid ambiguity about "who is authoritative" for plural rules:
+
+1. **CLDR is the linguistic baseline authority** (version-pinned snapshot in repository).
+2. **WP-CLI locale listing is a scope filter** (which locales are relevant to WordPress), not a rule authority.
+3. **gettext/WP-CLI i18n stacks are consumers** of `Plural-Forms` metadata (header parsing, PO/MO/JSON generation), not canonical rule sources for all locales.
+
+Practical consequence for generation pipeline:
+
+- derive baseline specs from pinned CLDR data,
+- constrain output set with WP locale coverage,
+- enforce deterministic checks with strict audit before regenerating runtime classes.
+
+### Audit Requirement (Fail-Fast)
+
+Plural generation now supports an explicit audit gate in script usage:
+
+- command-level option: `--audit`,
+- optional report artifact: `--audit-report=build/plurals-audit.json`,
+- stricter policy toggle: `--audit-fail-on-overrides`.
+
+Current audit checks target high-risk drift points:
+
+1. unresolved `plural_expression` values still containing raw CLDR rule fragments,
+2. `nplurals` versus `forms` count inconsistencies,
+3. mismatch against curated known gettext expressions,
+4. optional hard failure whenever project overrides are applied.
+
+This gives a deterministic review surface and prevents silent regressions from ad-hoc fixes.
+
 ### Current Upstream Baseline Pin (March 2026)
 
 - Canonical CLDR source file: `common/supplemental/plurals.xml` in `unicode-org/cldr`.

@@ -21,18 +21,18 @@ class PluralFormsRegistryTest extends TestCase {
 	 */
 	public function test_registry_falls_back_to_default_spec_for_unknown_locale() {
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'xx_XX' ) );
-		$this->assertSame( array( 'one', 'other' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'xx_XX' ) );
+		$this->assertSame( array( 'a', 'b' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'xx_XX' ) );
 		$this->assertSame(
 			array(
 				array(
 					'marker'  => 'a',
-					'label'   => 'one',
+					'label'   => 'a',
 					'tooltip' => 'One',
 				),
 				array(
 					'marker'  => 'b',
-					'label'   => 'other',
-					'tooltip' => 'Other values',
+					'label'   => 'b',
+					'tooltip' => 'Other than one',
 				),
 			),
 			\WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'xx_XX' )
@@ -46,7 +46,7 @@ class PluralFormsRegistryTest extends TestCase {
 	 */
 	public function test_registry_resolves_single_form_locale() {
 		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ja_JP' ) );
-		$this->assertSame( array( 'other' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja_JP' ) );
+		$this->assertSame( array( 'a' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja_JP' ) );
 	}
 
 	/**
@@ -56,7 +56,7 @@ class PluralFormsRegistryTest extends TestCase {
 	 */
 	public function test_registry_resolves_three_form_locale() {
 		$this->assertSame( 3, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ru_RU' ) );
-		$this->assertSame( array( 'one', 'few', 'many' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ru_RU' ) );
+		$this->assertSame( array( 'a', 'b', 'c' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ru_RU' ) );
 	}
 
 	/**
@@ -68,18 +68,18 @@ class PluralFormsRegistryTest extends TestCase {
 		$this->assertSame( '(n > 1)', \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_expression_for_locale( 'fr_FR' ) );
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'a', 'b' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( 'fr_FR' ) );
-		$this->assertSame( array( 'Zero or one', 'More than one' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( 'fr_FR' ) );
+		$this->assertSame( array( '0, 1', 'other' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( 'fr_FR' ) );
 		$this->assertSame(
 			array(
 				array(
 					'marker'  => 'a',
-					'label'   => 'one',
-					'tooltip' => 'Zero or one',
+					'label'   => 'a',
+					'tooltip' => '0, 1',
 				),
 				array(
 					'marker'  => 'b',
-					'label'   => 'other',
-					'tooltip' => 'More than one',
+					'label'   => 'b',
+					'tooltip' => 'other',
 				),
 			),
 			\WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'fr_FR' )

@@ -21,7 +21,7 @@ class TranslationEntriesListTableTest extends TestCase {
 	 */
 	public function test_translation_entries_list_table_class_exists_and_extends_wp_list_table() {
 		$this->assertTrue(
-			class_exists( 'WP_I18nly\\Admin\\UI\\TranslationEntriesListTable', false ),
+			class_exists( 'WP_I18nly\\Admin\\UI\\TranslationEntriesListTable' ),
 			'Expected WP_I18nly\\Admin\\UI\\TranslationEntriesListTable class to be defined.'
 		);
 

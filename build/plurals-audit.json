@@ -1,0 +1,61 @@
+{
+    "generated_count": 84,
+    "overridden_languages": {
+        "fr": [
+            "forms",
+            "nplurals"
+        ]
+    },
+    "issues": [
+        {
+            "type": "unresolved_plural_expression",
+            "language": "ca",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "cy",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "es",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "gd",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "he",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "it",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "lt",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "lv",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "pt",
+            "message": "plural_expression still contains raw CLDR rule text."
+        },
+        {
+            "type": "unresolved_plural_expression",
+            "language": "ro",
+            "message": "plural_expression still contains raw CLDR rule text."
+        }
+    ]
+}

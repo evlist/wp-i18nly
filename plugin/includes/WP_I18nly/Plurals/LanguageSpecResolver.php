@@ -10,9 +10,6 @@
 
 namespace WP_I18nly\Plurals;
 
-use WP_I18nly\Plurals\Languages\En;
-use WP_I18nly\Plurals\Languages\Fr;
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -20,12 +17,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class LanguageSpecResolver {
 	/**
-	 * @var array<string, class-string<LanguageSpecProvider>>
+	 * @var array<string, class-string<LanguageSpecProvider>>|null
 	 */
-	private const PROVIDER_MAP = array(
-		'en' => En::class,
-		'fr' => Fr::class,
-	);
+	private static $provider_map = null;
 
 	/**
 	 * Returns spec provider output for one locale.
@@ -39,8 +33,10 @@ final class LanguageSpecResolver {
 		$language      = $this->normalize_language( $locale );
 		$provider_fqcn = LanguageSpecDefault::class;
 
-		if ( '' !== $language && isset( self::PROVIDER_MAP[ $language ] ) ) {
-			$provider_fqcn = self::PROVIDER_MAP[ $language ];
+		$provider_map = self::get_provider_map();
+
+		if ( '' !== $language && isset( $provider_map[ $language ] ) ) {
+			$provider_fqcn = $provider_map[ $language ];
 		}
 
 		if ( is_subclass_of( $provider_fqcn, LanguageSpecProvider::class ) ) {
@@ -48,6 +44,50 @@ final class LanguageSpecResolver {
 		}
 
 		return LanguageSpecDefault::get_spec();
+	}
+
+	/**
+	 * Returns cached provider map with auto-discovery of language classes.
+	 *
+	 * Dynamically discovers all Language/*.php files and builds a map
+	 * from language codes to provider class names. This allows generation
+	 * of new language classes without requiring code changes here.
+	 *
+	 * @return array<string, class-string<LanguageSpecProvider>>
+	 */
+	private static function get_provider_map(): array {
+		if ( null !== self::$provider_map ) {
+			return self::$provider_map;
+		}
+
+		self::$provider_map = array();
+
+		$lang_dir = __DIR__ . '/Languages';
+		if ( ! is_dir( $lang_dir ) ) {
+			return self::$provider_map;
+		}
+
+		$files = glob( $lang_dir . '/*.php' );
+		if ( false === $files ) {
+			return self::$provider_map;
+		}
+
+		foreach ( $files as $file ) {
+			$basename  = basename( $file, '.php' );
+			$classname = strtolower( $basename );
+
+			if ( ! preg_match( '/^lang([a-z]{2})$/', $classname, $matches ) ) {
+				continue; // Skip non-language files.
+			}
+
+			$language_code = $matches[1];
+			$fqcn          = 'WP_I18nly\\Plurals\\Languages\\' . $basename;
+			if ( class_exists( $fqcn ) && is_subclass_of( $fqcn, LanguageSpecProvider::class ) ) {
+				self::$provider_map[ $language_code ] = $fqcn;
+			}
+		}
+
+		return self::$provider_map;
 	}
 
 	/**

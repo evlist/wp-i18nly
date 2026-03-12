@@ -15,35 +15,47 @@ require_once __DIR__ . '/plurals/class-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-project-plural-spec-overrides.php';
 require_once __DIR__ . '/plurals/class-spec-contract-validator.php';
 
-$options = getopt( '', array( 'input::', 'languages-dir::', 'wp-locales-command::', 'dry-run' ) );
+$options = getopt(
+	'',
+	array(
+		'input::',
+		'languages-dir::',
+		'wp-locales-command::',
+		'dry-run',
+		'audit',
+		'audit-report::',
+		'audit-fail-on-overrides',
+	)
+);
 
-$input_path = isset( $options['input'] ) ? (string) $options['input'] : __DIR__ . '/plurals/cldr-baseline.sample.json';
-$languages_dir = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : __DIR__ . '/../plugin/includes/WP_I18nly/Plurals/Languages';
-$wp_locales_command = isset( $options['wp-locales-command'] )
+$input_path             = isset( $options['input'] ) ? (string) $options['input'] : discover_default_input_path();
+$languages_dir          = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : __DIR__ . '/../plugin/includes/WP_I18nly/Plurals/Languages';
+$wp_locales_command     = isset( $options['wp-locales-command'] )
 	? (string) $options['wp-locales-command']
 	: 'wp language core list --field=language';
-$dry_run    = array_key_exists( 'dry-run', $options );
+$dry_run                = array_key_exists( 'dry-run', $options );
+$audit_enabled          = array_key_exists( 'audit', $options );
+$audit_report_path      = isset( $options['audit-report'] ) ? trim( (string) $options['audit-report'] ) : '';
+$audit_fail_on_override = array_key_exists( 'audit-fail-on-overrides', $options );
 
 if ( ! is_file( $input_path ) ) {
 	fwrite( STDERR, "Input file not found: {$input_path}\n" );
 	exit( 1 );
 }
 
-$raw_json = file_get_contents( $input_path );
-if ( ! is_string( $raw_json ) ) {
-	fwrite( STDERR, "Cannot read input file: {$input_path}\n" );
+require_once $input_path;
+
+if ( ! class_exists( 'GP_Locales' ) ) {
+	fwrite( STDERR, "Invalid GlotPress input (GP_Locales class missing): {$input_path}\n" );
 	exit( 1 );
 }
 
-$baseline = json_decode( $raw_json, true );
-if ( ! is_array( $baseline ) ) {
-	fwrite( STDERR, "Invalid JSON input: {$input_path}\n" );
-	exit( 1 );
-}
+$baseline = build_specs_from_glotpress_locales();
 
-$validator = new SpecContractValidator();
-$overrides = new ProjectPluralSpecOverrides();
-$generated = array();
+$validator            = new SpecContractValidator();
+$overrides            = new ProjectPluralSpecOverrides();
+$generated            = array();
+$overridden_languages = array();
 
 foreach ( $baseline as $language => $spec ) {
 	if ( ! is_string( $language ) || ! is_array( $spec ) ) {
@@ -56,6 +68,10 @@ foreach ( $baseline as $language => $spec ) {
 
 	$final_spec = $overrides->apply( $normalized_language, $spec );
 	$validator->validate_language_spec( $normalized_language, $final_spec );
+
+	if ( $spec !== $final_spec ) {
+		$overridden_languages[ $normalized_language ] = detect_changed_spec_keys( $spec, $final_spec );
+	}
 
 	$generated[ $normalized_language ] = $final_spec;
 }
@@ -81,7 +97,7 @@ if ( ! empty( $wp_prefixes ) ) {
 		fwrite(
 			STDOUT,
 			sprintf(
-				'WP languages missing in CLDR baseline: %s' . PHP_EOL,
+				'WP languages missing in GlotPress baseline: %s' . PHP_EOL,
 				implode( ', ', $missing )
 			)
 		);
@@ -89,10 +105,54 @@ if ( ! empty( $wp_prefixes ) ) {
 } else {
 	fwrite(
 		STDOUT,
-		'WP locale filter disabled or unavailable; generating all baseline languages. ' .
+		'WP locale filter disabled or unavailable; generating all GlotPress baseline languages. ' .
 		'If WP exists outside current directory, pass --wp-locales-command="wp --path=/path/to/wp language core list --field=language".' .
 		PHP_EOL
 	);
+}
+
+if ( $audit_enabled ) {
+	$audit_report = build_generation_audit_report(
+		$generated,
+		$overridden_languages,
+		$audit_fail_on_override
+	);
+
+	$issue_count = isset( $audit_report['issues'] ) && is_array( $audit_report['issues'] )
+		? count( $audit_report['issues'] )
+		: 0;
+
+	fwrite(
+		STDOUT,
+		sprintf(
+			'Audit summary: %d issue(s), %d overridden language(s).' . PHP_EOL,
+			$issue_count,
+			count( $overridden_languages )
+		)
+	);
+
+	if ( '' !== $audit_report_path ) {
+		$report_dir = dirname( $audit_report_path );
+
+		if ( ! is_dir( $report_dir ) && ! mkdir( $report_dir, 0777, true ) && ! is_dir( $report_dir ) ) {
+			fwrite( STDERR, "Cannot create audit report directory: {$report_dir}\n" );
+			exit( 1 );
+		}
+
+		$encoded = json_encode( $audit_report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+
+		if ( ! is_string( $encoded ) || false === file_put_contents( $audit_report_path, $encoded . PHP_EOL ) ) {
+			fwrite( STDERR, "Cannot write audit report: {$audit_report_path}\n" );
+			exit( 1 );
+		}
+
+		fwrite( STDOUT, sprintf( 'Audit report written to %s' . PHP_EOL, $audit_report_path ) );
+	}
+
+	if ( $issue_count > 0 ) {
+		fwrite( STDERR, 'Audit failed. Fix issues or adjust policy before generation.' . PHP_EOL );
+		exit( 1 );
+	}
 }
 
 if ( $dry_run ) {
@@ -138,7 +198,11 @@ function generate_language_classes( array $generated, $languages_dir ) {
  * @return string
  */
 function build_language_class_php( $class_name, array $spec ) {
-	$spec_export = var_export( $spec, true );
+	$nplurals                 = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 1;
+	$plural_expression        = isset( $spec['plural_expression'] ) ? (string) $spec['plural_expression'] : '(n != 1)';
+	$forms                    = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? $spec['forms'] : array();
+	$forms_assignments        = build_forms_assignments_php( $forms );
+	$plural_expression_export = var_export( $plural_expression, true );
 
 	return "<?php\n"
 		. "/**\n"
@@ -157,9 +221,60 @@ function build_language_class_php( $class_name, array $spec ) {
 		. "\t * @return array<string, mixed>\n"
 		. "\t */\n"
 		. "\tpublic static function get_spec() {\n"
-		. "\t\treturn {$spec_export};\n"
+		. "\t\t\$spec = array (\n"
+		. "  'nplurals' => {$nplurals},\n"
+		. "  'plural_expression' => {$plural_expression_export},\n"
+		. "  'forms' => \n"
+		. "  array (\n"
+		. "  ),\n"
+		. ");\n"
+		. "\n"
+		. $forms_assignments
+		. "\n"
+		. "\t\treturn \$spec;\n"
 		. "\t}\n"
 		. "}\n";
+}
+
+/**
+ * Builds explicit forms assignment lines for one generated class.
+ *
+ * @param array<int|string, mixed> $forms Forms map.
+ * @return string
+ */
+function build_forms_assignments_php( array $forms ) {
+	$lines = '';
+	$index = 0;
+
+	foreach ( $forms as $value ) {
+		$label   = marker_from_index( $index );
+		$tooltip = is_string( $value ) ? $value : '';
+
+		if ( is_array( $value ) ) {
+			if ( isset( $value['label'] ) && is_string( $value['label'] ) && '' !== trim( $value['label'] ) ) {
+				$label = $value['label'];
+			}
+
+			if ( isset( $value['tooltip'] ) && is_string( $value['tooltip'] ) && '' !== trim( $value['tooltip'] ) ) {
+				$tooltip = $value['tooltip'];
+			}
+		}
+
+		if ( '' === trim( $tooltip ) ) {
+			$tooltip = 'other';
+		}
+
+		$label_export   = var_export( (string) $label, true );
+		$tooltip_export = var_export( (string) $tooltip, true );
+
+		$lines .= "\t\t\$spec['forms'][] = array(\n";
+		$lines .= "\t\t\t'label'   => __( {$label_export}, 'i18nly' ),\n";
+		$lines .= "\t\t\t'tooltip' => __( {$tooltip_export}, 'i18nly' ),\n";
+		$lines .= "\t\t);\n";
+		++$index;
+	}
+
+	return $lines;
 }
 
 /**
@@ -177,7 +292,430 @@ function language_to_class_name( $language ) {
 		return 'DefaultSpec';
 	}
 
-	return ucfirst( $normalized );
+	return 'Lang' . ucfirst( $normalized );
+}
+
+/**
+ * Builds internal specs from GlotPress locales definitions.
+ *
+ * Source of truth:
+ * - `GP_Locales::locales()` from an imported copy of `locales.php`.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function build_specs_from_glotpress_locales() {
+	$specs   = array();
+	$locales = GP_Locales::locales();
+
+	if ( ! is_array( $locales ) ) {
+		fwrite( STDERR, "Invalid GlotPress locale list; expected array.\n" );
+		exit( 1 );
+	}
+
+	foreach ( $locales as $slug => $locale ) {
+		if ( ! is_string( $slug ) || ! is_object( $locale ) ) {
+			continue;
+		}
+
+		$normalized_language = normalize_language_prefix( $slug );
+
+		if ( '' === $normalized_language && isset( $locale->wp_locale ) && is_string( $locale->wp_locale ) ) {
+			$normalized_language = normalize_language_prefix( $locale->wp_locale );
+		}
+
+		if ( '' === $normalized_language ) {
+			continue;
+		}
+
+		$nplurals = isset( $locale->nplurals ) ? (int) $locale->nplurals : 2;
+		$nplurals = max( 1, $nplurals );
+
+		$plural_expression = isset( $locale->plural_expression ) && is_string( $locale->plural_expression )
+			? trim( $locale->plural_expression )
+			: 'n != 1';
+
+		if ( '' === $plural_expression ) {
+			$plural_expression = 'n != 1';
+		}
+
+		if ( ! isset( $specs[ $normalized_language ] ) || 2 === strlen( $slug ) ) {
+			$specs[ $normalized_language ] = array(
+				'nplurals'          => $nplurals,
+				'plural_expression' => '(' . $plural_expression . ')',
+				'forms'             => build_forms_from_nplurals( $nplurals, $plural_expression ),
+			);
+		}
+	}
+
+	ksort( $specs );
+
+	return $specs;
+}
+
+/**
+ * Builds runtime forms from nplurals.
+ *
+ * The last form is intentionally labeled as "other" to keep UI simple for
+ * non-technical users, while other forms expose concrete number examples.
+ *
+ * @param int    $nplurals Number of plural forms.
+ * @param string $plural_expression Gettext plural expression.
+ * @return array<string, string>
+ */
+function build_forms_from_nplurals( $nplurals, $plural_expression ) {
+	$count    = max( 1, (int) $nplurals );
+	$forms    = array();
+	$examples = collect_plural_examples_by_index( $plural_expression, $count, 200, 4 );
+
+	foreach ( range( 0, $count - 1 ) as $index ) {
+		$marker = marker_from_index( (int) $index );
+
+		if ( 1 === $count || $index === ( $count - 1 ) ) {
+			$forms[ $marker ] = 'other';
+			continue;
+		}
+
+		$forms[ $marker ] = format_plural_examples_label( $examples, (int) $index );
+	}
+
+	return $forms;
+}
+
+/**
+ * Collects sample integers by resolved plural index.
+ *
+ * @param string $plural_expression Gettext plural expression.
+ * @param int    $count Number of plural forms.
+ * @param int    $max_n Max integer to probe.
+ * @param int    $max_examples Number of examples retained per index.
+ * @return array<int, array{examples: array<int, int>, hits: int}>
+ */
+function collect_plural_examples_by_index( $plural_expression, $count, $max_n, $max_examples ) {
+	$result = array();
+
+	for ( $index = 0; $index < $count; $index++ ) {
+		$result[ $index ] = array(
+			'examples' => array(),
+			'hits'     => 0,
+		);
+	}
+
+	for ( $n = 0; $n <= $max_n; $n++ ) {
+		$index = evaluate_plural_expression_index( $plural_expression, $n, $count );
+		if ( ! isset( $result[ $index ] ) ) {
+			continue;
+		}
+
+		++$result[ $index ]['hits'];
+		if ( count( $result[ $index ]['examples'] ) < $max_examples ) {
+			$result[ $index ]['examples'][] = $n;
+		}
+	}
+
+	return $result;
+}
+
+/**
+ * Formats one example label for UI.
+ *
+ * @param array<int, array{examples: array<int, int>, hits: int}> $examples_by_index Collected examples.
+ * @param int                                                     $index Plural index.
+ * @return string
+ */
+function format_plural_examples_label( array $examples_by_index, $index ) {
+	if ( ! isset( $examples_by_index[ $index ] ) ) {
+		return 'other';
+	}
+
+	$examples = $examples_by_index[ $index ]['examples'];
+	$hits     = $examples_by_index[ $index ]['hits'];
+
+	if ( empty( $examples ) ) {
+		return 'other';
+	}
+
+	$label = implode( ', ', array_map( 'strval', $examples ) );
+
+	if ( $hits > count( $examples ) ) {
+		$label .= ', ...';
+	}
+
+	return $label;
+}
+
+/**
+ * Evaluates one gettext plural expression for an integer quantity.
+ *
+ * @param string $plural_expression Gettext plural expression.
+ * @param int    $n Quantity.
+ * @param int    $count Number of plural forms.
+ * @return int
+ */
+function evaluate_plural_expression_index( $plural_expression, $n, $count ) {
+	$tokens = tokenize_plural_expression( (string) $plural_expression );
+	if ( empty( $tokens ) ) {
+		return ( 1 === $n ) ? 0 : min( 1, $count - 1 );
+	}
+
+	$position = 0;
+	$value    = parse_plural_conditional( $tokens, $position, (int) $n );
+
+	if ( ! is_int( $value ) ) {
+		$value = (int) $value;
+	}
+
+	if ( $value < 0 ) {
+		return 0;
+	}
+
+	if ( $value >= $count ) {
+		return $count - 1;
+	}
+
+	return $value;
+}
+
+/**
+ * Tokenizes one gettext plural expression.
+ *
+ * @param string $expression Expression.
+ * @return array<int, string>
+ */
+function tokenize_plural_expression( $expression ) {
+	$normalized = trim( (string) $expression );
+	if ( '' === $normalized ) {
+		return array();
+	}
+
+	$tokens = array();
+	$offset = 0;
+	$length = strlen( $normalized );
+
+	while ( $offset < $length ) {
+		if ( preg_match( '/\G\s+/', $normalized, $matches, 0, $offset ) ) {
+			$offset += strlen( $matches[0] );
+			continue;
+		}
+
+		if ( preg_match( '/\G(==|!=|<=|>=|\|\||&&|[()?:%<>]|n|\d+)/', $normalized, $matches, 0, $offset ) ) {
+			$tokens[] = $matches[1];
+			$offset  += strlen( $matches[1] );
+			continue;
+		}
+
+		return array();
+	}
+
+	return $tokens;
+}
+
+/**
+ * Parses conditional expression level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_conditional( array $tokens, &$position, $n ) {
+	$value = parse_plural_or( $tokens, $position, $n );
+
+	if ( isset( $tokens[ $position ] ) && '?' === $tokens[ $position ] ) {
+		++$position;
+		$when_true = parse_plural_conditional( $tokens, $position, $n );
+
+		if ( isset( $tokens[ $position ] ) && ':' === $tokens[ $position ] ) {
+			++$position;
+		}
+
+		$when_false = parse_plural_conditional( $tokens, $position, $n );
+
+		return ( 0 !== (int) $value ) ? (int) $when_true : (int) $when_false;
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses logical OR level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_or( array $tokens, &$position, $n ) {
+	$value = parse_plural_and( $tokens, $position, $n );
+
+	while ( isset( $tokens[ $position ] ) && '||' === $tokens[ $position ] ) {
+		++$position;
+		$rhs   = parse_plural_and( $tokens, $position, $n );
+		$value = ( 0 !== (int) $value || 0 !== (int) $rhs ) ? 1 : 0;
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses logical AND level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_and( array $tokens, &$position, $n ) {
+	$value = parse_plural_equality( $tokens, $position, $n );
+
+	while ( isset( $tokens[ $position ] ) && '&&' === $tokens[ $position ] ) {
+		++$position;
+		$rhs   = parse_plural_equality( $tokens, $position, $n );
+		$value = ( 0 !== (int) $value && 0 !== (int) $rhs ) ? 1 : 0;
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses equality level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_equality( array $tokens, &$position, $n ) {
+	$value = parse_plural_relational( $tokens, $position, $n );
+
+	while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '==', '!=' ), true ) ) {
+		$operator = $tokens[ $position ];
+		++$position;
+		$rhs = parse_plural_relational( $tokens, $position, $n );
+
+		if ( '==' === $operator ) {
+			$value = ( (int) $value === (int) $rhs ) ? 1 : 0;
+		} else {
+			$value = ( (int) $value !== (int) $rhs ) ? 1 : 0;
+		}
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses relational level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_relational( array $tokens, &$position, $n ) {
+	$value = parse_plural_modulo( $tokens, $position, $n );
+
+	while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '<', '<=', '>', '>=' ), true ) ) {
+		$operator = $tokens[ $position ];
+		++$position;
+		$rhs = parse_plural_modulo( $tokens, $position, $n );
+
+		switch ( $operator ) {
+			case '<':
+				$value = ( (int) $value < (int) $rhs ) ? 1 : 0;
+				break;
+			case '<=':
+				$value = ( (int) $value <= (int) $rhs ) ? 1 : 0;
+				break;
+			case '>':
+				$value = ( (int) $value > (int) $rhs ) ? 1 : 0;
+				break;
+			case '>=':
+				$value = ( (int) $value >= (int) $rhs ) ? 1 : 0;
+				break;
+		}
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses modulo level.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_modulo( array $tokens, &$position, $n ) {
+	$value = parse_plural_primary( $tokens, $position, $n );
+
+	while ( isset( $tokens[ $position ] ) && '%' === $tokens[ $position ] ) {
+		++$position;
+		$rhs = parse_plural_primary( $tokens, $position, $n );
+
+		$divisor = (int) $rhs;
+		$value   = 0 === $divisor ? 0 : ( (int) $value % $divisor );
+	}
+
+	return (int) $value;
+}
+
+/**
+ * Parses primary values.
+ *
+ * @param array<int, string> $tokens Tokens.
+ * @param int                $position Current parser position.
+ * @param int                $n Quantity.
+ * @return int
+ */
+function parse_plural_primary( array $tokens, &$position, $n ) {
+	if ( ! isset( $tokens[ $position ] ) ) {
+		return 0;
+	}
+
+	$token = $tokens[ $position ];
+
+	if ( 'n' === $token ) {
+		++$position;
+		return (int) $n;
+	}
+
+	if ( preg_match( '/^\d+$/', $token ) ) {
+		++$position;
+		return (int) $token;
+	}
+
+	if ( '(' === $token ) {
+		++$position;
+		$value = parse_plural_conditional( $tokens, $position, $n );
+
+		if ( isset( $tokens[ $position ] ) && ')' === $tokens[ $position ] ) {
+			++$position;
+		}
+
+		return (int) $value;
+	}
+
+	++$position;
+
+	return 0;
+}
+
+/**
+ * Returns alphabetical marker for one index.
+ *
+ * @param int $index Marker index.
+ * @return string
+ */
+function marker_from_index( $index ) {
+	$index  = max( 0, (int) $index );
+	$marker = '';
+
+	do {
+		$marker = chr( 97 + ( $index % 26 ) ) . $marker;
+		$index  = (int) floor( $index / 26 ) - 1;
+	} while ( $index >= 0 );
+
+	return $marker;
 }
 
 /**
@@ -313,4 +851,97 @@ function normalize_language_prefix( $value ) {
 	}
 
 	return isset( $matches[0] ) ? (string) $matches[0] : '';
+}
+
+/**
+ * Discovers the default input path.
+ *
+ * Default source path for GlotPress locale definitions copy.
+ *
+ * @return string
+ */
+function discover_default_input_path() {
+	return __DIR__ . '/plurals/upstream/glotpress-locales.php';
+}
+
+/**
+ * Detects changed top-level keys between original and final specs.
+ *
+ * @param array<string, mixed> $original Original spec.
+ * @param array<string, mixed> $final Final spec.
+ * @return array<int, string>
+ */
+function detect_changed_spec_keys( array $original, array $final ) {
+	$keys         = array_unique( array_merge( array_keys( $original ), array_keys( $final ) ) );
+	$changed_keys = array();
+
+	foreach ( $keys as $key ) {
+		if ( ! is_string( $key ) ) {
+			continue;
+		}
+
+		$before = $original[ $key ] ?? null;
+		$after  = $final[ $key ] ?? null;
+
+		if ( $before !== $after ) {
+			$changed_keys[] = $key;
+		}
+	}
+
+	sort( $changed_keys );
+
+	return $changed_keys;
+}
+
+/**
+ * Builds a strict audit report for generated language specs.
+ *
+ * @param array<string, array<string, mixed>> $generated Generated specs.
+ * @param array<string, array<int, string>>   $overridden_languages Override changes by language.
+ * @param bool                                $fail_on_overrides Whether overrides should fail audit.
+ * @return array<string, mixed>
+ */
+function build_generation_audit_report( array $generated, array $overridden_languages, $fail_on_overrides ) {
+	$issues = array();
+
+	foreach ( $generated as $language => $spec ) {
+		$nplurals          = isset( $spec['nplurals'] ) ? (int) $spec['nplurals'] : 0;
+		$forms             = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? $spec['forms'] : array();
+		$plural_expression = isset( $spec['plural_expression'] ) && is_string( $spec['plural_expression'] )
+			? $spec['plural_expression']
+			: '';
+
+		if ( count( $forms ) !== $nplurals ) {
+			$issues[] = array(
+				'type'     => 'forms_count_mismatch',
+				'language' => $language,
+				'message'  => sprintf( 'forms count (%d) differs from nplurals (%d).', count( $forms ), $nplurals ),
+			);
+		}
+
+		if ( '' === trim( $plural_expression ) ) {
+			$issues[] = array(
+				'type'     => 'empty_plural_expression',
+				'language' => $language,
+				'message'  => 'plural_expression must be non-empty.',
+			);
+		}
+
+		if ( $fail_on_overrides && isset( $overridden_languages[ $language ] ) ) {
+			$issues[] = array(
+				'type'     => 'override_applied',
+				'language' => $language,
+				'message'  => sprintf(
+					'override modified keys: %s',
+					implode( ', ', $overridden_languages[ $language ] )
+				),
+			);
+		}
+	}
+
+	return array(
+		'generated_count'      => count( $generated ),
+		'overridden_languages' => $overridden_languages,
+		'issues'               => $issues,
+	);
 }

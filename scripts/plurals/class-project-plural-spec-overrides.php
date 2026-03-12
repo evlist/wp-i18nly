@@ -25,7 +25,23 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 	 * @return array<string, mixed>
 	 */
 	public function apply( string $language, array $spec ): array {
-		unset( $language );
+		switch ( $language ) {
+			case 'en':
+					$spec['forms'] = array(
+						array(
+							'label'   => '1',
+							'tooltip' => 'One',
+						),
+						array(
+							'label'   => 'n',
+							'tooltip' => 'Other than one',
+						),
+					);
+
+				break;
+
+			// Add more languages here as needed.
+		}
 
 		return $spec;
 	}

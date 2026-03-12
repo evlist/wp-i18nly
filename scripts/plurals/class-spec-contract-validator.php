@@ -24,7 +24,7 @@ final class SpecContractValidator {
 	 */
 	public function validate_language_spec( string $language, array $spec ): void {
 		if ( '' === $language ) {
-			throw new InvalidArgumentException('Language code must not be empty.');
+			throw new InvalidArgumentException( 'Language code must not be empty.' );
 		}
 
 		if ( ! isset( $spec['nplurals'] ) || ! is_int( $spec['nplurals'] ) || $spec['nplurals'] < 1 ) {
@@ -51,7 +51,7 @@ final class SpecContractValidator {
 			throw new InvalidArgumentException( sprintf( 'Language %s: forms must not be empty.', $language ) );
 		}
 
-		foreach ( $spec['forms'] as $marker => $label ) {
+		foreach ( $spec['forms'] as $marker => $form_entry ) {
 			$marker_string = is_int( $marker ) || is_string( $marker )
 				? trim( (string) $marker )
 				: '';
@@ -62,11 +62,37 @@ final class SpecContractValidator {
 				);
 			}
 
-			if ( ! is_string( $label ) || '' === trim( $label ) ) {
-				throw new InvalidArgumentException(
-					sprintf( 'Language %s: form label for marker "%s" must be a non-empty string.', $language, $marker )
-				);
+			if ( is_string( $form_entry ) ) {
+				if ( '' === trim( $form_entry ) ) {
+					throw new InvalidArgumentException(
+						sprintf( 'Language %s: form label for marker "%s" must be a non-empty string.', $language, $marker )
+					);
+				}
+
+				continue;
 			}
+
+			if ( is_array( $form_entry ) ) {
+				$label = isset( $form_entry['label'] ) ? trim( (string) $form_entry['label'] ) : '';
+				if ( '' === $label ) {
+					throw new InvalidArgumentException(
+						sprintf( 'Language %s: form label for marker "%s" must be a non-empty string.', $language, $marker )
+					);
+				}
+
+				$tooltip = isset( $form_entry['tooltip'] ) ? trim( (string) $form_entry['tooltip'] ) : '';
+				if ( '' === $tooltip ) {
+					throw new InvalidArgumentException(
+						sprintf( 'Language %s: form tooltip for marker "%s" must be a non-empty string.', $language, $marker )
+					);
+				}
+
+				continue;
+			}
+
+			throw new InvalidArgumentException(
+				sprintf( 'Language %s: form entry for marker "%s" must be a string or an array with label/tooltip.', $language, $marker )
+			);
 		}
 	}
 }

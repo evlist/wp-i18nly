@@ -12,39 +12,61 @@ This folder contains the future data pipeline for plural specs.
 
 This is an initial scaffold only:
 
-- baseline sample input: `cldr-baseline.sample.json`
-- upstream pinned source snapshot: `upstream/plurals-48.1.0.json`
+- upstream pinned source snapshot: `upstream/glotpress-locales.php`
 - override interface: `class-plural-spec-overrides.php`
 - default override implementation: `class-project-plural-spec-overrides.php`
 - contract validator: `class-spec-contract-validator.php`
 - generator CLI: `../generate-plural-specs.php`
 
+Default input is the pinned GlotPress source snapshot:
+
+- `scripts/plurals/upstream/glotpress-locales.php`
+
 No runtime plugin file is modified in this slice.
+
+## Why GlotPress, Not CLDR?
+
+The plural specs pipeline uses GlotPress as the authoritative source of truth instead of CLDR (Common Locale Data Repository) for these reasons:
+
+1. **Single Source of Truth**: GlotPress locales are the definitive reference used by WordPress.org for all translations. Plural rules are directly curated by WordPress translation community leads, avoiding discrepancies between sources.
+
+2. **Active Maintenance**: GlotPress is continuously updated and maintained by the WordPress translation infrastructure. Rules are validated against real-world translation needs rather than theoretical specifications.
+
+3. **Direct Applicability**: GlotPress rules are designed and tested specifically for WordPress translated content. CLDR, while comprehensive, is a general-purpose specification and may include edge cases not relevant to WordPress' translation scope.
+
+4. **Architecturally Simpler**: Using CLDR as a separate source created maintenance fragility—version discovery across JSON files, format parsing variations, and potential divergence from the WordPress-authoritative source. GlotPress eliminates this complexity.
+
+5. **Integration Cost**: CLDR plural rules often require post-processing (expression simplification, edge-case handling, Gettext compatibility). GlotPress rules are already in Gettext-compatible format (`nplurals` and `plural_expression`).
 
 ## Upstream Source And License
 
 Canonical upstream source:
 
-- CLDR XML (canonical): `https://github.com/unicode-org/cldr/blob/main/common/supplemental/plurals.xml`
-- CLDR JSON (ingestion-friendly): `https://github.com/unicode-org/cldr-json/blob/main/cldr-json/cldr-core/supplemental/plurals.json`
+- GlotPress locales table: `https://plugins.svn.wordpress.org/glotpress/trunk/locales/locales.php`
 
-Pinned snapshot currently used in this repository:
+Pinned snapshot currently present in this repository:
 
-- `scripts/plurals/upstream/plurals-48.1.0.json`
+- `scripts/plurals/upstream/glotpress-locales.php`
 
-License for CLDR and CLDR JSON data:
+License for GlotPress source data:
 
-- Unicode License v3
-- SPDX: `Unicode-3.0`
+- GPL-2.0-or-later
+- SPDX: `GPL-2.0-or-later`
 
-Update command for latest CLDR JSON release snapshot:
+Update command for latest GlotPress snapshot:
 
 ```bash
-TAG=$(curl -sSL https://api.github.com/repos/unicode-org/cldr-json/releases/latest | grep '"tag_name"' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-curl -sSL "https://raw.githubusercontent.com/unicode-org/cldr-json/${TAG}/cldr-json/cldr-core/supplemental/plurals.json" -o "scripts/plurals/upstream/plurals-${TAG}.json"
+curl -sSL "https://plugins.svn.wordpress.org/glotpress/trunk/locales/locales.php" -o "scripts/plurals/upstream/glotpress-locales.php"
 ```
 
-## Baseline Input Format
+## Supported Input Formats
+
+### GlotPress locales.php (default)
+
+The generator accepts an imported copy of GlotPress `locales.php` defining
+`GP_Locales` and uses `GP_Locales::locales()` as source of truth.
+
+### Internal generated format
 
 Top-level object:
 
@@ -77,6 +99,31 @@ Dry run (validation + merge, no output file):
 php scripts/generate-plural-specs.php --dry-run
 ```
 
+Strict audit mode (fail-fast + JSON report):
+
+```bash
+php scripts/generate-plural-specs.php \
+  --dry-run \
+  --audit \
+  --audit-report build/plurals-audit.json
+```
+
+When `--audit` is enabled, the script fails on:
+
+- `nplurals` / `forms` count mismatches,
+- empty `plural_expression` values.
+
+Optional stricter policy:
+
+```bash
+php scripts/generate-plural-specs.php \
+  --dry-run \
+  --audit \
+  --audit-fail-on-overrides
+```
+
+With `--audit-fail-on-overrides`, any project override usage becomes an audit failure.
+
 By default, the script tries to use WP-CLI to filter generated languages to
 WordPress-supported locales (`wp language core list --field=language`), reduced
 to two-letter prefixes.
@@ -91,7 +138,6 @@ Write one generated class per language (PSR-4 friendly):
 
 ```bash
 php scripts/generate-plural-specs.php \
-  --input scripts/plurals/cldr-baseline.sample.json \
   --languages-dir plugin/includes/WP_I18nly/Plurals/Languages
 ```
 
@@ -109,7 +155,17 @@ php scripts/generate-plural-specs.php --wp-locales-command=""
 ```
 
 When WP filtering is enabled, the script also reports prefixes supported by WP
-but missing from the current CLDR baseline snapshot.
+but missing from the current GlotPress baseline snapshot.
+
+## WordPress / Gettext Boundaries
+
+For plural rules source-of-truth, tooling roles are intentionally distinct:
+
+- WordPress / WP-CLI `language core list` provides available locales only.
+- WP-CLI i18n code consumes `Plural-Forms` headers when present in translation files.
+- gettext tooling can parse PO headers, but does not define product policy.
+
+Therefore, this pipeline uses GlotPress locale definitions as baseline source and treats WP/gettext as consumers of those rules.
 
 ## Notes
 

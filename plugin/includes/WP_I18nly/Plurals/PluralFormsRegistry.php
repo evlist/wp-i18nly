@@ -3,7 +3,7 @@
  * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * CLDR-derived plural forms registry.
+ * Plural forms registry backed by generated language classes.
  *
  * @package I18nly
  */
@@ -14,8 +14,6 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Resolves plural forms metadata for one locale.
- *
- * The embedded values are derived from Unicode CLDR plural rules.
  */
 class PluralFormsRegistry {
 	/**
@@ -25,151 +23,18 @@ class PluralFormsRegistry {
 	 */
 	private const DEFAULT_SPEC = array(
 		'nplurals'          => 2,
-		'categories'        => array( 'one', 'other' ),
 		'plural_expression' => '(n != 1)',
 		'forms'             => array(
 			array(
 				'marker'  => 'a',
-				'label'   => 'one',
+				'label'   => 'a',
 				'tooltip' => 'One',
 			),
 			array(
 				'marker'  => 'b',
-				'label'   => 'other',
+				'label'   => 'b',
 				'tooltip' => 'Other values',
 			),
-		),
-	);
-
-	/**
-	 * Language to plural forms spec map.
-	 *
-	 * @var array<string, array<string, mixed>>
-	 */
-	private const LANGUAGE_SPEC_MAP = array(
-		'ar' => array(
-			'nplurals'          => 6,
-			'categories'        => array( 'zero', 'one', 'two', 'few', 'many', 'other' ),
-			'plural_expression' => '(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5)',
-		),
-		'be' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'many' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'bs' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'other' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'cs' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'other' ),
-			'plural_expression' => '(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2)',
-		),
-		'dz' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'fr' => array(
-			'nplurals'          => 2,
-			'categories'        => array( 'one', 'other' ),
-			'plural_expression' => '(n > 1)',
-			'forms'             => array(
-				'a' => 'Zero or one',
-				'b' => 'More than one',
-			),
-		),
-		'ga' => array(
-			'nplurals'          => 5,
-			'categories'        => array( 'one', 'two', 'few', 'many', 'other' ),
-			'plural_expression' => '(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4)',
-		),
-		'hr' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'other' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'id' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'ja' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'km' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'ko' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'lo' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'ms' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'my' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'pl' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'many' ),
-			'plural_expression' => '(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'ru' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'many' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'sk' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'other' ),
-			'plural_expression' => '(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2)',
-		),
-		'sl' => array(
-			'nplurals'          => 4,
-			'categories'        => array( 'one', 'two', 'few', 'other' ),
-			'plural_expression' => '(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3)',
-		),
-		'sr' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'other' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'th' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'uk' => array(
-			'nplurals'          => 3,
-			'categories'        => array( 'one', 'few', 'many' ),
-			'plural_expression' => '(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)',
-		),
-		'vi' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
-		),
-		'zh' => array(
-			'nplurals'          => 1,
-			'categories'        => array( 'other' ),
-			'plural_expression' => '0',
 		),
 	);
 
@@ -180,14 +45,14 @@ class PluralFormsRegistry {
 	 * @return array<string, mixed>
 	 */
 	public static function get_spec_for_locale( $locale ) {
-		$language = self::normalize_language( $locale );
-		$spec     = self::DEFAULT_SPEC;
+		$resolver = new LanguageSpecResolver();
+		$raw_spec = $resolver->resolve_spec_for_locale( (string) $locale );
 
-		if ( '' !== $language && isset( self::LANGUAGE_SPEC_MAP[ $language ] ) ) {
-			$spec = self::LANGUAGE_SPEC_MAP[ $language ];
+		if ( ! is_array( $raw_spec ) ) {
+			$raw_spec = self::DEFAULT_SPEC;
 		}
 
-		return self::enrich_spec_for_ui( $spec );
+		return self::normalize_spec_for_ui( $raw_spec );
 	}
 
 	/**
@@ -213,18 +78,14 @@ class PluralFormsRegistry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_labels_for_locale( $locale ) {
-		$spec  = self::get_spec_for_locale( $locale );
-		$forms = self::get_forms_from_spec( $spec );
+		$forms  = self::get_forms_for_locale( $locale );
+		$labels = array();
 
-		if ( ! empty( $forms ) ) {
-			return self::pluck_forms_string_field( $forms, 'label' );
+		foreach ( $forms as $form ) {
+			$labels[] = isset( $form['label'] ) ? (string) $form['label'] : '';
 		}
 
-		if ( isset( $spec['categories'] ) && is_array( $spec['categories'] ) ) {
-			return array_values( $spec['categories'] );
-		}
-
-		return (array) self::DEFAULT_SPEC['categories'];
+		return $labels;
 	}
 
 	/**
@@ -234,18 +95,14 @@ class PluralFormsRegistry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_markers_for_locale( $locale ) {
-		$spec  = self::get_spec_for_locale( $locale );
-		$forms = self::get_forms_from_spec( $spec );
+		$forms   = self::get_forms_for_locale( $locale );
+		$markers = array();
 
-		if ( ! empty( $forms ) ) {
-			return self::pluck_forms_string_field( $forms, 'marker' );
+		foreach ( $forms as $form ) {
+			$markers[] = isset( $form['marker'] ) ? (string) $form['marker'] : '';
 		}
 
-		if ( isset( $spec['form_markers'] ) && is_array( $spec['form_markers'] ) ) {
-			return array_values( $spec['form_markers'] );
-		}
-
-		return array( 'a', 'b' );
+		return $markers;
 	}
 
 	/**
@@ -255,18 +112,14 @@ class PluralFormsRegistry {
 	 * @return array<int, string>
 	 */
 	public static function get_form_tooltips_for_locale( $locale ) {
-		$spec  = self::get_spec_for_locale( $locale );
-		$forms = self::get_forms_from_spec( $spec );
+		$forms    = self::get_forms_for_locale( $locale );
+		$tooltips = array();
 
-		if ( ! empty( $forms ) ) {
-			return self::pluck_forms_string_field( $forms, 'tooltip' );
+		foreach ( $forms as $form ) {
+			$tooltips[] = isset( $form['tooltip'] ) ? (string) $form['tooltip'] : '';
 		}
 
-		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
-			return array_values( $spec['form_tooltips'] );
-		}
-
-		return array( 'One', 'Other values' );
+		return $tooltips;
 	}
 
 	/**
@@ -276,14 +129,13 @@ class PluralFormsRegistry {
 	 * @return array<int, array{marker: string, label: string, tooltip: string}>
 	 */
 	public static function get_forms_for_locale( $locale ) {
-		$spec  = self::get_spec_for_locale( $locale );
-		$forms = self::get_forms_from_spec( $spec );
+		$spec = self::get_spec_for_locale( $locale );
 
-		if ( ! empty( $forms ) ) {
-			return $forms;
+		if ( isset( $spec['forms'] ) && is_array( $spec['forms'] ) ) {
+			return $spec['forms'];
 		}
 
-		return self::get_forms_from_spec( self::DEFAULT_SPEC );
+		return self::DEFAULT_SPEC['forms'];
 	}
 
 	/**
@@ -310,427 +162,89 @@ class PluralFormsRegistry {
 	 * @return int
 	 */
 	public static function get_form_index_for_locale( $locale, $quantity ) {
-		$language = self::normalize_language( $locale );
-		$n        = max( 0, (int) $quantity );
-		$index    = self::compute_form_index_by_language( $language, $n );
+		$spec       = self::get_spec_for_locale( $locale );
+		$nplurals   = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+		$expression = isset( $spec['plural_expression'] ) && is_string( $spec['plural_expression'] )
+			? $spec['plural_expression']
+			: (string) self::DEFAULT_SPEC['plural_expression'];
 
-		return self::clamp_form_index( $locale, $index );
-	}
+		$n      = max( 0, (int) $quantity );
+		$tokens = self::tokenize_plural_expression( $expression );
 
-	/**
-	 * Computes form index for language-specific rule.
-	 *
-	 * @param string $language Normalized language code.
-	 * @param int    $n Quantity.
-	 * @return int
-	 */
-	private static function compute_form_index_by_language( $language, $n ) {
-		if ( '' === $language ) {
-			return ( 1 === $n ) ? 0 : 1;
+		if ( empty( $tokens ) ) {
+			return ( 1 === $n ) ? 0 : min( 1, $nplurals - 1 );
 		}
 
-		$one_form_languages = array( 'dz', 'id', 'ja', 'km', 'ko', 'lo', 'ms', 'my', 'th', 'vi', 'zh' );
-
-		if ( in_array( $language, $one_form_languages, true ) ) {
-			return 0;
-		}
-
-		switch ( $language ) {
-			case 'fr':
-				return ( $n > 1 ) ? 1 : 0;
-
-			case 'cs':
-			case 'sk':
-				if ( 1 === $n ) {
-					return 0;
-				}
-
-				if ( $n >= 2 && $n <= 4 ) {
-					return 1;
-				}
-
-				return 2;
-
-			case 'pl':
-				if ( 1 === $n ) {
-					return 0;
-				}
-
-				if ( $n % 10 >= 2 && $n % 10 <= 4 && ( $n % 100 < 12 || $n % 100 > 14 ) ) {
-					return 1;
-				}
-
-				return 2;
-
-			case 'be':
-			case 'bs':
-			case 'hr':
-			case 'ru':
-			case 'sr':
-			case 'uk':
-				if ( 1 === $n % 10 && 11 !== $n % 100 ) {
-					return 0;
-				}
-
-				if ( $n % 10 >= 2 && $n % 10 <= 4 && ( $n % 100 < 12 || $n % 100 > 14 ) ) {
-					return 1;
-				}
-
-				return 2;
-
-			case 'sl':
-				if ( 1 === $n % 100 ) {
-					return 0;
-				}
-
-				if ( 2 === $n % 100 ) {
-					return 1;
-				}
-
-				if ( 3 === $n % 100 || 4 === $n % 100 ) {
-					return 2;
-				}
-
-				return 3;
-
-			case 'ga':
-				if ( 1 === $n ) {
-					return 0;
-				}
-
-				if ( 2 === $n ) {
-					return 1;
-				}
-
-				if ( $n < 7 ) {
-					return 2;
-				}
-
-				if ( $n < 11 ) {
-					return 3;
-				}
-
-				return 4;
-
-			case 'ar':
-				if ( 0 === $n ) {
-					return 0;
-				}
-
-				if ( 1 === $n ) {
-					return 1;
-				}
-
-				if ( 2 === $n ) {
-					return 2;
-				}
-
-				if ( $n % 100 >= 3 && $n % 100 <= 10 ) {
-					return 3;
-				}
-
-				if ( $n % 100 >= 11 && $n % 100 <= 99 ) {
-					return 4;
-				}
-
-				return 5;
-
-			default:
-				return ( 1 === $n ) ? 0 : 1;
-		}
-	}
-
-	/**
-	 * Clamps one computed index to locale bounds.
-	 *
-	 * @param string $locale Target locale.
-	 * @param int    $index Computed index.
-	 * @return int
-	 */
-	private static function clamp_form_index( $locale, $index ) {
-		$max = self::get_plural_forms_count_for_locale( $locale ) - 1;
+		$position = 0;
+		$index    = self::parse_plural_conditional( $tokens, $position, $n );
+		$index    = (int) $index;
 
 		if ( $index < 0 ) {
 			return 0;
 		}
 
-		if ( $index > $max ) {
-			return $max;
+		if ( $index >= $nplurals ) {
+			return $nplurals - 1;
 		}
 
-		return (int) $index;
+		return $index;
 	}
 
 	/**
-	 * Adds UI-oriented marker and tooltip fields to one spec.
+	 * Normalizes resolver spec to UI-oriented forms format.
 	 *
-	 * @param array<string, mixed> $spec Raw spec.
+	 * @param array<string, mixed> $spec Raw resolver spec.
 	 * @return array<string, mixed>
 	 */
-	private static function enrich_spec_for_ui( array $spec ) {
-		$nplurals      = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
-		$raw_forms     = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? $spec['forms'] : array();
-		$form_count    = max( $nplurals, count( $raw_forms ) );
-		$categories    = self::pad_labels( self::extract_categories( $spec ), $form_count );
-		$form_markers  = self::pad_markers( self::extract_markers( $spec ), $form_count );
-		$form_tooltips = self::pad_tooltips( self::extract_tooltips( $spec, $categories ), $form_count );
+	private static function normalize_spec_for_ui( array $spec ) {
+		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+		$forms    = array();
 
-		$spec['forms'] = self::normalize_forms(
-			$raw_forms,
-			$form_count,
-			$form_markers,
-			$categories,
-			$form_tooltips
-		);
+		if ( isset( $spec['forms'] ) && is_array( $spec['forms'] ) ) {
+			$index = 0;
+			foreach ( $spec['forms'] as $entry ) {
+				$marker  = self::marker_from_index( $index );
+				$label   = $marker;
+				$tooltip = 'other';
 
-		$spec['nplurals']      = count( $spec['forms'] );
-		$spec['categories']    = self::pluck_forms_string_field( $spec['forms'], 'label' );
-		$spec['form_markers']  = self::pluck_forms_string_field( $spec['forms'], 'marker' );
-		$spec['form_tooltips'] = self::pluck_forms_string_field( $spec['forms'], 'tooltip' );
-
-		return $spec;
-	}
-
-	/**
-	 * Normalizes one forms definition array.
-	 *
-	 * @param array<int|string, mixed> $forms Raw forms array.
-	 * @param int                      $count Expected count.
-	 * @param array<int, string>       $markers Fallback markers.
-	 * @param array<int, string>       $labels Fallback labels.
-	 * @param array<int, string>       $tooltips Fallback tooltips.
-	 * @return array<int, array{marker: string, label: string, tooltip: string}>
-	 */
-	private static function normalize_forms( array $forms, $count, array $markers, array $labels, array $tooltips ) {
-		$normalized = array();
-
-		for ( $index = 0; $index < $count; $index++ ) {
-			$entry = null;
-
-			if ( isset( $forms[ $index ] ) ) {
-				$entry = $forms[ $index ];
-			} elseif ( isset( $markers[ $index ] ) && isset( $forms[ $markers[ $index ] ] ) ) {
-				$entry = $forms[ $markers[ $index ] ];
-			}
-
-			$marker  = isset( $markers[ $index ] ) ? (string) $markers[ $index ] : self::marker_from_index( $index );
-			$label   = isset( $labels[ $index ] ) ? (string) $labels[ $index ] : (string) $index;
-			$tooltip = isset( $tooltips[ $index ] ) ? (string) $tooltips[ $index ] : $label;
-
-			if ( is_array( $entry ) ) {
-				if ( isset( $entry['marker'] ) && '' !== trim( (string) $entry['marker'] ) ) {
-					$marker = (string) $entry['marker'];
+				if ( is_array( $entry ) ) {
+					if ( isset( $entry['label'] ) && '' !== trim( (string) $entry['label'] ) ) {
+						$label  = (string) $entry['label'];
+						$marker = (string) $entry['label'];
+					}
+					if ( isset( $entry['tooltip'] ) && '' !== trim( (string) $entry['tooltip'] ) ) {
+						$tooltip = (string) $entry['tooltip'];
+					}
+				} elseif ( is_string( $entry ) ) {
+					$tooltip = trim( $entry ) !== '' ? $entry : 'other';
 				}
 
-				if ( isset( $entry['label'] ) && '' !== trim( (string) $entry['label'] ) ) {
-					$label = (string) $entry['label'];
-				}
-
-				if ( isset( $entry['tooltip'] ) && '' !== trim( (string) $entry['tooltip'] ) ) {
-					$tooltip = (string) $entry['tooltip'];
-				}
-			} elseif ( is_string( $entry ) && '' !== trim( $entry ) ) {
-				$tooltip = $entry;
+				$forms[] = array(
+					'marker'  => $marker,
+					'label'   => $label,
+					'tooltip' => $tooltip,
+				);
+				$index++;
 			}
-
-			$normalized[] = array(
-				'marker'  => $marker,
-				'label'   => $label,
-				'tooltip' => $tooltip,
-			);
 		}
 
-		return $normalized;
-	}
-
-	/**
-	 * Returns categories from one spec.
-	 *
-	 * @param array<string, mixed> $spec Raw spec.
-	 * @return array<int, string>
-	 */
-	private static function extract_categories( array $spec ) {
-		if ( isset( $spec['categories'] ) && is_array( $spec['categories'] ) ) {
-			return array_values(
-				array_map(
-					'strval',
-					$spec['categories']
-				)
-			);
-		}
-
-		return array();
-	}
-
-	/**
-	 * Returns marker symbols from one spec.
-	 *
-	 * @param array<string, mixed> $spec Raw spec.
-	 * @return array<int, string>
-	 */
-	private static function extract_markers( array $spec ) {
-		if ( isset( $spec['form_markers'] ) && is_array( $spec['form_markers'] ) ) {
-			return array_values(
-				array_map(
-					'strval',
-					$spec['form_markers']
-				)
-			);
-		}
-
-		return array();
-	}
-
-	/**
-	 * Returns tooltips from one spec.
-	 *
-	 * @param array<string, mixed> $spec Raw spec.
-	 * @param array<int, string>   $categories Fallback categories.
-	 * @return array<int, string>
-	 */
-	private static function extract_tooltips( array $spec, array $categories ) {
-		if ( isset( $spec['form_tooltips'] ) && is_array( $spec['form_tooltips'] ) ) {
-			return array_values(
-				array_map(
-					'strval',
-					$spec['form_tooltips']
-				)
-			);
-		}
-
-		$tooltips = array();
-
-		foreach ( $categories as $category ) {
-			$tooltips[] = ucfirst( (string) $category );
-		}
-
-		return $tooltips;
-	}
-
-	/**
-	 * Returns normalized forms list from one spec.
-	 *
-	 * @param array<string, mixed> $spec Spec.
-	 * @return array<int, array{marker: string, label: string, tooltip: string}>
-	 */
-	private static function get_forms_from_spec( array $spec ) {
-		if ( ! isset( $spec['forms'] ) || ! is_array( $spec['forms'] ) ) {
-			return array();
-		}
-
-		$forms = array();
-
-		foreach ( $spec['forms'] as $form ) {
-			if ( ! is_array( $form ) ) {
-				continue;
-			}
-
-			$marker  = isset( $form['marker'] ) ? (string) $form['marker'] : '';
-			$label   = isset( $form['label'] ) ? (string) $form['label'] : '';
-			$tooltip = isset( $form['tooltip'] ) ? (string) $form['tooltip'] : '';
-
-			if ( '' === trim( $marker ) ) {
-				continue;
-			}
-
+		for ( $index = count( $forms ); $index < $nplurals; $index++ ) {
+			$marker  = self::marker_from_index( $index );
 			$forms[] = array(
 				'marker'  => $marker,
-				'label'   => $label,
-				'tooltip' => $tooltip,
+				'label'   => $marker,
+				'tooltip' => __( 'other', 'i18nly' ),
 			);
 		}
 
-		return $forms;
-	}
+		$spec['nplurals'] = count( $forms );
+		$spec['forms']    = $forms;
 
-	/**
-	 * Returns one string field from forms list.
-	 *
-	 * @param array<int, array<string, mixed>> $forms Forms list.
-	 * @param string                           $field Field key.
-	 * @return array<int, string>
-	 */
-	private static function pluck_forms_string_field( array $forms, $field ) {
-		$values = array();
-
-		foreach ( $forms as $form ) {
-			$values[] = isset( $form[ $field ] ) ? (string) $form[ $field ] : '';
+		if ( ! isset( $spec['plural_expression'] ) || ! is_string( $spec['plural_expression'] ) || '' === trim( $spec['plural_expression'] ) ) {
+			$spec['plural_expression'] = (string) self::DEFAULT_SPEC['plural_expression'];
 		}
 
-		return $values;
-	}
-
-	/**
-	 * Pads marker array to expected count.
-	 *
-	 * @param array<int, string> $markers Marker symbols.
-	 * @param int                $count Expected count.
-	 * @return array<int, string>
-	 */
-	private static function pad_markers( array $markers, $count ) {
-		$normalized = array_values(
-			array_map(
-				'strval',
-				$markers
-			)
-		);
-
-		for ( $index = count( $normalized ); $index < $count; $index++ ) {
-			$normalized[] = self::marker_from_index( $index );
-		}
-
-		return array_slice( $normalized, 0, $count );
-	}
-
-	/**
-	 * Pads form labels array to expected count.
-	 *
-	 * @param array<int, string> $labels Labels.
-	 * @param int                $count Expected count.
-	 * @return array<int, string>
-	 */
-	private static function pad_labels( array $labels, $count ) {
-		$normalized = array_values(
-			array_map(
-				'strval',
-				$labels
-			)
-		);
-
-		for ( $index = count( $normalized ); $index < $count; $index++ ) {
-			$normalized[] = sprintf( 'form-%d', $index );
-		}
-
-		return array_slice( $normalized, 0, $count );
-	}
-
-	/**
-	 * Pads tooltips array to expected count.
-	 *
-	 * @param array<int, mixed> $tooltips Tooltips.
-	 * @param int               $count Expected count.
-	 * @return array<int, string>
-	 */
-	private static function pad_tooltips( array $tooltips, $count ) {
-		$normalized = array();
-
-		foreach ( $tooltips as $tooltip ) {
-			$normalized[] = (string) $tooltip;
-		}
-
-		$normalized_count = count( $normalized );
-
-		while ( $normalized_count < $count ) {
-			$normalized[] = sprintf(
-				/* translators: %d is plural form index. */
-				__( 'Plural form %d', 'i18nly' ),
-				$normalized_count
-			);
-
-			++$normalized_count;
-		}
-
-		return array_slice( $normalized, 0, $count );
+		return $spec;
 	}
 
 	/**
@@ -752,24 +266,227 @@ class PluralFormsRegistry {
 	}
 
 	/**
-	 * Extracts normalized language code from locale.
+	 * Tokenizes one gettext plural expression.
 	 *
-	 * @param string $locale Target locale.
-	 * @return string
+	 * @param string $expression Expression.
+	 * @return array<int, string>
 	 */
-	private static function normalize_language( $locale ) {
-		$locale = strtolower( (string) $locale );
-
-		if ( '' === $locale ) {
-			return '';
+	private static function tokenize_plural_expression( $expression ) {
+		$normalized = trim( (string) $expression );
+		if ( '' === $normalized ) {
+			return array();
 		}
 
-		$language = preg_replace( '/[_-].*$/', '', $locale );
+		$tokens = array();
+		$offset = 0;
+		$length = strlen( $normalized );
 
-		if ( ! is_string( $language ) ) {
-			return '';
+		while ( $offset < $length ) {
+			if ( preg_match( '/\G\s+/', $normalized, $matches, 0, $offset ) ) {
+				$offset += strlen( $matches[0] );
+				continue;
+			}
+
+			if ( preg_match( '/\G(==|!=|<=|>=|\|\||&&|[()?:%<>]|n|\d+)/', $normalized, $matches, 0, $offset ) ) {
+				$tokens[] = $matches[1];
+				$offset  += strlen( $matches[1] );
+				continue;
+			}
+
+			return array();
 		}
 
-		return $language;
+		return $tokens;
+	}
+
+	/**
+	 * Parses conditional expression level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_conditional( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_or( $tokens, $position, $n );
+
+		if ( isset( $tokens[ $position ] ) && '?' === $tokens[ $position ] ) {
+			$position++;
+			$when_true = self::parse_plural_conditional( $tokens, $position, $n );
+
+			if ( isset( $tokens[ $position ] ) && ':' === $tokens[ $position ] ) {
+				$position++;
+			}
+
+			$when_false = self::parse_plural_conditional( $tokens, $position, $n );
+
+			return ( 0 !== (int) $value ) ? (int) $when_true : (int) $when_false;
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses logical OR level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_or( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_and( $tokens, $position, $n );
+
+		while ( isset( $tokens[ $position ] ) && '||' === $tokens[ $position ] ) {
+			$position++;
+			$rhs   = self::parse_plural_and( $tokens, $position, $n );
+			$value = ( 0 !== (int) $value || 0 !== (int) $rhs ) ? 1 : 0;
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses logical AND level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_and( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_equality( $tokens, $position, $n );
+
+		while ( isset( $tokens[ $position ] ) && '&&' === $tokens[ $position ] ) {
+			$position++;
+			$rhs   = self::parse_plural_equality( $tokens, $position, $n );
+			$value = ( 0 !== (int) $value && 0 !== (int) $rhs ) ? 1 : 0;
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses equality level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_equality( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_relational( $tokens, $position, $n );
+
+		while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '==', '!=' ), true ) ) {
+			$operator = $tokens[ $position ];
+			$position++;
+			$rhs = self::parse_plural_relational( $tokens, $position, $n );
+
+			if ( '==' === $operator ) {
+				$value = ( (int) $value === (int) $rhs ) ? 1 : 0;
+			} else {
+				$value = ( (int) $value !== (int) $rhs ) ? 1 : 0;
+			}
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses relational level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_relational( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_modulo( $tokens, $position, $n );
+
+		while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '<', '<=', '>', '>=' ), true ) ) {
+			$operator = $tokens[ $position ];
+			$position++;
+			$rhs = self::parse_plural_modulo( $tokens, $position, $n );
+
+			switch ( $operator ) {
+				case '<':
+					$value = ( (int) $value < (int) $rhs ) ? 1 : 0;
+					break;
+				case '<=':
+					$value = ( (int) $value <= (int) $rhs ) ? 1 : 0;
+					break;
+				case '>':
+					$value = ( (int) $value > (int) $rhs ) ? 1 : 0;
+					break;
+				case '>=':
+					$value = ( (int) $value >= (int) $rhs ) ? 1 : 0;
+					break;
+			}
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses modulo level.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_modulo( array $tokens, &$position, $n ) {
+		$value = self::parse_plural_primary( $tokens, $position, $n );
+
+		while ( isset( $tokens[ $position ] ) && '%' === $tokens[ $position ] ) {
+			$position++;
+			$rhs = self::parse_plural_primary( $tokens, $position, $n );
+
+			$divisor = (int) $rhs;
+			$value   = 0 === $divisor ? 0 : ( (int) $value % $divisor );
+		}
+
+		return (int) $value;
+	}
+
+	/**
+	 * Parses primary values.
+	 *
+	 * @param array<int, string> $tokens Tokens.
+	 * @param int                $position Current parser position.
+	 * @param int                $n Quantity.
+	 * @return int
+	 */
+	private static function parse_plural_primary( array $tokens, &$position, $n ) {
+		if ( ! isset( $tokens[ $position ] ) ) {
+			return 0;
+		}
+
+		$token = $tokens[ $position ];
+
+		if ( 'n' === $token ) {
+			$position++;
+			return (int) $n;
+		}
+
+		if ( preg_match( '/^\d+$/', $token ) ) {
+			$position++;
+			return (int) $token;
+		}
+
+		if ( '(' === $token ) {
+			$position++;
+			$value = self::parse_plural_conditional( $tokens, $position, $n );
+
+			if ( isset( $tokens[ $position ] ) && ')' === $tokens[ $position ] ) {
+				$position++;
+			}
+
+			return (int) $value;
+		}
+
+		$position++;
+
+		return 0;
 	}
 }
