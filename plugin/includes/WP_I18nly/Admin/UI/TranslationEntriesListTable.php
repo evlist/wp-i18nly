@@ -318,30 +318,12 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		}
 
 		$source_forms      = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'en_US' );
-		$singular_symbol   = _x( '1', 'grammar form marker for singular translation row', 'i18nly' );
-		$singular_tooltip  = _x( 'Singular form', 'tooltip for singular translation form marker', 'i18nly' );
-		$plural_symbol     = _x( 'n', 'grammar form marker for plural translation row', 'i18nly' );
-		$plural_tooltip    = _x( 'Plural form', 'tooltip for plural translation form marker', 'i18nly' );
-
-		if ( isset( $source_forms[0] ) && is_array( $source_forms[0] ) ) {
-			if ( isset( $source_forms[0]['marker'] ) && '' !== trim( (string) $source_forms[0]['marker'] ) ) {
-				$singular_symbol = (string) $source_forms[0]['marker'];
-			}
-
-			if ( isset( $source_forms[0]['tooltip'] ) && '' !== trim( (string) $source_forms[0]['tooltip'] ) ) {
-				$singular_tooltip = (string) $source_forms[0]['tooltip'];
-			}
-		}
-
-		if ( isset( $source_forms[1] ) && is_array( $source_forms[1] ) ) {
-			if ( isset( $source_forms[1]['marker'] ) && '' !== trim( (string) $source_forms[1]['marker'] ) ) {
-				$plural_symbol = (string) $source_forms[1]['marker'];
-			}
-
-			if ( isset( $source_forms[1]['tooltip'] ) && '' !== trim( (string) $source_forms[1]['tooltip'] ) ) {
-				$plural_tooltip = (string) $source_forms[1]['tooltip'];
-			}
-		}
+		$singular_form     = ( isset( $source_forms[0] ) && is_array( $source_forms[0] ) ) ? $source_forms[0] : array();
+		$plural_form       = ( isset( $source_forms[1] ) && is_array( $source_forms[1] ) ) ? $source_forms[1] : array();
+		$singular_symbol   = isset( $singular_form['marker'] ) ? (string) $singular_form['marker'] : '';
+		$singular_tooltip  = isset( $singular_form['tooltip'] ) ? (string) $singular_form['tooltip'] : '';
+		$plural_symbol     = isset( $plural_form['marker'] ) ? (string) $plural_form['marker'] : '';
+		$plural_tooltip    = isset( $plural_form['tooltip'] ) ? (string) $plural_form['tooltip'] : '';
 
 		$singular_marker = $this->render_form_marker(
 			$singular_symbol,

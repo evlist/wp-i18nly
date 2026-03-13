@@ -27,4 +27,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <file name="psalm-stubs/wp-compat.php" />
     </stubs>
 
+    <issueHandlers>
+        <UnusedVariable errorLevel="error" />
+        <UnusedParam errorLevel="error" />
+    </issueHandlers>
+
 </psalm>
