@@ -68,6 +68,31 @@ class LanguageSpecResolverTest extends TestCase {
 	}
 
 	/**
+	 * Applies generic two-form override for locales using `n != 1`.
+	 *
+	 * @return void
+	 */
+	public function test_applies_generic_two_form_override_for_n_not_1_locales() {
+		$resolver = new \WP_I18nly\Plurals\LanguageSpecResolver();
+		$spec     = $resolver->resolve_spec_for_locale( 'de_DE' );
+
+		$this->assertSame( '(n != 1)', $spec['plural_expression'] );
+		$this->assertSame(
+			array(
+				array(
+					'label'   => '1',
+					'tooltip' => 'One',
+				),
+				array(
+					'label'   => 'n',
+					'tooltip' => 'Other than one',
+				),
+			),
+			$spec['forms']
+		);
+	}
+
+	/**
 	 * Falls back to default provider when language is unsupported.
 	 *
 	 * @return void
