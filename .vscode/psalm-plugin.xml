@@ -25,6 +25,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <file name="intelephense-stubs/wp-core.php" />
         <file name="psalm-stubs/wp-runtime-extra.php" />
         <file name="psalm-stubs/wp-compat.php" />
+        <file name="psalm-stubs/gettext.php" />
     </stubs>
 
     <issueHandlers>

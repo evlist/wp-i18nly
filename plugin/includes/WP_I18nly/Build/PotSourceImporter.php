@@ -150,7 +150,7 @@ class PotSourceImporter {
 			return;
 		}
 
-		require_once dirname( __DIR__, 2 ) . '/third-party/vendor/autoload.php';
+		require_once dirname( __DIR__, 3 ) . '/third-party/vendor/autoload.php';
 	}
 
 	/**
