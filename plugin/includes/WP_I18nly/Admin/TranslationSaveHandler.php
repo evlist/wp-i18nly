@@ -181,7 +181,7 @@ class TranslationSaveHandler {
 	 * Normalizes translation entries payload rows.
 	 *
 	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
-	 * @return array<int|string, array<string, string>>
+	 * @return array<int|string, array{forms: array<int, string>}>
 	 */
 	private function normalize_translation_entries_payload( array $entries_payload ) {
 		$normalized_payload = array();

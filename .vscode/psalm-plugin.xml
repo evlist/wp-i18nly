@@ -17,6 +17,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <ignoreFiles>
             <directory name="../plugin/third-party/vendor" />
             <directory name="../plugin/third-party/wp-cli" />
+            <directory name="../plugin/includes/WP_I18nly/Plurals/Languages" />
         </ignoreFiles>
     </projectFiles>
 
@@ -25,4 +26,5 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <file name="psalm-stubs/wp-runtime-extra.php" />
         <file name="psalm-stubs/wp-compat.php" />
     </stubs>
+
 </psalm>

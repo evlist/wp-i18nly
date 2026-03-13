@@ -73,7 +73,7 @@ class TranslationEntriesPersister {
 	 * Normalizes translation entries payload rows.
 	 *
 	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
-	 * @return array<int|string, array<string, string>>
+	 * @return array<int|string, array{forms: array<int, string>}>
 	 */
 	public function normalize( array $entries_payload ) {
 		$normalized_payload = array();
