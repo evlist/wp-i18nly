@@ -25,7 +25,14 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 	 * @return array<string, mixed>
 	 */
 	public function apply( string $locale, array $spec ): array {
-		if (
+		if ( $this->does_nplurals_equal( $spec, 1 ) ) {
+			$spec['forms'] = array(
+				array(
+					'label'   => '*',
+					'tooltip' => 'Any number',
+				),
+			);
+		} elseif (
 			$this->does_nplurals_equal( $spec, 2 )
 			&& $this->does_plural_expression_equal( $spec, '(n != 1)' )
 		) {

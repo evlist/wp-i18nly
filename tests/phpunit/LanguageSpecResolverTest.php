@@ -93,6 +93,27 @@ class LanguageSpecResolverTest extends TestCase {
 	}
 
 	/**
+	 * Applies generic single-form override for invariant locales.
+	 *
+	 * @return void
+	 */
+	public function test_applies_generic_single_form_override_for_invariant_locales() {
+		$resolver = new \WP_I18nly\Plurals\LanguageSpecResolver();
+		$spec     = $resolver->resolve_spec_for_locale( 'ja' );
+
+		$this->assertSame( 1, $spec['nplurals'] );
+		$this->assertSame(
+			array(
+				array(
+					'label'   => '*',
+					'tooltip' => 'Any number',
+				),
+			),
+			$spec['forms']
+		);
+	}
+
+	/**
 	 * Falls back to default provider when language is unsupported.
 	 *
 	 * @return void

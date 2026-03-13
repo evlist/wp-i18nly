@@ -46,7 +46,8 @@ class PluralFormsRegistryTest extends TestCase {
 	 */
 	public function test_registry_resolves_single_form_locale() {
 		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ja' ) );
-		$this->assertSame( array( 'a' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja' ) );
+		$this->assertSame( array( '*' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja' ) );
+		$this->assertSame( array( 'Any number' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( 'ja' ) );
 	}
 
 	/**

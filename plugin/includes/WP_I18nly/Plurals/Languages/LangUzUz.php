@@ -28,8 +28,8 @@ final class LangUzUz implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
-			'label'   => __( 'a', 'i18nly' ),
-			'tooltip' => __( 'other', 'i18nly' ),
+			'label'   => __( '*', 'i18nly' ),
+			'tooltip' => __( 'Any number', 'i18nly' ),
 		);
 
 		return $spec;
