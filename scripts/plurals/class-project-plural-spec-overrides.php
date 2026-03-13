@@ -25,25 +25,48 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 	 * @return array<string, mixed>
 	 */
 	public function apply( string $locale, array $spec ): array {
-		switch ( $locale ) {
-			case 'en':
-			case 'en_US':
-					$spec['forms'] = array(
-						array(
-							'label'   => '1',
-							'tooltip' => 'One',
-						),
-						array(
-							'label'   => 'n',
-							'tooltip' => 'Other than one',
-						),
-					);
-
-				break;
-
-			// Add more languages here as needed.
+		if (
+			$this->does_nplurals_equal( $spec, 2 )
+			&& $this->does_plural_expression_equal( $spec, '(n != 1)' )
+		) {
+			$spec['forms'] = array(
+				array(
+					'label'   => '1',
+					'tooltip' => 'One',
+				),
+				array(
+					'label'   => 'n',
+					'tooltip' => 'Other than one',
+				),
+			);
 		}
 
 		return $spec;
+	}
+
+	/**
+	 * Checks whether spec nplurals equals expected value.
+	 *
+	 * @param array<string, mixed> $spec Locale spec.
+	 * @param int                  $expected Expected nplurals value.
+	 * @return bool
+	 */
+	private function does_nplurals_equal( array $spec, int $expected ): bool {
+		$nplurals = isset( $spec['nplurals'] ) ? (int) $spec['nplurals'] : 0;
+
+		return $expected === $nplurals;
+	}
+
+	/**
+	 * Checks whether spec plural expression equals expected value.
+	 *
+	 * @param array<string, mixed> $spec Locale spec.
+	 * @param string               $expected Expected plural expression.
+	 * @return bool
+	 */
+	private function does_plural_expression_equal( array $spec, string $expected ): bool {
+		$expression = isset( $spec['plural_expression'] ) ? (string) $spec['plural_expression'] : '';
+
+		return $expected === $expression;
 	}
 }

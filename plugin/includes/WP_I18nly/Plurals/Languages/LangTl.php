@@ -28,12 +28,12 @@ final class LangTl implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
-			'label'   => __( 'a', 'i18nly' ),
-			'tooltip' => __( '1', 'i18nly' ),
+			'label'   => __( '1', 'i18nly' ),
+			'tooltip' => __( 'One', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
-			'label'   => __( 'b', 'i18nly' ),
-			'tooltip' => __( 'other', 'i18nly' ),
+			'label'   => __( 'n', 'i18nly' ),
+			'tooltip' => __( 'Other than one', 'i18nly' ),
 		);
 
 		return $spec;
