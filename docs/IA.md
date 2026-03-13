@@ -388,7 +388,7 @@ Plural data must be reproducible from documented public sources, not from implic
 
 Reference direction agreed in session:
 
-- use public CLDR plural data as canonical language baseline,
+- use a pinned GlotPress locales snapshot as canonical language baseline,
 - keep I18nly-specific UI choices (markers/tooltips/overrides) explicit,
 - document provenance and generation steps.
 
@@ -396,7 +396,7 @@ Reference direction agreed in session:
 
 Use a two-layer source model plus a build step:
 
-1. **Public baseline data** (CLDR-derived input snapshot with pinned version/source URL).
+1. **Public baseline data** (GlotPress locales snapshot with pinned source URL).
 2. **Project overrides in PHP** (rule-based transforms, not static-only key/value).
 3. **Generator script** in `scripts/` merges baseline + overrides.
 4. **Generated runtime artifact** in plugin code is PHP (autoload/OPcache-friendly).
@@ -435,11 +435,11 @@ Maintainers of this plugin are expected to know PHP already, so this increases p
 
 - `scripts/plurals/` for source baseline + PHP overrides + generator,
 - `plugin/includes/WP_I18nly/Plurals/` for generated runtime map and registry reader,
-- `docs/` references to CLDR version and provenance.
+- `docs/` references to GlotPress snapshot version and provenance.
 
 ### Governance Rules For This Strategy
 
-1. Treat baseline CLDR snapshot and override code as authoritative inputs.
+1. Treat baseline GlotPress snapshot and override code as authoritative inputs.
 2. Keep generated plugin artifacts deterministic and reproducible.
 3. Require tests (golden/regression) around generation output for key locales.
 4. Document every baseline update with source version and changelog notes.
@@ -448,15 +448,23 @@ Maintainers of this plugin are expected to know PHP already, so this increases p
 
 To avoid ambiguity about "who is authoritative" for plural rules:
 
-1. **CLDR is the linguistic baseline authority** (version-pinned snapshot in repository).
+1. **GlotPress locales are the baseline authority for this project** (version-pinned snapshot in repository).
 2. **WP-CLI locale listing is a scope filter** (which locales are relevant to WordPress), not a rule authority.
 3. **gettext/WP-CLI i18n stacks are consumers** of `Plural-Forms` metadata (header parsing, PO/MO/JSON generation), not canonical rule sources for all locales.
 
 Practical consequence for generation pipeline:
 
-- derive baseline specs from pinned CLDR data,
+- derive baseline specs from pinned GlotPress locale data,
 - constrain output set with WP locale coverage,
 - enforce deterministic checks with strict audit before regenerating runtime classes.
+
+### Why Not CLDR In This Pipeline
+
+CLDR is intentionally not used as source of truth here because:
+
+1. GlotPress is directly curated and used by WordPress translation infrastructure.
+2. GlotPress locale metadata already provides gettext-compatible `nplurals` and `plural_expression` values.
+3. Using CLDR in addition to GlotPress adds ingestion and reconciliation complexity with no functional gain for the plugin runtime.
 
 ### Audit Requirement (Fail-Fast)
 
@@ -468,7 +476,7 @@ Plural generation now supports an explicit audit gate in script usage:
 
 Current audit checks target high-risk drift points:
 
-1. unresolved `plural_expression` values still containing raw CLDR rule fragments,
+1. unresolved or non-gettext-compatible `plural_expression` values,
 2. `nplurals` versus `forms` count inconsistencies,
 3. mismatch against curated known gettext expressions,
 4. optional hard failure whenever project overrides are applied.
@@ -477,10 +485,9 @@ This gives a deterministic review surface and prevents silent regressions from a
 
 ### Current Upstream Baseline Pin (March 2026)
 
-- Canonical CLDR source file: `common/supplemental/plurals.xml` in `unicode-org/cldr`.
-- JSON ingestion source: `cldr-core/supplemental/plurals.json` in `unicode-org/cldr-json`.
-- Current pinned snapshot in repository: `scripts/plurals/upstream/plurals-48.1.0.json`.
-- License for imported CLDR data: **Unicode License v3** (`Unicode-3.0`).
+- Canonical source file: `locales.php` in GlotPress SVN (`plugins.svn.wordpress.org/glotpress/trunk/locales/locales.php`).
+- Current pinned snapshot in repository: `scripts/plurals/upstream/glotpress-locales.php`.
+- License for imported source data: **GPL-2.0-or-later**.
 
 ## 10) Session Safety Checklist for Future Runs
 
