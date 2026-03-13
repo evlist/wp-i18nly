@@ -480,10 +480,6 @@ class SourceWpdbRepository {
 			if ( isset( $row['form_index'] ) && '' !== (string) $row['form_index'] ) {
 				$form_index = max( 0, (int) $row['form_index'] );
 
-				if ( $form_index >= $max_plural_forms ) {
-					continue;
-				}
-
 				$normalized_rows[ $source_entry_id ]['translations'][ $form_index ] = array(
 					'source_entry_id' => $source_entry_id,
 					'form_index'      => $form_index,
