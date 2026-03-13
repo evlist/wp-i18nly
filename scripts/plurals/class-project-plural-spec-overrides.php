@@ -25,9 +25,9 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 	 * @return array<string, mixed>
 	 */
 	public function apply( string $locale, array $spec ): array {
-		switch ( $this->normalize_locale_for_matching( $locale ) ) {
+		switch ( $locale ) {
 			case 'en':
-			case 'en_us':
+			case 'en_US':
 					$spec['forms'] = array(
 						array(
 							'label'   => '1',
@@ -45,22 +45,5 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 		}
 
 		return $spec;
-	}
-
-	/**
-	 * Normalizes locale string for stable matching in overrides.
-	 *
-	 * @param string $locale Locale string.
-	 * @return string
-	 */
-	private function normalize_locale_for_matching( string $locale ): string {
-		$locale = str_replace( '-', '_', strtolower( trim( $locale ) ) );
-		$locale = preg_replace( '/[^a-z0-9_]/', '', $locale );
-
-		if ( ! is_string( $locale ) ) {
-			return '';
-		}
-
-		return $locale;
 	}
 }
