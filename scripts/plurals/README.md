@@ -70,7 +70,7 @@ The generator accepts an imported copy of GlotPress `locales.php` defining
 
 Top-level object:
 
-- keys: language codes (`en`, `fr`, `ru`, ...)
+- keys: locale codes (`en_US`, `fr_FR`, `pt_BR`, `ja`, ...)
 - values: objects with:
   - `nplurals` (int >= 1)
   - `plural_expression` (string)
@@ -80,7 +80,7 @@ Example:
 
 ```json
 {
-  "en": {
+  "en_US": {
     "nplurals": 2,
     "plural_expression": "(n != 1)",
     "forms": {
@@ -124,17 +124,17 @@ php scripts/generate-plural-specs.php \
 
 With `--audit-fail-on-overrides`, any project override usage becomes an audit failure.
 
-By default, the script tries to use WP-CLI to filter generated languages to
-WordPress-supported locales (`wp language core list --field=language`), reduced
-to two-letter prefixes.
+By default, the script tries to use WP-CLI to filter generated locales to
+WordPress-supported locales (`wp language core list --field=language`), using
+exact locale matching after normalization.
 
-If WP-CLI is unavailable, the script falls back to generating all baseline languages.
+If WP-CLI is unavailable, the script falls back to generating all baseline locales.
 
-By default, the script writes one generated class per language to:
+By default, the script writes one generated class per locale to:
 
 - `plugin/includes/WP_I18nly/Plurals/Languages`
 
-Write one generated class per language (PSR-4 friendly):
+Write one generated class per locale (PSR-4 friendly):
 
 ```bash
 php scripts/generate-plural-specs.php \
@@ -154,7 +154,7 @@ Disable WP filtering explicitly:
 php scripts/generate-plural-specs.php --wp-locales-command=""
 ```
 
-When WP filtering is enabled, the script also reports prefixes supported by WP
+When WP filtering is enabled, the script also reports locales supported by WP
 but missing from the current GlotPress baseline snapshot.
 
 ## WordPress / Gettext Boundaries
