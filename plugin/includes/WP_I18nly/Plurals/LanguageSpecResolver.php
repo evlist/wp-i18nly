@@ -17,27 +17,13 @@ defined( 'ABSPATH' ) || exit;
  */
 final class LanguageSpecResolver {
 	/**
-	 * @var array<string, class-string<LanguageSpecProvider>>|null
-	 */
-	private static $provider_map = null;
-
-	/**
 	 * Returns spec provider output for one locale.
-	 *
-	 * Language normalization intentionally uses only first two letters.
 	 *
 	 * @param string $locale Locale string.
 	 * @return array<string, mixed>
 	 */
 	public function resolve_spec_for_locale( $locale ) {
-		$language      = $this->normalize_language( $locale );
-		$provider_fqcn = LanguageSpecDefault::class;
-
-		$provider_map = self::get_provider_map();
-
-		if ( '' !== $language && isset( $provider_map[ $language ] ) ) {
-			$provider_fqcn = $provider_map[ $language ];
-		}
+		$provider_fqcn = $this->resolve_provider_fqcn_for_locale( $locale );
 
 		if ( is_subclass_of( $provider_fqcn, LanguageSpecProvider::class ) ) {
 			return $provider_fqcn::get_spec();
@@ -47,68 +33,67 @@ final class LanguageSpecResolver {
 	}
 
 	/**
-	 * Returns cached provider map with auto-discovery of language classes.
+	 * Resolves generated provider FQCN for one locale.
 	 *
-	 * Dynamically discovers all Language/*.php files and builds a map
-	 * from language codes to provider class names. This allows generation
-	 * of new language classes without requiring code changes here.
-	 *
-	 * @return array<string, class-string<LanguageSpecProvider>>
+	 * @param string $locale Locale string.
+	 * @return class-string
 	 */
-	private static function get_provider_map(): array {
-		if ( null !== self::$provider_map ) {
-			return self::$provider_map;
+	private function resolve_provider_fqcn_for_locale( $locale ) {
+		$normalized_locale = $this->normalize_locale( $locale );
+
+		if ( '' === $normalized_locale ) {
+			return LanguageSpecDefault::class;
 		}
 
-		self::$provider_map = array();
+		$class_name = $this->locale_to_class_name( $normalized_locale );
+		$fqcn       = 'WP_I18nly\\Plurals\\Languages\\' . $class_name;
 
-		$lang_dir = __DIR__ . '/Languages';
-		if ( ! is_dir( $lang_dir ) ) {
-			return self::$provider_map;
+		if ( class_exists( $fqcn ) ) {
+			return $fqcn;
 		}
 
-		$files = glob( $lang_dir . '/*.php' );
-		if ( false === $files ) {
-			return self::$provider_map;
-		}
-
-		foreach ( $files as $file ) {
-			$basename  = basename( $file, '.php' );
-			$classname = strtolower( $basename );
-
-			if ( ! preg_match( '/^lang([a-z]{2})$/', $classname, $matches ) ) {
-				continue; // Skip non-language files.
-			}
-
-			$language_code = $matches[1];
-			$fqcn          = 'WP_I18nly\\Plurals\\Languages\\' . $basename;
-			if ( class_exists( $fqcn ) && is_subclass_of( $fqcn, LanguageSpecProvider::class ) ) {
-				self::$provider_map[ $language_code ] = $fqcn;
-			}
-		}
-
-		return self::$provider_map;
+		return LanguageSpecDefault::class;
 	}
 
 	/**
-	 * Extracts language code from locale.
-	 *
-	 * Only first two letters are used (ISO 639-1 approximation).
+	 * Normalizes locale string.
 	 *
 	 * @param string $locale Locale string.
 	 * @return string
 	 */
-	private function normalize_language( $locale ) {
-		$locale = strtolower( (string) $locale );
+	private function normalize_locale( $locale ) {
+		$locale = str_replace( '-', '_', strtolower( trim( (string) $locale ) ) );
+		$locale = preg_replace( '/[^a-z0-9_]/', '', $locale );
 
-		if ( '' === $locale ) {
+		if ( ! is_string( $locale ) || '' === $locale ) {
 			return '';
 		}
 
-		if ( ! preg_match( '/^[a-z]{2}/', $locale, $matches ) ) {
+		if ( ! preg_match( '/^[a-z]{2,3}(?:_[a-z0-9]{2,})*$/', $locale ) ) {
 			return '';
 		}
 
-		return isset( $matches[0] ) ? (string) $matches[0] : '';
+		return $locale;
+	}
+
+	/**
+	 * Converts normalized locale key to generated class name.
+	 *
+	 * @param string $normalized_locale Normalized locale key.
+	 * @return string
+	 */
+	private function locale_to_class_name( $normalized_locale ) {
+		$parts = explode( '_', $normalized_locale );
+		$camel = '';
+
+		foreach ( $parts as $part ) {
+			if ( '' === $part ) {
+				continue;
+			}
+
+			$camel .= strtoupper( substr( $part, 0, 1 ) ) . strtolower( substr( $part, 1 ) );
+		}
+
+		return 'Lang' . $camel;
 	}
 }

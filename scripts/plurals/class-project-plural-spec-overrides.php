@@ -20,13 +20,14 @@ final class ProjectPluralSpecOverrides implements PluralSpecOverrides {
 	/**
 	 * Applies default project overrides.
 	 *
-	 * @param string               $language Language code (normalized lowercase).
-	 * @param array<string, mixed> $spec     Normalized language spec.
+	 * @param string               $locale_key Locale key (normalized lowercase).
+	 * @param array<string, mixed> $spec       Normalized locale spec.
 	 * @return array<string, mixed>
 	 */
-	public function apply( string $language, array $spec ): array {
-		switch ( $language ) {
+	public function apply( string $locale_key, array $spec ): array {
+		switch ( $locale_key ) {
 			case 'en':
+			case 'en_us':
 					$spec['forms'] = array(
 						array(
 							'label'   => '1',

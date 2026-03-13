@@ -20,6 +20,7 @@ $options = getopt(
 	array(
 		'input::',
 		'languages-dir::',
+		'supported-locales-file::',
 		'wp-locales-command::',
 		'dry-run',
 		'audit',
@@ -30,6 +31,9 @@ $options = getopt(
 
 $input_path             = isset( $options['input'] ) ? (string) $options['input'] : discover_default_input_path();
 $languages_dir          = isset( $options['languages-dir'] ) ? (string) $options['languages-dir'] : __DIR__ . '/../plugin/includes/WP_I18nly/Plurals/Languages';
+$supported_locales_file = isset( $options['supported-locales-file'] )
+	? (string) $options['supported-locales-file']
+	: __DIR__ . '/../plugin/includes/WP_I18nly/Support/GeneratedTargetLocales.php';
 $wp_locales_command     = isset( $options['wp-locales-command'] )
 	? (string) $options['wp-locales-command']
 	: 'wp language core list --field=language';
@@ -55,39 +59,39 @@ $baseline = build_specs_from_glotpress_locales();
 $validator            = new SpecContractValidator();
 $overrides            = new ProjectPluralSpecOverrides();
 $generated            = array();
-$overridden_languages = array();
+	$overridden_locales   = array();
 
-foreach ( $baseline as $language => $spec ) {
-	if ( ! is_string( $language ) || ! is_array( $spec ) ) {
+foreach ( $baseline as $locale => $spec ) {
+	if ( ! is_string( $locale ) || ! is_array( $spec ) ) {
 		fwrite( STDERR, "Invalid baseline entry, expected map<string, object>.\n" );
 		exit( 1 );
 	}
 
-	$normalized_language = strtolower( trim( $language ) );
-	$validator->validate_language_spec( $normalized_language, $spec );
+	$normalized_locale = normalize_locale_key( $locale );
+	$validator->validate_language_spec( $normalized_locale, $spec );
 
-	$final_spec = $overrides->apply( $normalized_language, $spec );
-	$validator->validate_language_spec( $normalized_language, $final_spec );
+	$final_spec = $overrides->apply( $normalized_locale, $spec );
+	$validator->validate_language_spec( $normalized_locale, $final_spec );
 
 	if ( $spec !== $final_spec ) {
-		$overridden_languages[ $normalized_language ] = detect_changed_spec_keys( $spec, $final_spec );
+		$overridden_locales[ $normalized_locale ] = detect_changed_spec_keys( $spec, $final_spec );
 	}
 
-	$generated[ $normalized_language ] = $final_spec;
+	$generated[ $normalized_locale ] = $final_spec;
 }
 
 ksort( $generated );
 
-$wp_prefixes = resolve_wp_language_prefixes( $wp_locales_command );
-if ( ! empty( $wp_prefixes ) ) {
+$wp_locales = resolve_wp_locales( $wp_locales_command );
+if ( ! empty( $wp_locales ) ) {
 	$all_generated = $generated;
-	$generated     = filter_generated_by_prefixes( $generated, $wp_prefixes );
-	$missing       = array_values( array_diff( $wp_prefixes, array_keys( $all_generated ) ) );
+	$generated     = filter_generated_by_locales( $generated, $wp_locales );
+	$missing       = array_values( array_diff( $wp_locales, array_keys( $all_generated ) ) );
 
 	fwrite(
 		STDOUT,
 		sprintf(
-			'WP locale filter enabled: kept %d of %d language specs.' . PHP_EOL,
+			'WP locale filter enabled: kept %d of %d locale specs.' . PHP_EOL,
 			count( $generated ),
 			count( $all_generated )
 		)
@@ -97,16 +101,16 @@ if ( ! empty( $wp_prefixes ) ) {
 		fwrite(
 			STDOUT,
 			sprintf(
-				'WP languages missing in GlotPress baseline: %s' . PHP_EOL,
-				implode( ', ', $missing )
+				'WP locales missing in GlotPress baseline: %s' . PHP_EOL,
+				implode( ', ', array_map( 'locale_key_to_wp_locale', $missing ) )
 			)
 		);
 	}
 } else {
 	fwrite(
 		STDOUT,
-		'WP locale filter disabled or unavailable; generating all GlotPress baseline languages. ' .
-		'If WP exists outside current directory, pass --wp-locales-command="wp --path=/path/to/wp language core list --field=language".' .
+		'WP locale filter unavailable; generating all GlotPress baseline locales. ' .
+		'Pass --wp-locales-command to override the default WP-CLI command if needed.' .
 		PHP_EOL
 	);
 }
@@ -114,7 +118,7 @@ if ( ! empty( $wp_prefixes ) ) {
 if ( $audit_enabled ) {
 	$audit_report = build_generation_audit_report(
 		$generated,
-		$overridden_languages,
+		$overridden_locales,
 		$audit_fail_on_override
 	);
 
@@ -125,9 +129,9 @@ if ( $audit_enabled ) {
 	fwrite(
 		STDOUT,
 		sprintf(
-			'Audit summary: %d issue(s), %d overridden language(s).' . PHP_EOL,
+			'Audit summary: %d issue(s), %d overridden locale(s).' . PHP_EOL,
 			$issue_count,
-			count( $overridden_languages )
+			count( $overridden_locales )
 		)
 	);
 
@@ -162,13 +166,18 @@ if ( $dry_run ) {
 
 if ( '' !== $languages_dir ) {
 	generate_language_classes( $generated, $languages_dir );
-	fwrite( STDOUT, sprintf( 'Generated %d language classes to %s' . PHP_EOL, count( $generated ), $languages_dir ) );
+	fwrite( STDOUT, sprintf( 'Generated %d locale classes to %s' . PHP_EOL, count( $generated ), $languages_dir ) );
+}
+
+if ( '' !== $supported_locales_file ) {
+	generate_supported_locales_class( array_keys( $generated ), $supported_locales_file );
+	fwrite( STDOUT, sprintf( 'Generated supported locales file to %s' . PHP_EOL, $supported_locales_file ) );
 }
 
 /**
- * Generates one class file per language.
+ * Generates one class file per locale.
  *
- * @param array<string, array<string, mixed>> $generated Generated specs map.
+ * @param array<string, array<string, mixed>> $generated Generated specs by locale.
  * @param string                              $languages_dir Target directory.
  * @return void
  */
@@ -178,8 +187,17 @@ function generate_language_classes( array $generated, $languages_dir ) {
 		exit( 1 );
 	}
 
-	foreach ( $generated as $language => $spec ) {
-		$class_name = language_to_class_name( $language );
+	$existing_files = glob( rtrim( $languages_dir, '/\\' ) . '/Lang*.php' );
+	if ( false !== $existing_files ) {
+		foreach ( $existing_files as $existing_file ) {
+			if ( is_string( $existing_file ) && is_file( $existing_file ) ) {
+				unlink( $existing_file );
+			}
+		}
+	}
+
+	foreach ( $generated as $locale => $spec ) {
+		$class_name = locale_to_class_name( $locale );
 		$file_path  = rtrim( $languages_dir, '/\\' ) . '/' . $class_name . '.php';
 		$file_php   = build_language_class_php( $class_name, $spec );
 
@@ -278,21 +296,32 @@ function build_forms_assignments_php( array $forms ) {
 }
 
 /**
- * Converts language code to PSR-4 class name.
+ * Converts locale code to PSR-4 class name.
  *
- * Uses the first two letters only.
+ * Example: `pt_BR` => `LangPtBr`.
  *
- * @param string $language Language code.
+ * @param string $locale Locale code.
  * @return string
  */
-function language_to_class_name( $language ) {
-	$normalized = strtolower( substr( preg_replace( '/[^a-z]/i', '', (string) $language ), 0, 2 ) );
+function locale_to_class_name( $locale ) {
+	$normalized = normalize_locale_key( $locale );
 
 	if ( '' === $normalized ) {
 		return 'DefaultSpec';
 	}
 
-	return 'Lang' . ucfirst( $normalized );
+	$parts = explode( '_', $normalized );
+	$camel = '';
+
+	foreach ( $parts as $part ) {
+		if ( '' === $part ) {
+			continue;
+		}
+
+		$camel .= strtoupper( substr( $part, 0, 1 ) ) . strtolower( substr( $part, 1 ) );
+	}
+
+	return 'Lang' . $camel;
 }
 
 /**
@@ -317,13 +346,14 @@ function build_specs_from_glotpress_locales() {
 			continue;
 		}
 
-		$normalized_language = normalize_language_prefix( $slug );
+		$canonical_locale  = ( isset( $locale->wp_locale ) && is_string( $locale->wp_locale ) ) ? $locale->wp_locale : $slug;
+		$normalized_locale = normalize_locale_key( $canonical_locale );
 
-		if ( '' === $normalized_language && isset( $locale->wp_locale ) && is_string( $locale->wp_locale ) ) {
-			$normalized_language = normalize_language_prefix( $locale->wp_locale );
+		if ( '' === $normalized_locale ) {
+			$normalized_locale = normalize_locale_key( $slug );
 		}
 
-		if ( '' === $normalized_language ) {
+		if ( '' === $normalized_locale ) {
 			continue;
 		}
 
@@ -338,13 +368,11 @@ function build_specs_from_glotpress_locales() {
 			$plural_expression = 'n != 1';
 		}
 
-		if ( ! isset( $specs[ $normalized_language ] ) || 2 === strlen( $slug ) ) {
-			$specs[ $normalized_language ] = array(
+		$specs[ $normalized_locale ] = array(
 				'nplurals'          => $nplurals,
 				'plural_expression' => '(' . $plural_expression . ')',
 				'forms'             => build_forms_from_nplurals( $nplurals, $plural_expression ),
 			);
-		}
 	}
 
 	ksort( $specs );
@@ -719,12 +747,35 @@ function marker_from_index( $index ) {
 }
 
 /**
- * Resolves WordPress language prefixes (first two letters).
+ * Normalizes a locale string to the internal key format.
+ *
+ * Example outputs: `pt_br`, `es_419`.
+ *
+ * @param string $value Locale value.
+ * @return string
+ */
+function normalize_locale_key( $value ) {
+	$value = str_replace( '-', '_', strtolower( trim( (string) $value ) ) );
+	$value = preg_replace( '/[^a-z0-9_]/', '', $value );
+
+	if ( ! is_string( $value ) ) {
+		return '';
+	}
+
+	if ( ! preg_match( '/^[a-z]{2,3}(?:_[a-z0-9]{2,})*$/', $value ) ) {
+		return '';
+	}
+
+	return $value;
+}
+
+/**
+ * Resolves WordPress locales from a WP-CLI command.
  *
  * @param string $command WP-CLI command returning one locale per line.
  * @return array<int, string>
  */
-function resolve_wp_language_prefixes( $command ) {
+function resolve_wp_locales( $command ) {
 	$command = trim( (string) $command );
 
 	if ( '' === $command ) {
@@ -754,7 +805,7 @@ function resolve_wp_language_prefixes( $command ) {
 		return array();
 	}
 
-	$prefix_map = array();
+	$locale_map = array();
 	$lines      = preg_split( '/\r?\n/', $raw );
 
 	if ( ! is_array( $lines ) ) {
@@ -762,17 +813,17 @@ function resolve_wp_language_prefixes( $command ) {
 	}
 
 	foreach ( $lines as $line ) {
-		$prefix = normalize_language_prefix( $line );
+		$locale_key = normalize_locale_key( $line );
 
-		if ( '' !== $prefix ) {
-			$prefix_map[ $prefix ] = true;
+		if ( '' !== $locale_key ) {
+			$locale_map[ $locale_key ] = true;
 		}
 	}
 
-	$prefixes = array_keys( $prefix_map );
-	sort( $prefixes );
+	$locales = array_keys( $locale_map );
+	sort( $locales );
 
-	return $prefixes;
+	return $locales;
 }
 
 /**
@@ -818,19 +869,19 @@ function discover_wordpress_path() {
 }
 
 /**
- * Filters generated language specs by allowed prefixes.
+ * Filters generated locale specs by allowed locales.
  *
  * @param array<string, array<string, mixed>> $generated Generated specs.
- * @param array<int, string>                  $prefixes Allowed prefixes.
+ * @param array<int, string>                  $locales Allowed normalized locales.
  * @return array<string, array<string, mixed>>
  */
-function filter_generated_by_prefixes( array $generated, array $prefixes ) {
-	$allowed = array_fill_keys( $prefixes, true );
+function filter_generated_by_locales( array $generated, array $locales ) {
+	$allowed = array_fill_keys( $locales, true );
 	$result  = array();
 
-	foreach ( $generated as $language => $spec ) {
-		if ( isset( $allowed[ $language ] ) ) {
-			$result[ $language ] = $spec;
+	foreach ( $generated as $locale => $spec ) {
+		if ( isset( $allowed[ $locale ] ) ) {
+			$result[ $locale ] = $spec;
 		}
 	}
 
@@ -838,19 +889,95 @@ function filter_generated_by_prefixes( array $generated, array $prefixes ) {
 }
 
 /**
- * Normalizes a locale/language string to a two-letter prefix.
+ * Generates one PHP class exposing all supported target locales.
  *
- * @param string $value Locale/language value.
+ * @param array<int, string> $locales Locales list.
+ * @param string             $output_file Destination file.
+ * @return void
+ */
+function generate_supported_locales_class( array $locales, $output_file ) {
+	$normalized_locales = array();
+
+	foreach ( $locales as $locale ) {
+		$key = normalize_locale_key( $locale );
+
+		if ( '' !== $key ) {
+			$normalized_locales[] = $key;
+		}
+	}
+
+	$normalized_locales = array_values( array_unique( $normalized_locales ) );
+
+	$wp_locales = array();
+	foreach ( $normalized_locales as $normalized_locale ) {
+		$wp_locales[] = locale_key_to_wp_locale( $normalized_locale );
+	}
+
+	$locales_for_export = array_values( array_unique( $wp_locales ) );
+	sort( $locales_for_export );
+
+	$output_dir = dirname( $output_file );
+	if ( ! is_dir( $output_dir ) && ! mkdir( $output_dir, 0777, true ) && ! is_dir( $output_dir ) ) {
+		fwrite( STDERR, "Cannot create supported locales directory: {$output_dir}\n" );
+		exit( 1 );
+	}
+
+	$export_locales = var_export( $locales_for_export, true );
+
+	$content = "<?php\n"
+		. "/**\n"
+		. " * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>\n"
+		. " * SPDX-License-Identifier: GPL-3.0-or-later\n"
+		. " *\n"
+		. " * Auto-generated file. Do not edit manually.\n"
+		. " *\n"
+		. " * @package I18nly\n"
+		. " */\n\n"
+		. "namespace WP_I18nly\\Support;\n\n"
+		. "defined( 'ABSPATH' ) || exit;\n\n"
+		. "final class GeneratedTargetLocales {\n"
+		. "\t/**\n"
+		. "\t * Returns all target locales supported by generated plural specs.\n"
+		. "\t *\n"
+		. "\t * @return array<int, string>\n"
+		. "\t */\n"
+		. "\tpublic static function all() {\n"
+		. "\t\treturn {$export_locales};\n"
+		. "\t}\n"
+		. "}\n";
+
+	if ( false === file_put_contents( $output_file, $content ) ) {
+		fwrite( STDERR, "Cannot write supported locales file: {$output_file}\n" );
+		exit( 1 );
+	}
+}
+
+/**
+ * Converts internal locale key to canonical WP locale string.
+ *
+ * @param string $locale_key Normalized locale key.
  * @return string
  */
-function normalize_language_prefix( $value ) {
-	$value = strtolower( trim( (string) $value ) );
+function locale_key_to_wp_locale( $locale_key ) {
+	$parts = explode( '_', strtolower( (string) $locale_key ) );
 
-	if ( ! preg_match( '/^[a-z]{2}/', $value, $matches ) ) {
+	if ( empty( $parts ) ) {
 		return '';
 	}
 
-	return isset( $matches[0] ) ? (string) $matches[0] : '';
+	$language = (string) array_shift( $parts );
+	$rebuilt  = $language;
+
+	foreach ( $parts as $part ) {
+		if ( preg_match( '/^[0-9]+$/', $part ) ) {
+			$rebuilt .= '_' . $part;
+			continue;
+		}
+
+		$rebuilt .= '_' . strtoupper( $part );
+	}
+
+	return $rebuilt;
 }
 
 /**

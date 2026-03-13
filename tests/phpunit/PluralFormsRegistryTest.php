@@ -45,8 +45,8 @@ class PluralFormsRegistryTest extends TestCase {
 	 * @return void
 	 */
 	public function test_registry_resolves_single_form_locale() {
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ja_JP' ) );
-		$this->assertSame( array( 'a' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja_JP' ) );
+		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ja' ) );
+		$this->assertSame( array( 'a' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'ja' ) );
 	}
 
 	/**
@@ -92,7 +92,7 @@ class PluralFormsRegistryTest extends TestCase {
 	 * @return void
 	 */
 	public function test_registry_resolves_six_form_locale() {
-		$this->assertSame( 6, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ar_AR' ) );
+		$this->assertSame( 6, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ar' ) );
 	}
 
 	/**
@@ -109,14 +109,14 @@ class PluralFormsRegistryTest extends TestCase {
 		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ru_RU', 2 ) );
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ru_RU', 5 ) );
 
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 0 ) );
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 1 ) );
-		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 2 ) );
-		$this->assertSame( 3, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 3 ) );
-		$this->assertSame( 4, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 11 ) );
-		$this->assertSame( 5, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar_AR', 100 ) );
+		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 0 ) );
+		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 1 ) );
+		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 2 ) );
+		$this->assertSame( 3, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 3 ) );
+		$this->assertSame( 4, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 11 ) );
+		$this->assertSame( 5, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 100 ) );
 
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ja_JP', 42 ) );
+		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ja', 42 ) );
 		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'xx_XX', 1 ) );
 		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'xx_XX', 2 ) );
 	}

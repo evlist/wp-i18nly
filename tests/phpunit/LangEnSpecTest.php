@@ -19,8 +19,8 @@ class LangEnSpecTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function test_langen_returns_two_forms_with_label_and_tooltip() {
-		$spec = \WP_I18nly\Plurals\Languages\LangEn::get_spec();
+	public function test_langenus_returns_two_forms_with_label_and_tooltip() {
+		$spec = \WP_I18nly\Plurals\Languages\LangEnUs::get_spec();
 
 		$this->assertArrayHasKey( 'forms', $spec );
 		$this->assertIsArray( $spec['forms'] );

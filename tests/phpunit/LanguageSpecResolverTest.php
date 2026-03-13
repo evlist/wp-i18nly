@@ -54,6 +54,20 @@ class LanguageSpecResolverTest extends TestCase {
 	}
 
 	/**
+	 * Resolves locale-specific providers without collapsing to language.
+	 *
+	 * @return void
+	 */
+	public function test_resolves_locale_specific_provider_without_language_fallback() {
+		$resolver = new \WP_I18nly\Plurals\LanguageSpecResolver();
+		$pt_spec  = $resolver->resolve_spec_for_locale( 'pt' );
+		$br_spec  = $resolver->resolve_spec_for_locale( 'pt_BR' );
+
+		$this->assertSame( '(n != 1)', $pt_spec['plural_expression'] );
+		$this->assertSame( '(n > 1)', $br_spec['plural_expression'] );
+	}
+
+	/**
 	 * Falls back to default provider when language is unsupported.
 	 *
 	 * @return void
