@@ -170,5 +170,6 @@ Therefore, this pipeline uses GlotPress locale definitions as baseline source an
 ## Notes
 
 - `ProjectPluralSpecOverrides` is intentionally conservative in this scaffold.
+- Override matching receives canonical locales (example: `en_US`, `pt_BR`, `ja`).
 - Add project rules there as the next step.
 - Keep overrides deterministic and side-effect free.

@@ -59,7 +59,7 @@ $baseline = build_specs_from_glotpress_locales();
 $validator            = new SpecContractValidator();
 $overrides            = new ProjectPluralSpecOverrides();
 $generated            = array();
-	$overridden_locales   = array();
+$overridden_locales   = array();
 
 foreach ( $baseline as $locale => $spec ) {
 	if ( ! is_string( $locale ) || ! is_array( $spec ) ) {
@@ -68,9 +68,10 @@ foreach ( $baseline as $locale => $spec ) {
 	}
 
 	$normalized_locale = normalize_locale_key( $locale );
+	$override_locale   = locale_key_to_wp_locale( $normalized_locale );
 	$validator->validate_language_spec( $normalized_locale, $spec );
 
-	$final_spec = $overrides->apply( $normalized_locale, $spec );
+	$final_spec = $overrides->apply( $override_locale, $spec );
 	$validator->validate_language_spec( $normalized_locale, $final_spec );
 
 	if ( $spec !== $final_spec ) {

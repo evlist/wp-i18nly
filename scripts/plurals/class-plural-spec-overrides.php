@@ -17,9 +17,9 @@ interface PluralSpecOverrides {
 	/**
 	 * Applies project-specific transformations.
 	 *
-	 * @param string               $language Language code (normalized lowercase, for example: en, fr).
-	 * @param array<string, mixed> $spec     Normalized language spec.
+	 * @param string               $locale Canonical locale (for example: en_US, fr_FR, ja).
+	 * @param array<string, mixed> $spec   Normalized locale spec.
 	 * @return array<string, mixed>
 	 */
-	public function apply( string $language, array $spec ): array;
+	public function apply( string $locale, array $spec ): array;
 }
