@@ -383,7 +383,7 @@ class SourceWpdbRepository {
 			}
 
 			$has_plural     = isset( $source_row['msgid_plural'] ) && '' !== trim( (string) $source_row['msgid_plural'] );
-			$required_forms = $has_plural ? max( 2, $max_forms ) : 1;
+			$required_forms = $has_plural ? $max_forms : 1;
 
 			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
 				$existing_translated_entry_id = (int) $this->db_get_var(
@@ -480,6 +480,10 @@ class SourceWpdbRepository {
 			if ( isset( $row['form_index'] ) && '' !== (string) $row['form_index'] ) {
 				$form_index = max( 0, (int) $row['form_index'] );
 
+				if ( $form_index >= $max_plural_forms ) {
+					continue;
+				}
+
 				$normalized_rows[ $source_entry_id ]['translations'][ $form_index ] = array(
 					'source_entry_id' => $source_entry_id,
 					'form_index'      => $form_index,
@@ -490,7 +494,7 @@ class SourceWpdbRepository {
 
 		foreach ( $normalized_rows as &$normalized_row ) {
 			$has_plural     = '' !== trim( (string) $normalized_row['msgid_plural'] );
-			$required_forms = $has_plural ? max( 2, $max_plural_forms ) : 1;
+			$required_forms = $has_plural ? $max_plural_forms : 1;
 
 			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
 				if ( isset( $normalized_row['translations'][ $form_index ] ) ) {

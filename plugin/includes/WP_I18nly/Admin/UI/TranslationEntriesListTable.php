@@ -108,6 +108,11 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			}
 
 			$form_index = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
+
+			if ( $has_plural && ! empty( $forms ) && ! isset( $forms[ $form_index ] ) ) {
+				continue;
+			}
+
 			$value      = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
 			$input_id   = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
