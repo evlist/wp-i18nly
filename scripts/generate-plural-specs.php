@@ -287,7 +287,9 @@ function build_forms_assignments_php( array $forms ) {
 		$tooltip_export = var_export( (string) $tooltip, true );
 
 		$lines .= "\t\t\$spec['forms'][] = array(\n";
+		$lines .= "\t\t\t/* translators: Short label identifying one plural form input in the translation editor. */\n";
 		$lines .= "\t\t\t'label'   => __( {$label_export}, 'i18nly' ),\n";
+		$lines .= "\t\t\t/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */\n";
 		$lines .= "\t\t\t'tooltip' => __( {$tooltip_export}, 'i18nly' ),\n";
 		$lines .= "\t\t);\n";
 		++$index;

@@ -96,6 +96,7 @@ class PotSourceImporter {
 
 			$msgctxt      = $translation->getContext();
 			$msgid_plural = $translation->getPlural();
+			$translator_comment = $this->extract_translator_comment( $translation );
 
 			$result = (string) $this->repository->upsert_source_entry(
 				array(
@@ -103,6 +104,7 @@ class PotSourceImporter {
 					'msgctxt'          => null !== $msgctxt ? (string) $msgctxt : null,
 					'msgid'            => $msgid,
 					'msgid_plural'     => null !== $msgid_plural ? (string) $msgid_plural : null,
+					'translator_comment' => $translator_comment,
 					'comments_json'    => $this->encode_json(
 						array(
 							'comments'           => $translation->getComments()->toArray(),
@@ -167,5 +169,38 @@ class PotSourceImporter {
 		}
 
 		return $encoded;
+	}
+
+	/**
+	 * Returns first translators comment stripped from its prefix.
+	 *
+	 * @param \Gettext\Translation $translation Translation entry.
+	 * @return string
+	 */
+	private function extract_translator_comment( \Gettext\Translation $translation ) {
+		$candidates = array_merge(
+			$translation->getExtractedComments()->toArray(),
+			$translation->getComments()->toArray()
+		);
+
+		foreach ( $candidates as $candidate ) {
+			if ( ! is_string( $candidate ) ) {
+				continue;
+			}
+
+			$normalized = trim( $candidate );
+
+			if ( 0 !== stripos( $normalized, 'translators:' ) ) {
+				continue;
+			}
+
+			$message = trim( substr( $normalized, strlen( 'translators:' ) ) );
+
+			if ( '' !== $message ) {
+				return $message;
+			}
+		}
+
+		return '';
 	}
 }

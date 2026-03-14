@@ -32,6 +32,29 @@
 	margin-top: 0.2rem;
 }
 
+.i18nly-translator-comment {
+	margin: 0.3rem 0 0;
+	padding: 0.2rem 0.45rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.35rem;
+	border-left: 2px solid #c3c4c7;
+	background: #f6f7f7;
+	font-size: 12px;
+	font-style: italic;
+	color: #646970;
+	line-height: 1.35;
+}
+
+.i18nly-translator-comment::before {
+	content: '\24D8';
+	font-style: normal;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #50575e;
+	flex: 0 0 auto;
+}
+
 .i18nly-translation-input {
 	display: block;
 	width: 100%;

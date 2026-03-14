@@ -111,6 +111,7 @@ class TranslationEntriesListTableTest extends TestCase {
 					'msgctxt'         => '',
 					'msgid'           => 'Hello',
 					'msgid_plural'    => '',
+					'translator_comment' => 'Shown in dashboard header.',
 					'status'          => 'active',
 					'translations'    => array(
 						array(
@@ -132,6 +133,8 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'data-i18nly-source-entry-id="21"', $html );
 		$this->assertStringContainsString( 'data-i18nly-form-index="0"', $html );
 		$this->assertStringContainsString( 'value="Bonjour"', $html );
+		$this->assertStringContainsString( 'class="i18nly-translator-comment"', $html );
+		$this->assertStringContainsString( 'Shown in dashboard header.', $html );
 		$this->assertStringNotContainsString( 'i18nly-form-marker', $html );
 	}
 

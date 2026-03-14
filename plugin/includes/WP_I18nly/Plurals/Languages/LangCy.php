@@ -28,19 +28,27 @@ final class LangCy implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'a', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( '1', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'b', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( '2', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'c', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( '0, 3, 4, 5, ...', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'd', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( 'other', 'i18nly' ),
 		);
 

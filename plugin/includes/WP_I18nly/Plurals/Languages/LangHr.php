@@ -28,15 +28,21 @@ final class LangHr implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'a', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( '1, 21, 31, 41, ...', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'b', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( '2, 3, 4, 22, ...', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'c', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( 'other', 'i18nly' ),
 		);
 

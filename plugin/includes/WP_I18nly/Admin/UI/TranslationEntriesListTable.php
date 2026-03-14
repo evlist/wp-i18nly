@@ -66,8 +66,18 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$singular   = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
 		$plural     = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural = '' !== trim( $plural );
+		$comment    = isset( $item['translator_comment'] ) ? trim( (string) $item['translator_comment'] ) : '';
+		$source     = $this->render_stacked_text_pair( $singular, $plural, $has_plural );
 
-		return $this->render_stacked_text_pair( $singular, $plural, $has_plural );
+		if ( '' === $comment ) {
+			return $source;
+		}
+
+		return sprintf(
+			'%1$s<p class="i18nly-translator-comment">%2$s</p>',
+			$source,
+			esc_html( $comment )
+		);
 	}
 
 	/**

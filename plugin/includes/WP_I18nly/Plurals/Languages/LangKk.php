@@ -28,11 +28,15 @@ final class LangKk implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( '1', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( 'One', 'i18nly' ),
 		);
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( 'n', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( 'Other than one', 'i18nly' ),
 		);
 

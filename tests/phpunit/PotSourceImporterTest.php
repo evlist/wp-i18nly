@@ -69,6 +69,8 @@ POT;
 				continue;
 			}
 
+			$this->assertSame( 'Greeting message.', (string) $entry['translator_comment'] );
+
 			$comments = json_decode( (string) $entry['comments_json'], true );
 			if ( isset( $comments['comments'] ) && in_array( 'translators: Greeting message.', (array) $comments['comments'], true ) ) {
 				$comments_found = true;
@@ -263,6 +265,7 @@ class I18nly_Test_InMemory_Source_Repository {
 			&& (string) $existing['msgctxt'] === (string) $entry['msgctxt']
 			&& (string) $existing['msgid'] === (string) $entry['msgid']
 			&& (string) $existing['msgid_plural'] === (string) $entry['msgid_plural']
+			&& (string) $existing['translator_comment'] === (string) $entry['translator_comment']
 			&& (string) $existing['comments_json'] === (string) $entry['comments_json']
 			&& (string) $existing['references_json'] === (string) $entry['references_json']
 			&& (string) $existing['flags_json'] === (string) $entry['flags_json']

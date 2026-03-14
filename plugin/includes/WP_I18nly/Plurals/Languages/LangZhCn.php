@@ -28,7 +28,9 @@ final class LangZhCn implements LanguageSpecProvider {
 );
 
 		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
 			'label'   => __( '*', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
 			'tooltip' => __( 'Any number', 'i18nly' ),
 		);
 

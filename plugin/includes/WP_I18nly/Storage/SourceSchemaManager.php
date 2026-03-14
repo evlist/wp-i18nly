@@ -19,7 +19,7 @@ class SourceSchemaManager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.0.6';
+	private const SCHEMA_VERSION = '0.0.7';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -131,6 +131,7 @@ class SourceSchemaManager {
 			msgctxt text DEFAULT NULL,
 			msgid longtext NOT NULL,
 			msgid_plural longtext DEFAULT NULL,
+			translator_comment text DEFAULT NULL,
 			comments_json longtext DEFAULT NULL,
 			references_json longtext DEFAULT NULL,
 			flags_json longtext DEFAULT NULL,

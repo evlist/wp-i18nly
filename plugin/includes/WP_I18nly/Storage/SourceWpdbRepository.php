@@ -39,6 +39,7 @@ class SourceWpdbRepository {
 	 */
 	private const ENTRY_CONTENT_COLUMNS = array(
 		'msgid_plural',
+		'translator_comment',
 		'comments_json',
 		'references_json',
 		'flags_json',
@@ -141,6 +142,9 @@ class SourceWpdbRepository {
 	 */
 	public function upsert_source_entry( array $entry ) {
 		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$entry['translator_comment'] = isset( $entry['translator_comment'] )
+			? (string) $entry['translator_comment']
+			: '';
 
 		if ( '' === $table ) {
 			return 'unchanged';
@@ -160,7 +164,7 @@ class SourceWpdbRepository {
 
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					'SELECT catalog_id, msgctxt, msgid, msgid_plural, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
+					'SELECT catalog_id, msgctxt, msgid, msgid_plural, translator_comment, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
 					$table,
 					$entry_id
 				),
@@ -187,6 +191,7 @@ class SourceWpdbRepository {
 				$table,
 				array(
 					'msgid_plural'     => $entry['msgid_plural'],
+					'translator_comment' => $entry['translator_comment'],
 					'comments_json'    => $entry['comments_json'],
 					'references_json'  => $entry['references_json'],
 					'flags_json'       => $entry['flags_json'],
@@ -195,7 +200,7 @@ class SourceWpdbRepository {
 					'updated_at_gmt'   => $now_gmt,
 				),
 				array( 'id' => $entry_id ),
-				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 				array( '%d' )
 			);
 
@@ -209,6 +214,7 @@ class SourceWpdbRepository {
 				'msgctxt'          => $entry['msgctxt'],
 				'msgid'            => $entry['msgid'],
 				'msgid_plural'     => $entry['msgid_plural'],
+				'translator_comment' => $entry['translator_comment'],
 				'comments_json'    => $entry['comments_json'],
 				'references_json'  => $entry['references_json'],
 				'flags_json'       => $entry['flags_json'],
@@ -217,7 +223,7 @@ class SourceWpdbRepository {
 				'created_at_gmt'   => $entry['created_at_gmt'],
 				'updated_at_gmt'   => $entry['updated_at_gmt'],
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		return 'inserted';
@@ -333,7 +339,7 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			(string) $plugin_slug,
@@ -444,7 +450,7 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			$translated_entries_table,
@@ -470,6 +476,7 @@ class SourceWpdbRepository {
 					'msgctxt'          => isset( $row['msgctxt'] ) ? (string) $row['msgctxt'] : '',
 					'msgid'            => isset( $row['msgid'] ) ? (string) $row['msgid'] : '',
 					'msgid_plural'     => isset( $row['msgid_plural'] ) ? (string) $row['msgid_plural'] : '',
+					'translator_comment' => isset( $row['translator_comment'] ) ? (string) $row['translator_comment'] : '',
 					'status'           => isset( $row['status'] ) ? (string) $row['status'] : '',
 					'last_seen_at_gmt' => isset( $row['last_seen_at_gmt'] ) ? (string) $row['last_seen_at_gmt'] : '',
 					'updated_at_gmt'   => isset( $row['updated_at_gmt'] ) ? (string) $row['updated_at_gmt'] : '',
