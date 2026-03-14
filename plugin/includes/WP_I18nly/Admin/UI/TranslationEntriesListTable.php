@@ -118,30 +118,34 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			}
 
 			$form_index = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
-
 			$value      = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
 			$input_id   = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
-			$input_html = $this->render_translation_input(
-				$input_id,
-				$source_entry,
-				$form_index,
-				$value,
-				sprintf(
-					/* translators: %d is plural form index. */
-					_x( 'Translation form %d', 'input label for one translation plural form', 'i18nly' ),
-					$form_index
-				)
-			);
-
 			if ( ! $has_plural ) {
-				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $input_html );
+				$lines[] = sprintf(
+					'<p class="i18nly-form-line">%s</p>',
+					$this->render_translation_input(
+						$input_id,
+						$source_entry,
+						$form_index,
+						$value,
+						__( 'Translation', 'i18nly' )
+					)
+				);
 				continue;
 			}
 
 			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
 			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
-			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips, $form_label );
+			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips );
+			$input_label  = '' !== trim( $form_tooltip ) ? $form_tooltip : $form_label;
+			$input_html   = $this->render_translation_input(
+				$input_id,
+				$source_entry,
+				$form_index,
+				$value,
+				$input_label
+			);
 
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%1$s %2$s</p>',
@@ -161,7 +165,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 					$source_entry,
 					0,
 					'',
-					_x( 'Translation form 0', 'input label for one translation form', 'i18nly' )
+					__( 'Translation', 'i18nly' )
 				)
 			);
 		}
@@ -235,10 +239,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @param int                              $form_index Plural form index.
 	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
 	 * @param array<int, mixed>                $form_tooltips Ordered form tooltips.
-	 * @param string                           $fallback_label Fallback label.
 	 * @return string
 	 */
-	private function resolve_form_tooltip( $form_index, array $forms, array $form_tooltips, $fallback_label ) {
+	private function resolve_form_tooltip( $form_index, array $forms, array $form_tooltips ) {
 		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['tooltip'] ) ) {
 			$tooltip = (string) $forms[ $form_index ]['tooltip'];
 
@@ -255,15 +258,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			}
 		}
 
-		if ( '' !== trim( $fallback_label ) ) {
-			return $fallback_label;
-		}
-
-		return sprintf(
-			/* translators: %d is plural form index. */
-			__( 'Plural form %d', 'i18nly' ),
-			$form_index
-		);
+		return '';
 	}
 
 	/**
