@@ -65,6 +65,12 @@ class TranslationMetaBoxRenderer {
 
 		<?php if ( $is_locked ) : ?>
 			<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
+			<p>
+				<label for="i18nly-show-obsolete-entries">
+					<input type="checkbox" id="i18nly-show-obsolete-entries" />
+					<?php echo esc_html__( 'Show obsolete entries', 'i18nly' ); ?>
+				</label>
+			</p>
 			<div id="i18nly-source-entries-table">
 				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
 			</div>

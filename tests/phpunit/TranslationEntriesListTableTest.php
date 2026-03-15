@@ -198,4 +198,40 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'value="%s article"', $html );
 		$this->assertStringContainsString( 'value="%s articles"', $html );
 	}
+
+	/**
+	 * Renders selection and bulk actions with status metadata.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_renders_bulk_actions_and_selection_controls() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 41,
+					'msgctxt'         => '',
+					'msgid'           => 'Hello',
+					'msgid_plural'    => '',
+					'status'          => 'obsolete',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => 'Bonjour',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'class="i18nly-bulk-select-all"', $html );
+		$this->assertStringContainsString( 'class="i18nly-entry-checkbox"', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--obsolete', $html );
+		$this->assertStringContainsString( 'data-i18nly-source-text="Hello"', $html );
+	}
 }

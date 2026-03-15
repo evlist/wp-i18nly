@@ -49,10 +49,49 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 */
 	public function get_columns() {
 		return array(
+			'cb'          => '<input type="checkbox" class="i18nly-bulk-select-all" aria-label="' . esc_attr__( 'Select all translation entries', 'i18nly' ) . '" />',
 			'msgctxt'     => __( 'Context', 'i18nly' ),
 			'msgid'       => __( 'Source string', 'i18nly' ),
 			'translation' => __( 'Translation', 'i18nly' ),
 			'status'      => __( 'Status', 'i18nly' ),
+		);
+	}
+
+	/**
+	 * Returns available bulk actions.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function get_bulk_actions() {
+		return array(
+			'clear_selected_translations' => __( 'Clear selected translations', 'i18nly' ),
+			'copy_source_to_translation'  => __( 'Copy source to translation', 'i18nly' ),
+		);
+	}
+
+	/**
+	 * Renders row selection checkbox.
+	 *
+	 * @param array<string, mixed> $item Row item.
+	 * @return string
+	 */
+	public function column_cb( $item ) {
+		$source_entry_id = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
+
+		if ( $source_entry_id <= 0 ) {
+			return '';
+		}
+
+		return sprintf(
+			'<input type="checkbox" class="i18nly-entry-checkbox" value="%1$d" aria-label="%2$s" />',
+			$source_entry_id,
+			esc_attr(
+				sprintf(
+					/* translators: %d: source entry ID. */
+					__( 'Select translation entry %d', 'i18nly' ),
+					$source_entry_id
+				)
+			)
 		);
 	}
 
@@ -87,6 +126,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	public function column_translation( $item ) {
+		$singular       = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
 		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural    = '' !== trim( $source_plural );
 		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
@@ -129,7 +169,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 						$source_entry,
 						$form_index,
 						$value,
-						__( 'Translation', 'i18nly' )
+						__( 'Translation', 'i18nly' ),
+						$singular
 					)
 				);
 				continue;
@@ -144,7 +185,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$source_entry,
 				$form_index,
 				$value,
-				$input_label
+				$input_label,
+				$this->get_source_text_for_form( $form_index, $singular, $source_plural )
 			);
 
 			$lines[] = sprintf(
@@ -165,7 +207,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 					$source_entry,
 					0,
 					'',
-					__( 'Translation', 'i18nly' )
+					__( 'Translation', 'i18nly' ),
+					$singular
 				)
 			);
 		}
@@ -175,6 +218,24 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		}
 
 		return implode( '', $lines );
+	}
+
+	/**
+	 * Renders status cell.
+	 *
+	 * @param array<string, mixed> $item Row item.
+	 * @return string
+	 */
+	public function column_status( $item ) {
+		$status       = isset( $item['status'] ) ? (string) $item['status'] : 'active';
+		$status_class = 'obsolete' === $status ? 'i18nly-entry-status--obsolete' : 'i18nly-entry-status--active';
+		$label        = 'obsolete' === $status ? __( 'Obsolete', 'i18nly' ) : __( 'Active', 'i18nly' );
+
+		return sprintf(
+			'<span class="i18nly-entry-status %1$s">%2$s</span>',
+			esc_attr( $status_class ),
+			esc_html( $label )
+		);
 	}
 
 	/**
@@ -269,17 +330,31 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @param int    $form_index Plural form index.
 	 * @param string $input_value Input value.
 	 * @param string $input_label Accessible label.
+	 * @param string $source_text Source text used by client-side bulk actions.
 	 * @return string
 	 */
-	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label ) {
+	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label, $source_text ) {
 		return sprintf(
-			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" aria-label="%5$s"/>',
+			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" data-i18nly-source-text="%5$s" aria-label="%6$s"/>',
 			esc_attr( $input_id ),
 			esc_attr( $input_value ),
 			(int) $source_entry,
 			(int) $form_index,
+			esc_attr( $source_text ),
 			esc_attr( $input_label )
 		);
+	}
+
+	/**
+	 * Returns the source text matching one target form.
+	 *
+	 * @param int    $form_index Plural form index.
+	 * @param string $singular Singular source string.
+	 * @param string $plural Plural source string.
+	 * @return string
+	 */
+	private function get_source_text_for_form( $form_index, $singular, $plural ) {
+		return 0 === (int) $form_index ? $singular : $plural;
 	}
 
 	/**
@@ -308,6 +383,20 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		}
 
 		return esc_html( (string) $item[ $column_name ] );
+	}
+
+	/**
+	 * Renders one table row with status metadata.
+	 *
+	 * @param array<string, mixed> $item Current row.
+	 * @return void
+	 */
+	public function single_row( $item ) {
+		$status = isset( $item['status'] ) ? (string) $item['status'] : 'active';
+
+		echo '<tr class="i18nly-translation-entry" data-entry-status="' . esc_attr( $status ) . '">';
+		$this->single_row_columns( $item );
+		echo '</tr>';
 	}
 
 	/**
@@ -383,6 +472,22 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return void
 	 */
 	protected function display_tablenav( $which ) {
-		echo '<div class="tablenav ' . esc_attr( (string) $which ) . '"></div>';
+		$bulk_actions = $this->get_bulk_actions();
+
+		echo '<div class="tablenav ' . esc_attr( (string) $which ) . '">';
+		echo '<div class="alignleft actions bulkactions">';
+		echo '<label for="bulk-action-selector-' . esc_attr( (string) $which ) . '" class="screen-reader-text">' . esc_html__( 'Select bulk action', 'i18nly' ) . '</label>';
+		echo '<select id="bulk-action-selector-' . esc_attr( (string) $which ) . '" class="i18nly-bulk-action-selector">';
+		echo '<option value="">' . esc_html__( 'Bulk actions', 'i18nly' ) . '</option>';
+
+		foreach ( $bulk_actions as $action => $label ) {
+			echo '<option value="' . esc_attr( $action ) . '">' . esc_html( $label ) . '</option>';
+		}
+
+		echo '</select>';
+		echo '<button type="button" class="button action i18nly-bulk-apply" disabled="disabled" aria-disabled="true">' . esc_html__( 'Apply', 'i18nly' ) . '</button>';
+		echo '</div>';
+		echo '<br class="clear" />';
+		echo '</div>';
 	}
 }

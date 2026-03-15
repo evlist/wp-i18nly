@@ -69,6 +69,7 @@
 
 				container.innerHTML = payload.data.html;
 				installEntriesPayloadCompaction();
+				installEntriesTableInteractions();
 			}
 		);
 	}
@@ -145,6 +146,194 @@
 			},
 			{ once: true }
 		);
+	}
+
+	function installEntriesTableInteractions() {
+		var container = document.getElementById( config.tableContainerId );
+		var obsoleteToggle = document.getElementById( 'i18nly-show-obsolete-entries' );
+		var rowCheckboxes;
+		var selectAllCheckboxes;
+		var bulkActionSelects;
+		var bulkApplyButtons;
+
+		function getSelectedRows() {
+			return Array.prototype.slice.call( rowCheckboxes ).filter(
+				function (checkbox) {
+					return checkbox.checked;
+				}
+			).map(
+				function (checkbox) {
+					return checkbox.closest( 'tr' );
+				}
+			).filter(
+				function (row) {
+					return null !== row;
+				}
+			);
+		}
+
+		function updateBulkActionState() {
+			var hasSelection = getSelectedRows().length > 0;
+
+			bulkApplyButtons.forEach(
+				function (button) {
+					var wrapper = button.closest( '.bulkactions' );
+					var select = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
+					var hasAction = !! select && '' !== select.value;
+
+					button.disabled = ! hasSelection || ! hasAction;
+					if (button.disabled) {
+						button.setAttribute( 'aria-disabled', 'true' );
+					} else {
+						button.removeAttribute( 'aria-disabled' );
+					}
+				}
+			);
+		}
+
+		function syncSelectAllState() {
+			var checkedCount = Array.prototype.slice.call( rowCheckboxes ).filter(
+				function (checkbox) {
+					return checkbox.checked;
+				}
+			).length;
+			var totalCount = rowCheckboxes.length;
+
+			selectAllCheckboxes.forEach(
+				function (checkbox) {
+					checkbox.checked = totalCount > 0 && checkedCount === totalCount;
+					checkbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+				}
+			);
+
+			updateBulkActionState();
+		}
+
+		function applyObsoleteFilter() {
+			var showObsolete = !! obsoleteToggle && obsoleteToggle.checked;
+
+			Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) ).forEach(
+				function (row) {
+					var status = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
+					var isObsolete = status === 'obsolete';
+					var checkbox = row.querySelector( '.i18nly-entry-checkbox' );
+					var mustHide = isObsolete && ! showObsolete;
+
+					row.style.display = mustHide ? 'none' : '';
+					row.setAttribute( 'aria-hidden', mustHide ? 'true' : 'false' );
+
+					if (mustHide && checkbox) {
+						checkbox.checked = false;
+					}
+				}
+			);
+
+			syncSelectAllState();
+		}
+
+		function copySourceToTranslation(row) {
+			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
+				function (input) {
+					input.value = input.getAttribute( 'data-i18nly-source-text' ) || '';
+					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				}
+			);
+		}
+
+		function clearSelectedTranslations(row) {
+			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
+				function (input) {
+					input.value = '';
+					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				}
+			);
+		}
+
+		function applyBulkAction(action) {
+			getSelectedRows().forEach(
+				function (row) {
+					if ( 'copy_source_to_translation' === action ) {
+						copySourceToTranslation( row );
+						return;
+					}
+
+					if ( 'clear_selected_translations' === action ) {
+						clearSelectedTranslations( row );
+					}
+				}
+			);
+		}
+
+		if ( ! container ) {
+			return;
+		}
+
+		rowCheckboxes = container.querySelectorAll( '.i18nly-entry-checkbox' );
+		selectAllCheckboxes = container.querySelectorAll( '.i18nly-bulk-select-all' );
+		bulkActionSelects = container.querySelectorAll( '.i18nly-bulk-action-selector' );
+		bulkApplyButtons = container.querySelectorAll( '.i18nly-bulk-apply' );
+
+		selectAllCheckboxes.forEach(
+			function (checkbox) {
+				checkbox.addEventListener(
+					'change',
+					function () {
+						var checked = checkbox.checked;
+
+						Array.prototype.slice.call( rowCheckboxes ).forEach(
+							function (rowCheckbox) {
+								var row = rowCheckbox.closest( 'tr' );
+
+								if ( row && row.style.display === 'none' ) {
+									return;
+								}
+
+								rowCheckbox.checked = checked;
+							}
+						);
+
+						syncSelectAllState();
+					}
+				);
+			}
+		);
+
+		Array.prototype.slice.call( rowCheckboxes ).forEach(
+			function (checkbox) {
+				checkbox.addEventListener( 'change', syncSelectAllState );
+			}
+		);
+
+		bulkActionSelects.forEach(
+			function (select) {
+				select.addEventListener( 'change', updateBulkActionState );
+			}
+		);
+
+		bulkApplyButtons.forEach(
+			function (button) {
+				button.addEventListener(
+					'click',
+					function () {
+						var wrapper = button.closest( '.bulkactions' );
+						var select = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
+
+						if ( ! select || '' === select.value ) {
+							return;
+						}
+
+						applyBulkAction( select.value );
+					}
+				);
+			}
+		);
+
+		if ( obsoleteToggle ) {
+			obsoleteToggle.addEventListener( 'change', applyObsoleteFilter );
+		}
+
+		applyObsoleteFilter();
+		updateBulkActionState();
 	}
 
 	refreshEntriesTable();
