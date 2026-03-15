@@ -2,7 +2,7 @@
 /**
  * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
  * SPDX-License-Identifier: GPL-3.0-or-later
- *
+ * 
  * @package I18nly
  */
 
@@ -226,7 +226,7 @@ function build_language_class_php( $class_name, array $spec ) {
 	return "<?php\n"
 		. "/**\n"
 		. " * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>\n"
-		. " * SPDX-License-Identifier: GPL-3.0-or-later\n"
+		. " * SPDX-License" . "-Identifier: GPL-3.0-or-later\n"
 		. " *\n"
 		. " * Auto-generated file. Do not edit manually.\n"
 		. " *\n"
@@ -930,7 +930,7 @@ function generate_supported_locales_class( array $locales, $output_file ) {
 	$content = "<?php\n"
 		. "/**\n"
 		. " * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>\n"
-		. " * SPDX-License-Identifier: GPL-3.0-or-later\n"
+		. " * SPDX-License" . "-Identifier: GPL-3.0-or-later\n"
 		. " *\n"
 		. " * Auto-generated file. Do not edit manually.\n"
 		. " *\n"

@@ -1,4 +1,8 @@
 {
+    "_comment": [
+        "SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>",
+        "SPDX-License-Identifier: GPL-3.0-or-later"
+    ],
     "generated_count": 84,
     "overridden_languages": {
         "fr": [

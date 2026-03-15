@@ -1,5 +1,8 @@
 <?php
 /**
+ * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Minimal Gettext stubs for Psalm static analysis.
  *
  * @package I18nly

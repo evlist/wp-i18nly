@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # Plural Specs Generation (Scaffold)
 
 This folder contains the future data pipeline for plural specs.
