@@ -72,5 +72,6 @@ function i18nly_bootstrap() {
 	add_action( 'admin_menu', array( $settings_page, 'register_menu' ) );
 	add_action( 'admin_init', array( $settings_page, 'register_settings' ) );
 	add_action( 'admin_post_i18nly_test_deepl_connection', array( $settings_page, 'handle_test_connection' ) );
+	add_action( 'admin_post_i18nly_clear_deepl_api_key', array( $settings_page, 'handle_clear_api_key' ) );
 }
 add_action( 'plugins_loaded', 'i18nly_bootstrap' );
