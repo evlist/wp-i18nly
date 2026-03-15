@@ -8,7 +8,7 @@ Stable tag: 0.1.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-A workflow management plugin for WordPress internationalization.
+Because translating a plugin in WordPress should be as simple as writing a blog post.
 
 == Description ==
 
