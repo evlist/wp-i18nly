@@ -45,4 +45,4 @@ At this stage, interfaces, internal services, and workflows may evolve between i
 3. Open the plugin entries from the WordPress admin sidebar to explore the currently available screens.
 
 ---
-*I18nly — Streamlining WordPress Localization.*
+*I18nly — Because translating a plugin in WordPress should be as simple as writing a blog post.*

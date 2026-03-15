@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Plugin Name: I18nly
- * Description: Workflow management tool for WordPress internationalization.
+ * Description: Because translating a plugin in WordPress should be as simple as writing a blog post.
  * Version: 0.1.0
  * Requires at least: 6.6
  * Requires PHP: 8.1
@@ -67,5 +67,10 @@ function i18nly_bootstrap() {
 
 	$admin_page = new \WP_I18nly\Admin\AdminPage();
 	$admin_page->register();
+
+	$settings_page = new \WP_I18nly\Admin\TranslationSettingsPage();
+	add_action( 'admin_menu', array( $settings_page, 'register_menu' ) );
+	add_action( 'admin_init', array( $settings_page, 'register_settings' ) );
+	add_action( 'admin_post_i18nly_test_deepl_connection', array( $settings_page, 'handle_test_connection' ) );
 }
 add_action( 'plugins_loaded', 'i18nly_bootstrap' );
