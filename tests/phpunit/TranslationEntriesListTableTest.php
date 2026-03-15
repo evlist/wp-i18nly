@@ -107,13 +107,13 @@ class TranslationEntriesListTableTest extends TestCase {
 		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
 			array(
 				array(
-					'source_entry_id' => 21,
-					'msgctxt'         => '',
-					'msgid'           => 'Hello',
-					'msgid_plural'    => '',
+					'source_entry_id'    => 21,
+					'msgctxt'            => '',
+					'msgid'              => 'Hello',
+					'msgid_plural'       => '',
 					'translator_comment' => 'Shown in dashboard header.',
-					'status'          => 'active',
-					'translations'    => array(
+					'status'             => 'active',
+					'translations'       => array(
 						array(
 							'form_index'  => 0,
 							'translation' => 'Bonjour',
@@ -198,5 +198,4 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'value="%s article"', $html );
 		$this->assertStringContainsString( 'value="%s articles"', $html );
 	}
-
 }
