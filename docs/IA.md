@@ -258,6 +258,7 @@ The plugin runtime now uses a single Composer PSR-4 autoloader.
 - namespace root: `WP_I18nly\\`,
 - namespace path: `plugin/includes/WP_I18nly/`,
 - legacy custom `spl_autoload_register` loader has been removed,
+
 - classmap fallback has been removed.
 
 ### Composer Configuration
@@ -298,6 +299,99 @@ phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
 - use PSR-4 class/file naming (for example `FooBar.php` for `WP_I18nly\\FooBar`),
 - avoid reintroducing legacy `I18nly_*` class names for runtime code,
 - keep tests updated to require or reference the namespaced classes.
+
+## AI Translation Integration (API Key, DeepL-first)
+
+### Product Decision
+
+The next AI translation increment targets **API-key based integration** with a
+single provider first: **DeepL API**.
+
+Rationale:
+
+- low implementation risk for a first production-capable slice,
+- good cost predictability for small/medium plugin translation volumes,
+- clear path to incremental generalization after one stable provider is live.
+
+This is intentionally **not** a super-set abstraction for all providers yet.
+
+### Scope (V1)
+
+- user enters a DeepL API key in plugin settings,
+- plugin validates key/connectivity via a lightweight endpoint call,
+- plugin can request translations for one entry first, then small batches,
+- translations are returned into existing translation entry UI.
+
+Out of scope for V1:
+
+- multi-provider orchestration,
+- routing/fallback between providers,
+- advanced prompt templates for generic LLMs,
+- background queue/workers.
+
+### Domain Contract (DeepL-first)
+
+Introduce one application-facing service contract dedicated to current needs
+without over-abstracting:
+
+- `translate_item(...)` for one singular/plural form,
+- `translate_batch(...)` for selected rows/forms,
+- `validate_credentials(...)` for settings page test,
+- `estimate_characters(...)` for user-facing cost transparency.
+
+The request payload should carry:
+
+- source locale,
+- target locale,
+- source text,
+- entry identifier and form index,
+- optional context (`msgctxt`) when available.
+
+The result payload should carry:
+
+- translated text,
+- item identifiers to map back to UI rows,
+- provider warnings/errors in a normalized shape.
+
+### XP Delivery Plan (Small Vertical Slices)
+
+1. **Settings + key validation**
+	- Add secure storage for DeepL key.
+	- Add "Test connection" action.
+
+2. **Single-item translation action**
+	- Translate one selected form from edit screen.
+	- Write result back to the corresponding input only.
+
+3. **Plural-aware handling**
+	- Ensure form indexes remain stable for plural entries.
+	- Prevent cross-form overwrite.
+
+4. **Small batch translation**
+	- Translate selected rows/forms.
+	- Return per-item success/error report.
+
+5. **Safety checks**
+	- Placeholder integrity (`%s`, `%d`, etc.).
+	- HTML/tag preservation checks.
+	- Reject/flag unsafe outputs per row.
+
+6. **Cost visibility**
+	- Display estimated source-character volume before submit.
+	- Keep behavior transparent for low-volume users.
+
+### UX and Compliance Constraints
+
+- Keep API key optional: no mandatory AI onboarding.
+- Do not store keys in source control or export artifacts.
+- Keep all comments/docs in English.
+- Keep WordPress standards and REUSE compliance.
+
+### Future Generalization Path
+
+After DeepL V1 is stable, generalize by extracting a provider-agnostic
+interface from real usage points (not from speculation), then add a second
+provider to validate abstraction quality.
 
 ## 15) Slice 3 Decomposition Direction (Admin)
 
