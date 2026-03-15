@@ -24,9 +24,9 @@ class LanguageOptionsProvider {
 	 */
 	public function get_target_language_options( $source_locale ) {
 		$source_locale_key = $this->normalize_locale_key( $source_locale );
-		$all_translations = array();
-		$ordered_options  = array();
-		$supported_labels = array();
+		$all_translations  = array();
+		$ordered_options   = array();
+		$supported_labels  = array();
 
 		if ( ! function_exists( 'wp_get_available_translations' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/translation-install.php';

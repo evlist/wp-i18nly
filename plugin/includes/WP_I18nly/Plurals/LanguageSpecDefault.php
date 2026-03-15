@@ -17,6 +17,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class LanguageSpecDefault implements LanguageSpecProvider {
 	/**
+	 * Returns default fallback language spec.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public static function get_spec() {

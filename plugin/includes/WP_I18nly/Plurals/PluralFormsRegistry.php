@@ -224,7 +224,7 @@ class PluralFormsRegistry {
 					'label'   => $label,
 					'tooltip' => $tooltip,
 				);
-				$index++;
+				++$index;
 			}
 		}
 
@@ -311,11 +311,11 @@ class PluralFormsRegistry {
 		$value = self::parse_plural_or( $tokens, $position, $n );
 
 		if ( isset( $tokens[ $position ] ) && '?' === $tokens[ $position ] ) {
-			$position++;
+			++$position;
 			$when_true = self::parse_plural_conditional( $tokens, $position, $n );
 
 			if ( isset( $tokens[ $position ] ) && ':' === $tokens[ $position ] ) {
-				$position++;
+				++$position;
 			}
 
 			$when_false = self::parse_plural_conditional( $tokens, $position, $n );
@@ -338,7 +338,7 @@ class PluralFormsRegistry {
 		$value = self::parse_plural_and( $tokens, $position, $n );
 
 		while ( isset( $tokens[ $position ] ) && '||' === $tokens[ $position ] ) {
-			$position++;
+			++$position;
 			$rhs   = self::parse_plural_and( $tokens, $position, $n );
 			$value = ( 0 !== (int) $value || 0 !== (int) $rhs ) ? 1 : 0;
 		}
@@ -358,7 +358,7 @@ class PluralFormsRegistry {
 		$value = self::parse_plural_equality( $tokens, $position, $n );
 
 		while ( isset( $tokens[ $position ] ) && '&&' === $tokens[ $position ] ) {
-			$position++;
+			++$position;
 			$rhs   = self::parse_plural_equality( $tokens, $position, $n );
 			$value = ( 0 !== (int) $value && 0 !== (int) $rhs ) ? 1 : 0;
 		}
@@ -379,7 +379,7 @@ class PluralFormsRegistry {
 
 		while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '==', '!=' ), true ) ) {
 			$operator = $tokens[ $position ];
-			$position++;
+			++$position;
 			$rhs = self::parse_plural_relational( $tokens, $position, $n );
 
 			if ( '==' === $operator ) {
@@ -405,7 +405,7 @@ class PluralFormsRegistry {
 
 		while ( isset( $tokens[ $position ] ) && in_array( $tokens[ $position ], array( '<', '<=', '>', '>=' ), true ) ) {
 			$operator = $tokens[ $position ];
-			$position++;
+			++$position;
 			$rhs = self::parse_plural_modulo( $tokens, $position, $n );
 
 			switch ( $operator ) {
@@ -439,7 +439,7 @@ class PluralFormsRegistry {
 		$value = self::parse_plural_primary( $tokens, $position, $n );
 
 		while ( isset( $tokens[ $position ] ) && '%' === $tokens[ $position ] ) {
-			$position++;
+			++$position;
 			$rhs = self::parse_plural_primary( $tokens, $position, $n );
 
 			$divisor = (int) $rhs;
@@ -465,27 +465,27 @@ class PluralFormsRegistry {
 		$token = $tokens[ $position ];
 
 		if ( 'n' === $token ) {
-			$position++;
+			++$position;
 			return (int) $n;
 		}
 
 		if ( preg_match( '/^\d+$/', $token ) ) {
-			$position++;
+			++$position;
 			return (int) $token;
 		}
 
 		if ( '(' === $token ) {
-			$position++;
+			++$position;
 			$value = self::parse_plural_conditional( $tokens, $position, $n );
 
 			if ( isset( $tokens[ $position ] ) && ')' === $tokens[ $position ] ) {
-				$position++;
+				++$position;
 			}
 
 			return (int) $value;
 		}
 
-		$position++;
+		++$position;
 
 		return 0;
 	}

@@ -323,13 +323,13 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			return esc_html( $singular );
 		}
 
-		$source_forms      = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'en_US' );
-		$singular_form     = ( isset( $source_forms[0] ) && is_array( $source_forms[0] ) ) ? $source_forms[0] : array();
-		$plural_form       = ( isset( $source_forms[1] ) && is_array( $source_forms[1] ) ) ? $source_forms[1] : array();
-		$singular_symbol   = isset( $singular_form['marker'] ) ? (string) $singular_form['marker'] : '';
-		$singular_tooltip  = isset( $singular_form['tooltip'] ) ? (string) $singular_form['tooltip'] : '';
-		$plural_symbol     = isset( $plural_form['marker'] ) ? (string) $plural_form['marker'] : '';
-		$plural_tooltip    = isset( $plural_form['tooltip'] ) ? (string) $plural_form['tooltip'] : '';
+		$source_forms     = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'en_US' );
+		$singular_form    = ( isset( $source_forms[0] ) && is_array( $source_forms[0] ) ) ? $source_forms[0] : array();
+		$plural_form      = ( isset( $source_forms[1] ) && is_array( $source_forms[1] ) ) ? $source_forms[1] : array();
+		$singular_symbol  = isset( $singular_form['marker'] ) ? (string) $singular_form['marker'] : '';
+		$singular_tooltip = isset( $singular_form['tooltip'] ) ? (string) $singular_form['tooltip'] : '';
+		$plural_symbol    = isset( $plural_form['marker'] ) ? (string) $plural_form['marker'] : '';
+		$plural_tooltip   = isset( $plural_form['tooltip'] ) ? (string) $plural_form['tooltip'] : '';
 
 		$singular_marker = $this->render_form_marker(
 			$singular_symbol,

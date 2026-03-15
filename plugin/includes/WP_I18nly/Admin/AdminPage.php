@@ -107,7 +107,6 @@ class AdminPage {
 	 * @param array<string, array<int, string>> $messages Current messages.
 	 * @return array<string, array<int, string>>
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function filter_translation_post_updated_messages( array $messages ) {
 		return $this->get_translation_messages()->filter_post_updated_messages( $messages, self::POST_TYPE );
 	}
@@ -119,7 +118,6 @@ class AdminPage {
 	 * @param array<string, int>                   $bulk_counts Item counts.
 	 * @return array<string, array<string, string>>
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function filter_translation_bulk_updated_messages( array $bulk_messages, array $bulk_counts ) {
 		return $this->get_translation_messages()->filter_bulk_updated_messages( $bulk_messages, $bulk_counts, self::POST_TYPE );
 	}
@@ -129,7 +127,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function register_translation_meta_box() {
 		$this->get_translation_edit_controller()->register_translation_meta_box(
 			self::POST_TYPE,
@@ -168,7 +165,6 @@ class AdminPage {
 	 * @param bool   $update Whether this is an update.
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function save_translation_meta_box( $post_id, $post, $update ) {
 		$this->get_translation_edit_controller()->handle_save_translation_meta_box( $post_id, $post, $update );
 	}
@@ -285,7 +281,6 @@ class AdminPage {
 	 * @param array<string, string> $columns Current columns.
 	 * @return array<string, string>
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function filter_translation_list_columns( array $columns ) {
 		return $this->get_list_columns()->filter_columns( $columns );
 	}
@@ -297,7 +292,6 @@ class AdminPage {
 	 * @param int    $post_id Translation post ID.
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function render_translation_list_column( $column_name, $post_id ) {
 		echo esc_html( $this->get_list_columns()->get_column_value( $column_name, $post_id, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE ) );
 	}
@@ -308,7 +302,6 @@ class AdminPage {
 	 * @param array<string, string> $columns Current sortable columns.
 	 * @return array<string, string>
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function filter_translation_sortable_columns( array $columns ) {
 		return $this->get_list_columns()->filter_sortable_columns( $columns );
 	}
@@ -319,7 +312,6 @@ class AdminPage {
 	 * @param object $query Current query object.
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function apply_translation_sorting( $query ) {
 		$this->get_list_columns()->apply_sorting( $query, self::POST_TYPE, self::META_SOURCE_SLUG, self::META_TARGET_LANGUAGE );
 	}
@@ -329,7 +321,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function register_post_type() {
 		$this->get_admin_registration()->register_post_type();
 	}
@@ -339,7 +330,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function register_menu() {
 		$this->get_admin_registration()->register_menu( self::LIST_SCREEN_SLUG, self::NEW_SCREEN_SLUG );
 	}
@@ -351,7 +341,6 @@ class AdminPage {
 	 * @param object                $post Current post object.
 	 * @return array<string, string>
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function filter_translation_row_actions( array $actions, $post ) {
 		return $this->get_list_columns()->filter_row_actions( $actions, $post, self::POST_TYPE );
 	}
@@ -385,7 +374,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function render_all_translations_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -400,7 +388,6 @@ class AdminPage {
 	 * @param string $hook_suffix Current admin page hook suffix.
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function render_translation_edit_pot_generation_script( $hook_suffix = '' ) {
 		$this->get_translation_edit_controller()->render_translation_edit_pot_generation_script(
 			$hook_suffix,
@@ -441,7 +428,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function ajax_generate_translation_pot() {
 		$this->get_translation_edit_controller()->ajax_generate_translation_pot();
 	}
@@ -451,7 +437,6 @@ class AdminPage {
 	 *
 	 * @return void
 	 */
-	/** @psalm-suppress PossiblyUnusedMethod WordPress callback. */
 	public function ajax_get_translation_entries_table() {
 		$this->get_translation_edit_controller()->ajax_get_translation_entries_table();
 	}

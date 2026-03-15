@@ -925,7 +925,7 @@ function generate_supported_locales_class( array $locales, $output_file ) {
 		exit( 1 );
 	}
 
-	$export_locales = var_export( $locales_for_export, true );
+	$export_locales = build_locales_array_php( $locales_for_export );
 
 	$content = "<?php\n"
 		. "/**\n"
@@ -938,6 +938,9 @@ function generate_supported_locales_class( array $locales, $output_file ) {
 		. " */\n\n"
 		. "namespace WP_I18nly\\Support;\n\n"
 		. "defined( 'ABSPATH' ) || exit;\n\n"
+		. "/**\n"
+		. " * Provides generated target locales supported by plural specs.\n"
+		. " */\n"
 		. "final class GeneratedTargetLocales {\n"
 		. "\t/**\n"
 		. "\t * Returns all target locales supported by generated plural specs.\n"
@@ -953,6 +956,28 @@ function generate_supported_locales_class( array $locales, $output_file ) {
 		fwrite( STDERR, "Cannot write supported locales file: {$output_file}\n" );
 		exit( 1 );
 	}
+}
+
+/**
+ * Builds a formatted PHP array literal for locale strings.
+ *
+ * @param array<int, string> $locales Locale list.
+ * @return string
+ */
+function build_locales_array_php( array $locales ) {
+	if ( empty( $locales ) ) {
+		return 'array()';
+	}
+
+	$lines = "array(\n";
+
+	foreach ( $locales as $locale ) {
+		$lines .= "\t\t\t'" . addslashes( (string) $locale ) . "',\n";
+	}
+
+	$lines .= "\t\t)";
+
+	return $lines;
 }
 
 /**
