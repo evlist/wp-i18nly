@@ -81,6 +81,18 @@ foreach ( $baseline as $locale => $spec ) {
 	$generated[ $normalized_locale ] = $final_spec;
 }
 
+// Build a global set of plural witnesses (one per form per locale), then
+// derive per-form witness lists for each locale from this shared set.
+$global_plural_witnesses = build_global_plural_witness_set( $generated, 500 );
+
+foreach ( $generated as $locale => $spec ) {
+	if ( ! is_string( $locale ) || ! is_array( $spec ) ) {
+		continue;
+	}
+
+	$generated[ $locale ]['forms'] = build_forms_with_examples_from_global_set( $spec, $global_plural_witnesses );
+}
+
 ksort( $generated );
 
 $wp_locales = resolve_wp_locales( $wp_locales_command );
@@ -167,6 +179,7 @@ if ( $dry_run ) {
 
 if ( '' !== $languages_dir ) {
 	generate_language_classes( $generated, $languages_dir );
+	run_phpcbf_on_generated_languages( $languages_dir );
 	fwrite( STDOUT, sprintf( 'Generated %d locale classes to %s' . PHP_EOL, count( $generated ), $languages_dir ) );
 }
 
@@ -240,13 +253,11 @@ function build_language_class_php( $class_name, array $spec ) {
 		. "\t * @return array<string, mixed>\n"
 		. "\t */\n"
 		. "\tpublic static function get_spec() {\n"
-		. "\t\t\$spec = array (\n"
-		. "  'nplurals' => {$nplurals},\n"
-		. "  'plural_expression' => {$plural_expression_export},\n"
-		. "  'forms' => \n"
-		. "  array (\n"
-		. "  ),\n"
-		. ");\n"
+		. "\t\t\$spec = array(\n"
+		. "\t\t\t'nplurals'          => {$nplurals},\n"
+		. "\t\t\t'plural_expression' => {$plural_expression_export},\n"
+		. "\t\t\t'forms'             => array(),\n"
+		. "\t\t);\n"
 		. "\n"
 		. $forms_assignments
 		. "\n"
@@ -268,6 +279,7 @@ function build_forms_assignments_php( array $forms ) {
 	foreach ( $forms as $value ) {
 		$label   = marker_from_index( $index );
 		$tooltip = is_string( $value ) ? $value : '';
+		$examples = array();
 
 		if ( is_array( $value ) ) {
 			if ( isset( $value['label'] ) && is_string( $value['label'] ) && '' !== trim( $value['label'] ) ) {
@@ -277,6 +289,18 @@ function build_forms_assignments_php( array $forms ) {
 			if ( isset( $value['tooltip'] ) && is_string( $value['tooltip'] ) && '' !== trim( $value['tooltip'] ) ) {
 				$tooltip = $value['tooltip'];
 			}
+
+			if ( isset( $value['examples'] ) && is_array( $value['examples'] ) ) {
+				$examples = array_values(
+					array_map(
+						'intval',
+						array_filter(
+							$value['examples'],
+							'is_numeric'
+						)
+					)
+				);
+			}
 		}
 
 		if ( '' === trim( $tooltip ) ) {
@@ -285,17 +309,41 @@ function build_forms_assignments_php( array $forms ) {
 
 		$label_export   = var_export( (string) $label, true );
 		$tooltip_export = var_export( (string) $tooltip, true );
+		if ( empty( $examples ) ) {
+			$examples[] = 0 === $index ? 1 : 2;
+		}
+
+		sort( $examples );
+		$examples = array_values( array_unique( $examples ) );
+		$examples_export = export_compact_int_array_php( $examples );
 
 		$lines .= "\t\t\$spec['forms'][] = array(\n";
 		$lines .= "\t\t\t/* translators: Short label identifying one plural form input in the translation editor. */\n";
 		$lines .= "\t\t\t'label'   => __( {$label_export}, 'i18nly' ),\n";
 		$lines .= "\t\t\t/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */\n";
 		$lines .= "\t\t\t'tooltip' => __( {$tooltip_export}, 'i18nly' ),\n";
+		$lines .= "\t\t\t'examples' => {$examples_export},\n";
 		$lines .= "\t\t);\n";
 		++$index;
 	}
 
 	return $lines;
+}
+
+/**
+ * Exports integer list as compact PHP array syntax.
+ *
+ * @param array<int, int> $values Integer values.
+ * @return string
+ */
+function export_compact_int_array_php( array $values ) {
+	$normalized = array_values( array_map( 'intval', $values ) );
+
+	if ( empty( $normalized ) ) {
+		return 'array()';
+	}
+
+	return 'array( ' . implode( ', ', array_map( 'strval', $normalized ) ) . ' )';
 }
 
 /**
@@ -410,6 +458,154 @@ function build_forms_from_nplurals( $nplurals, $plural_expression ) {
 	}
 
 	return $forms;
+}
+
+/**
+ * Builds one shared witness set with one sample integer per form/locale.
+ *
+ * @param array<string, array<string, mixed>> $generated Generated specs map.
+ * @param int                                 $max_n Max integer to probe.
+ * @return array<int, int>
+ */
+function build_global_plural_witness_set( array $generated, $max_n ) {
+	$set = array();
+
+	foreach ( $generated as $spec ) {
+		if ( ! is_array( $spec ) ) {
+			continue;
+		}
+
+		$nplurals          = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 1;
+		$plural_expression = isset( $spec['plural_expression'] ) ? (string) $spec['plural_expression'] : '(n != 1)';
+		$examples          = collect_plural_examples_by_index( $plural_expression, $nplurals, (int) $max_n, 1 );
+
+		foreach ( $examples as $entry ) {
+			if ( ! is_array( $entry ) || empty( $entry['examples'] ) || ! is_array( $entry['examples'] ) ) {
+				continue;
+			}
+
+			$first = (int) reset( $entry['examples'] );
+			$set[ $first ] = $first;
+		}
+	}
+
+	ksort( $set );
+
+	return array_values( $set );
+}
+
+/**
+ * Builds per-form witness lists from a global witness set.
+ *
+ * @param array<string, mixed> $spec Locale spec.
+ * @param array<int, int>      $global_witnesses Shared witnesses.
+ * @return array<int, array<int, int>>
+ */
+function build_form_examples_from_global_set( array $spec, array $global_witnesses ) {
+	$nplurals          = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 1;
+	$plural_expression = isset( $spec['plural_expression'] ) ? (string) $spec['plural_expression'] : '(n != 1)';
+	$form_examples     = array();
+
+	for ( $form_index = 0; $form_index < $nplurals; $form_index++ ) {
+		$form_examples[ $form_index ] = array();
+	}
+
+	foreach ( $global_witnesses as $witness ) {
+		$n          = (int) $witness;
+		$form_index = evaluate_plural_expression_index( $plural_expression, $n, $nplurals );
+
+		if ( ! isset( $form_examples[ $form_index ] ) ) {
+			continue;
+		}
+
+		$form_examples[ $form_index ][] = $n;
+	}
+
+	foreach ( $form_examples as $form_index => $examples ) {
+		if ( ! empty( $examples ) ) {
+			sort( $examples );
+			$form_examples[ $form_index ] = array_values( array_unique( $examples ) );
+			continue;
+		}
+
+		$local_examples = collect_plural_examples_by_index( $plural_expression, $nplurals, 500, 1 );
+		$fallback       = isset( $local_examples[ $form_index ]['examples'][0] )
+			? (int) $local_examples[ $form_index ]['examples'][0]
+			: 0;
+
+		$form_examples[ $form_index ] = array( $fallback );
+	}
+
+	return $form_examples;
+}
+
+/**
+ * Builds forms with embedded examples from one global witness set.
+ *
+ * @param array<string, mixed> $spec Locale spec.
+ * @param array<int, int>      $global_witnesses Shared witnesses.
+ * @return array<int, array<string, mixed>>
+ */
+function build_forms_with_examples_from_global_set( array $spec, array $global_witnesses ) {
+	$forms         = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? array_values( $spec['forms'] ) : array();
+	$form_examples = build_form_examples_from_global_set( $spec, $global_witnesses );
+
+	foreach ( $forms as $index => $entry ) {
+		$examples = isset( $form_examples[ $index ] ) && is_array( $form_examples[ $index ] )
+			? array_values( array_map( 'intval', $form_examples[ $index ] ) )
+			: array( 0 === $index ? 1 : 2 );
+
+		if ( is_array( $entry ) ) {
+			$entry['examples'] = $examples;
+			$forms[ $index ]   = $entry;
+			continue;
+		}
+
+		$forms[ $index ] = array(
+			'label'    => marker_from_index( (int) $index ),
+			'tooltip'  => is_string( $entry ) ? $entry : 'other',
+			'examples' => $examples,
+		);
+	}
+
+	return $forms;
+}
+
+/**
+ * Runs phpcbf on generated language classes for clean formatting.
+ *
+ * @param string $languages_dir Generated languages directory.
+ * @return void
+ */
+function run_phpcbf_on_generated_languages( $languages_dir ) {
+	$phpcbf_bin = trim( (string) shell_exec( 'command -v phpcbf 2>/dev/null' ) );
+
+	if ( '' === $phpcbf_bin ) {
+		return;
+	}
+
+	$command = sprintf(
+		'%s --standard=PSR12 %s 2>&1',
+		escapeshellarg( $phpcbf_bin ),
+		escapeshellarg( (string) $languages_dir )
+	);
+
+	$last_line = null;
+	$output    = array();
+	$status    = 0;
+
+	exec( $command, $output, $status );
+
+	if ( ! empty( $output ) ) {
+		$last_line = (string) end( $output );
+	}
+
+	if ( 0 !== $status && 1 !== $status ) {
+		fwrite( STDERR, "Warning: phpcbf failed on generated language classes." . PHP_EOL );
+		if ( is_string( $last_line ) && '' !== $last_line ) {
+			fwrite( STDERR, $last_line . PHP_EOL );
+		}
+	}
 }
 
 /**

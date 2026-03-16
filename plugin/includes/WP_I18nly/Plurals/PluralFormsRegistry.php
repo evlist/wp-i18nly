@@ -29,11 +29,13 @@ class PluralFormsRegistry {
 				'marker'  => 'a',
 				'label'   => 'a',
 				'tooltip' => 'One',
+				'examples' => array( 1 ),
 			),
 			array(
 				'marker'  => 'b',
 				'label'   => 'b',
-				'tooltip' => 'Other values',
+				'tooltip' => 'Other than one',
+				'examples' => array( 0, 2 ),
 			),
 		),
 	);
@@ -123,6 +125,40 @@ class PluralFormsRegistry {
 	}
 
 	/**
+	 * Returns ordered witness examples for each plural form.
+	 *
+	 * @param string $locale Target locale.
+	 * @return array<int, array<int, int>>
+	 */
+	public static function get_form_examples_for_locale( $locale ) {
+		$spec     = self::get_spec_for_locale( $locale );
+		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 1;
+		$forms    = isset( $spec['forms'] ) && is_array( $spec['forms'] ) ? $spec['forms'] : array();
+		$raw      = self::extract_form_examples_from_forms( $forms, $nplurals );
+
+		if ( empty( $raw ) && isset( $spec['form_examples'] ) && is_array( $spec['form_examples'] ) ) {
+			$raw = self::normalize_form_examples( $spec['form_examples'], $nplurals );
+		}
+
+		$result   = array();
+
+		for ( $index = 0; $index < $nplurals; $index++ ) {
+			$examples = isset( $raw[ $index ] ) && is_array( $raw[ $index ] )
+				? array_values( array_map( 'intval', $raw[ $index ] ) )
+				: array();
+
+			if ( empty( $examples ) ) {
+				$fallback   = ( 0 === $index ) ? 1 : 2;
+				$examples[] = $fallback;
+			}
+
+			$result[ $index ] = array_values( array_unique( $examples ) );
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Returns ordered form metadata for one locale.
 	 *
 	 * @param string $locale Target locale.
@@ -199,6 +235,9 @@ class PluralFormsRegistry {
 	private static function normalize_spec_for_ui( array $spec ) {
 		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
 		$forms    = array();
+		$raw_form_examples = isset( $spec['form_examples'] ) && is_array( $spec['form_examples'] )
+			? self::normalize_form_examples( $spec['form_examples'], $nplurals )
+			: array();
 
 		if ( isset( $spec['forms'] ) && is_array( $spec['forms'] ) ) {
 			$index = 0;
@@ -206,6 +245,9 @@ class PluralFormsRegistry {
 				$marker  = self::marker_from_index( $index );
 				$label   = $marker;
 				$tooltip = 'other';
+				$examples = isset( $raw_form_examples[ $index ] ) && is_array( $raw_form_examples[ $index ] )
+					? $raw_form_examples[ $index ]
+					: array( 0 === $index ? 1 : 2 );
 
 				if ( is_array( $entry ) ) {
 					if ( isset( $entry['label'] ) && '' !== trim( (string) $entry['label'] ) ) {
@@ -215,6 +257,9 @@ class PluralFormsRegistry {
 					if ( isset( $entry['tooltip'] ) && '' !== trim( (string) $entry['tooltip'] ) ) {
 						$tooltip = (string) $entry['tooltip'];
 					}
+					if ( isset( $entry['examples'] ) && is_array( $entry['examples'] ) ) {
+						$examples = array_values( array_map( 'intval', $entry['examples'] ) );
+					}
 				} elseif ( is_string( $entry ) ) {
 					$tooltip = trim( $entry ) !== '' ? $entry : 'other';
 				}
@@ -223,6 +268,7 @@ class PluralFormsRegistry {
 					'marker'  => $marker,
 					'label'   => $label,
 					'tooltip' => $tooltip,
+					'examples' => array_values( array_unique( $examples ) ),
 				);
 				++$index;
 			}
@@ -234,6 +280,7 @@ class PluralFormsRegistry {
 				'marker'  => $marker,
 				'label'   => $marker,
 				'tooltip' => __( 'other', 'i18nly' ),
+				'examples' => array( 0 === $index ? 1 : 2 ),
 			);
 		}
 
@@ -245,6 +292,60 @@ class PluralFormsRegistry {
 		}
 
 		return $spec;
+	}
+
+	/**
+	 * Extracts per-form examples from normalized forms.
+	 *
+	 * @param array<int, mixed> $forms Normalized forms.
+	 * @param int               $nplurals Number of plural forms.
+	 * @return array<int, array<int, int>>
+	 */
+	private static function extract_form_examples_from_forms( array $forms, $nplurals ) {
+		$normalized = array();
+		$count      = max( 1, (int) $nplurals );
+
+		for ( $index = 0; $index < $count; $index++ ) {
+			$examples = isset( $forms[ $index ] ) && is_array( $forms[ $index ] ) && isset( $forms[ $index ]['examples'] ) && is_array( $forms[ $index ]['examples'] )
+				? array_values( array_map( 'intval', $forms[ $index ]['examples'] ) )
+				: array();
+
+			if ( empty( $examples ) ) {
+				$examples = array( 0 === $index ? 1 : 2 );
+			}
+
+			sort( $examples );
+			$normalized[ $index ] = array_values( array_unique( $examples ) );
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Normalizes per-form examples list.
+	 *
+	 * @param array<int|string, mixed> $form_examples Raw examples list.
+	 * @param int                      $nplurals Number of plural forms.
+	 * @return array<int, array<int, int>>
+	 */
+	private static function normalize_form_examples( array $form_examples, $nplurals ) {
+		$normalized = array();
+		$count      = max( 1, (int) $nplurals );
+
+		for ( $index = 0; $index < $count; $index++ ) {
+			$examples = isset( $form_examples[ $index ] ) && is_array( $form_examples[ $index ] )
+				? array_values( array_map( 'intval', $form_examples[ $index ] ) )
+				: array();
+
+			if ( empty( $examples ) ) {
+				$examples = array( 0 === $index ? 1 : 2 );
+			}
+
+			sort( $examples );
+			$normalized[ $index ] = array_values( array_unique( $examples ) );
+		}
+
+		return $normalized;
 	}
 
 	/**

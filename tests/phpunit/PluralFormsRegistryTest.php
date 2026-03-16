@@ -22,21 +22,20 @@ class PluralFormsRegistryTest extends TestCase {
 	public function test_registry_falls_back_to_default_spec_for_unknown_locale() {
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'xx_XX' ) );
 		$this->assertSame( array( 'a', 'b' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( 'xx_XX' ) );
-		$this->assertSame(
-			array(
-				array(
-					'marker'  => 'a',
-					'label'   => 'a',
-					'tooltip' => 'One',
-				),
-				array(
-					'marker'  => 'b',
-					'label'   => 'b',
-					'tooltip' => 'Other than one',
-				),
-			),
-			\WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'xx_XX' )
-		);
+
+		$forms = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'xx_XX' );
+		$this->assertCount( 2, $forms );
+		$this->assertSame( 'a', $forms[0]['marker'] );
+		$this->assertSame( 'a', $forms[0]['label'] );
+		$this->assertNotSame( '', trim( (string) $forms[0]['tooltip'] ) );
+		$this->assertArrayHasKey( 'examples', $forms[0] );
+		$this->assertContains( 1, $forms[0]['examples'] );
+
+		$this->assertSame( 'b', $forms[1]['marker'] );
+		$this->assertSame( 'b', $forms[1]['label'] );
+		$this->assertNotSame( '', trim( (string) $forms[1]['tooltip'] ) );
+		$this->assertArrayHasKey( 'examples', $forms[1] );
+		$this->assertContains( 2, $forms[1]['examples'] );
 	}
 
 	/**
@@ -70,21 +69,26 @@ class PluralFormsRegistryTest extends TestCase {
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'a', 'b' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( '0, 1', 'other' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( 'fr_FR' ) );
-		$this->assertSame(
-			array(
-				array(
-					'marker'  => 'a',
-					'label'   => 'a',
-					'tooltip' => '0, 1',
-				),
-				array(
-					'marker'  => 'b',
-					'label'   => 'b',
-					'tooltip' => 'other',
-				),
-			),
-			\WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'fr_FR' )
-		);
+
+		$forms = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( 'fr_FR' );
+		$this->assertCount( 2, $forms );
+		$this->assertSame( 'a', $forms[0]['marker'] );
+		$this->assertSame( 'a', $forms[0]['label'] );
+		$this->assertSame( '0, 1', $forms[0]['tooltip'] );
+		$this->assertArrayHasKey( 'examples', $forms[0] );
+		$this->assertContains( 1, $forms[0]['examples'] );
+
+		$this->assertSame( 'b', $forms[1]['marker'] );
+		$this->assertSame( 'b', $forms[1]['label'] );
+		$this->assertSame( 'other', $forms[1]['tooltip'] );
+		$this->assertArrayHasKey( 'examples', $forms[1] );
+		$this->assertContains( 2, $forms[1]['examples'] );
+
+		$examples = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_examples_for_locale( 'fr_FR' );
+		$this->assertArrayHasKey( 0, $examples );
+		$this->assertArrayHasKey( 1, $examples );
+		$this->assertContains( 1, $examples[0] );
+		$this->assertContains( 2, $examples[1] );
 	}
 
 	/**
