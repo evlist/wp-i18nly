@@ -322,6 +322,28 @@ This is intentionally **not** a super-set abstraction for all providers yet.
 - plugin can request translations for one entry first, then small batches,
 - translations are returned into existing translation entry UI.
 
+### Translation Quality State (Review Token)
+
+For AI-assisted output, do not use a binary accept/reject model.
+
+Use a persisted review token with explicit states so AI output can remain visible
+while still surfacing risk and review needs.
+
+Initial state vocabulary:
+
+- `ai_draft_ok`: generated and technical checks passed,
+- `needs_review_placeholders`: placeholder integrity issue detected,
+- `needs_review_plural_mapping`: plural mapping used heuristic path,
+- `needs_review_ambiguity`: low-context or low-confidence wording,
+- `human_verified`: validated by a human reviewer,
+- `human_edited`: modified by human after AI suggestion.
+
+Design rule:
+
+- never silently discard AI output,
+- always attach state and reason flags,
+- keep human review as the final authority.
+
 Out of scope for V1:
 
 - multi-provider orchestration,
@@ -347,11 +369,63 @@ The request payload should carry:
 - entry identifier and form index,
 - optional context (`msgctxt`) when available.
 
+Recommended context additions for better MT quality:
+
+- translator comment when available,
+- UI/runtime usage hint (for example admin notice/error),
+- placeholder guidance metadata.
+
 The result payload should carry:
 
 - translated text,
 - item identifiers to map back to UI rows,
 - provider warnings/errors in a normalized shape.
+
+It should also carry:
+
+- review state token,
+- machine-readable validation flags.
+
+### Placeholder Safety Policy
+
+Placeholder checks must be strict but non-blocking for UX:
+
+1. mask placeholders before external translation call,
+2. restore placeholders after translation,
+3. validate count/order/types,
+4. if mismatch: keep suggestion but mark `needs_review_placeholders`.
+
+This policy replaces hard rejection for initial slices.
+
+### Plural Strategy (Current Constraint: Source Locale Is English)
+
+Current simplification accepted for V1:
+
+- source locale is fixed to English,
+- source has two forms (`msgid` singular and `msgid_plural` plural).
+
+For each target plural form:
+
+1. take the first representative example value for that target form,
+2. if the example value is `1`, use source singular form,
+3. otherwise, use source plural form,
+4. request translation for that target form using this mapped source form,
+5. store result with review metadata.
+
+This heuristic is intentionally scoped to EN→* and should be generalized later
+if source locale becomes configurable.
+
+### Plural Metadata Generation Requirements
+
+Generated plural classes should expose structured metadata usable by the AI
+translation flow, not only human-readable tooltips.
+
+In addition to labels/markers/tooltips, generation should provide:
+
+- per-target-form representative examples as arrays,
+- deterministic form indexing contract for runtime use.
+
+These arrays are the runtime input for the EN source-form mapping heuristic.
 
 ### XP Delivery Plan (Small Vertical Slices)
 
@@ -365,16 +439,17 @@ The result payload should carry:
 
 3. **Plural-aware handling**
 	- Ensure form indexes remain stable for plural entries.
+	- Generate each target plural form using EN-source heuristic (`n=1` -> source singular, otherwise source plural).
 	- Prevent cross-form overwrite.
 
 4. **Small batch translation**
 	- Translate selected rows/forms.
-	- Return per-item success/error report.
+	- Return per-item success/error report and review state token.
 
 5. **Safety checks**
 	- Placeholder integrity (`%s`, `%d`, etc.).
 	- HTML/tag preservation checks.
-	- Reject/flag unsafe outputs per row.
+	- Flag unsafe outputs per row via review token (no hard reject in V1).
 
 6. **Cost visibility**
 	- Display estimated source-character volume before submit.
