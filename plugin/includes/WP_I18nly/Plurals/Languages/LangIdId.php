@@ -13,36 +13,35 @@ namespace WP_I18nly\Plurals\Languages;
 
 use WP_I18nly\Plurals\LanguageSpecProvider;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
-final class LangIdId implements LanguageSpecProvider
-{
-    /**
-     * @return array<string, mixed>
-     */
-    public static function get_spec()
-    {
-        $spec = array(
-            'nplurals'          => 2,
-            'plural_expression' => '(n > 1)',
-            'forms'             => array(),
-        );
+final class LangIdId implements LanguageSpecProvider {
 
-        $spec['forms'][] = array(
-            /* translators: Short label identifying one plural form input in the translation editor. */
-            'label'   => __('a', 'i18nly'),
-            /* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
-            'tooltip' => __('0, 1', 'i18nly'),
-            'examples' => array( 0, 1 ),
-        );
-        $spec['forms'][] = array(
-            /* translators: Short label identifying one plural form input in the translation editor. */
-            'label'   => __('b', 'i18nly'),
-            /* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
-            'tooltip' => __('other', 'i18nly'),
-            'examples' => array( 2, 3, 4, 7, 8, 11, 20, 21, 100 ),
-        );
+	/**
+	 * @return array<string, mixed>
+	 */
+	public static function get_spec() {
+		$spec = array(
+			'nplurals'          => 2,
+			'plural_expression' => '(n > 1)',
+			'forms'             => array(),
+		);
 
-        return $spec;
-    }
+		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
+			'label'    => __( 'a', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
+			'tooltip'  => __( '0, 1', 'i18nly' ),
+			'examples' => array( 0, 1 ),
+		);
+		$spec['forms'][] = array(
+			/* translators: Short label identifying one plural form input in the translation editor. */
+			'label'    => __( 'b', 'i18nly' ),
+			/* translators: Tooltip explaining when this plural form input should be used in the translation editor. */
+			'tooltip'  => __( 'other', 'i18nly' ),
+			'examples' => array( 2, 3, 4, 7, 8, 11, 20, 21, 100 ),
+		);
+
+		return $spec;
+	}
 }

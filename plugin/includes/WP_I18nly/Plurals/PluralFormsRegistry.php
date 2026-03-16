@@ -26,15 +26,15 @@ class PluralFormsRegistry {
 		'plural_expression' => '(n != 1)',
 		'forms'             => array(
 			array(
-				'marker'  => 'a',
-				'label'   => 'a',
-				'tooltip' => 'One',
+				'marker'   => 'a',
+				'label'    => 'a',
+				'tooltip'  => 'One',
 				'examples' => array( 1 ),
 			),
 			array(
-				'marker'  => 'b',
-				'label'   => 'b',
-				'tooltip' => 'Other than one',
+				'marker'   => 'b',
+				'label'    => 'b',
+				'tooltip'  => 'Other than one',
 				'examples' => array( 0, 2 ),
 			),
 		),
@@ -140,7 +140,7 @@ class PluralFormsRegistry {
 			$raw = self::normalize_form_examples( $spec['form_examples'], $nplurals );
 		}
 
-		$result   = array();
+		$result = array();
 
 		for ( $index = 0; $index < $nplurals; $index++ ) {
 			$examples = isset( $raw[ $index ] ) && is_array( $raw[ $index ] )
@@ -233,8 +233,8 @@ class PluralFormsRegistry {
 	 * @return array<string, mixed>
 	 */
 	private static function normalize_spec_for_ui( array $spec ) {
-		$nplurals = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
-		$forms    = array();
+		$nplurals          = isset( $spec['nplurals'] ) ? max( 1, (int) $spec['nplurals'] ) : 2;
+		$forms             = array();
 		$raw_form_examples = isset( $spec['form_examples'] ) && is_array( $spec['form_examples'] )
 			? self::normalize_form_examples( $spec['form_examples'], $nplurals )
 			: array();
@@ -242,9 +242,9 @@ class PluralFormsRegistry {
 		if ( isset( $spec['forms'] ) && is_array( $spec['forms'] ) ) {
 			$index = 0;
 			foreach ( $spec['forms'] as $entry ) {
-				$marker  = self::marker_from_index( $index );
-				$label   = $marker;
-				$tooltip = 'other';
+				$marker   = self::marker_from_index( $index );
+				$label    = $marker;
+				$tooltip  = 'other';
 				$examples = isset( $raw_form_examples[ $index ] ) && is_array( $raw_form_examples[ $index ] )
 					? $raw_form_examples[ $index ]
 					: array( 0 === $index ? 1 : 2 );
@@ -265,9 +265,9 @@ class PluralFormsRegistry {
 				}
 
 				$forms[] = array(
-					'marker'  => $marker,
-					'label'   => $label,
-					'tooltip' => $tooltip,
+					'marker'   => $marker,
+					'label'    => $label,
+					'tooltip'  => $tooltip,
 					'examples' => array_values( array_unique( $examples ) ),
 				);
 				++$index;
@@ -277,9 +277,9 @@ class PluralFormsRegistry {
 		for ( $index = count( $forms ); $index < $nplurals; $index++ ) {
 			$marker  = self::marker_from_index( $index );
 			$forms[] = array(
-				'marker'  => $marker,
-				'label'   => $marker,
-				'tooltip' => __( 'other', 'i18nly' ),
+				'marker'   => $marker,
+				'label'    => $marker,
+				'tooltip'  => __( 'other', 'i18nly' ),
 				'examples' => array( 0 === $index ? 1 : 2 ),
 			);
 		}
