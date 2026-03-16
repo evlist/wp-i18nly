@@ -234,4 +234,38 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'i18nly-entry-status--obsolete', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-text="Hello"', $html );
 	}
+
+	/**
+	 * Renders one AI translate button bound to each translation input.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_renders_ai_translate_button_with_input_binding() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 51,
+					'msgctxt'         => '',
+					'msgid'           => 'Translate me',
+					'msgid_plural'    => '',
+					'status'          => 'active',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'class="i18nly-translate-btn"', $html );
+		$this->assertMatchesRegularExpression( '/data-for="i18nly-translation-51-0"/', $html );
+	}
 }

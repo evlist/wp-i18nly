@@ -334,7 +334,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label, $source_text ) {
-		return sprintf(
+		$input_html = sprintf(
 			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" data-i18nly-source-text="%5$s" aria-label="%6$s"/>',
 			esc_attr( $input_id ),
 			esc_attr( $input_value ),
@@ -343,6 +343,14 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			esc_attr( $source_text ),
 			esc_attr( $input_label )
 		);
+
+		$translate_button = sprintf(
+			'<button type="button" class="i18nly-translate-btn" data-for="%s" aria-label="%s">🤖</button>',
+			esc_attr( $input_id ),
+			esc_attr__( 'Translate with AI', 'i18nly' )
+		);
+
+		return $input_html . ' ' . $translate_button;
 	}
 
 	/**

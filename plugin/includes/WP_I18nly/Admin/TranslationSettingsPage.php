@@ -275,7 +275,7 @@ class TranslationSettingsPage {
 	 *
 	 * @return string
 	 */
-	private function get_saved_api_key() {
+	public function get_saved_api_key() {
 		$settings = get_option( self::OPTION_NAME, array() );
 
 		if ( ! is_array( $settings ) || ! isset( $settings['deepl_api_key'] ) ) {

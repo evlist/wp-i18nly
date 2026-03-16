@@ -13,6 +13,7 @@ namespace WP_I18nly\Admin;
 use WP_I18nly\Admin\UI\TranslationListColumns;
 use WP_I18nly\Admin\UI\TranslationMessages;
 use WP_I18nly\Admin\UI\EditScreenAssets;
+use WP_I18nly\Admin\AiTranslationManager;
 use WP_I18nly\Support\AdminRegistration;
 use WP_I18nly\Support\CurrentEditTranslationResolver;
 use WP_I18nly\Support\TranslationRepository;
@@ -90,6 +91,7 @@ class AdminPage {
 		add_action( 'admin_enqueue_scripts', array( $this, 'render_translation_edit_pot_generation_script' ) );
 		add_action( 'wp_ajax_i18nly_generate_translation_pot', array( $this, 'ajax_generate_translation_pot' ) );
 		add_action( 'wp_ajax_i18nly_get_translation_entries_table', array( $this, 'ajax_get_translation_entries_table' ) );
+		add_action( 'wp_ajax_i18nly_ai_translate_entry', array( $this, 'ajax_ai_translate_entry' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
@@ -419,8 +421,14 @@ class AdminPage {
 	 * @param int $translation_id Translation ID.
 	 * @return array<string, mixed>
 	 */
-	private function build_translation_edit_script_config( $translation_id ) {
-		return $this->get_edit_screen_assets()->build_script_config( $translation_id );
+	public function build_translation_edit_script_config( $translation_id ) {
+		$base_config = $this->get_edit_screen_assets()->build_script_config( (int) $translation_id );
+		$ai_manager  = new AiTranslationManager(
+			function ( $translation_id ) {
+				return $this->get_translation( $translation_id );
+			}
+		);
+		return $ai_manager->extend_script_config( $base_config, (int) $translation_id );
 	}
 
 	/**
@@ -439,6 +447,20 @@ class AdminPage {
 	 */
 	public function ajax_get_translation_entries_table() {
 		$this->get_translation_edit_controller()->ajax_get_translation_entries_table();
+	}
+
+	/**
+	 * Handles AJAX request to translate one entry with AI.
+	 *
+	 * @return void
+	 */
+	public function ajax_ai_translate_entry() {
+		$ai_manager = new AiTranslationManager(
+			function ( $translation_id ) {
+				return $this->get_translation( $translation_id );
+			}
+		);
+		$ai_manager->get_ajax_handler()->handle_translate_entry();
 	}
 
 	/**
@@ -479,27 +501,27 @@ class AdminPage {
 	}
 
 	/**
-	 * Returns translation list columns handler.
+	 * Provides list columns.
 	 *
-	 * @return \WP_I18nly\Admin\UI\TranslationListColumns
+	 * @return TranslationListColumns
 	 */
 	protected function get_list_columns() {
 		return new TranslationListColumns();
 	}
 
 	/**
-	 * Returns translation messages handler.
+	 * Provides messages.
 	 *
-	 * @return \WP_I18nly\Admin\UI\TranslationMessages
+	 * @return TranslationMessages
 	 */
 	protected function get_translation_messages() {
 		return new TranslationMessages();
 	}
 
 	/**
-	 * Returns edit screen assets handler.
+	 * Provides edit screen assets.
 	 *
-	 * @return \WP_I18nly\Admin\UI\EditScreenAssets
+	 * @return EditScreenAssets
 	 */
 	protected function get_edit_screen_assets() {
 		return new EditScreenAssets();
@@ -653,38 +675,22 @@ class AdminPage {
 		return new PluginMetadataProvider();
 	}
 
-	/**
-	 * Returns language options provider.
-	 *
-	 * @return \WP_I18nly\Support\LanguageOptionsProvider
-	 */
+	/** Language options. @return LanguageOptionsProvider */
 	protected function get_language_options_provider() {
 		return new LanguageOptionsProvider();
 	}
 
-	/**
-	 * Returns translation entries persister.
-	 *
-	 * @return \WP_I18nly\Support\TranslationEntriesPersister
-	 */
+	/** Translation entries persister. @return TranslationEntriesPersister */
 	protected function get_translation_entries_persister() {
 		return new TranslationEntriesPersister();
 	}
 
-	/**
-	 * Returns admin registration service.
-	 *
-	 * @return \WP_I18nly\Support\AdminRegistration
-	 */
+	/** Admin registration. @return AdminRegistration */
 	protected function get_admin_registration() {
 		return new AdminRegistration();
 	}
 
-	/**
-	 * Returns current edit translation resolver.
-	 *
-	 * @return \WP_I18nly\Support\CurrentEditTranslationResolver
-	 */
+	/** Edit translation resolver. @return CurrentEditTranslationResolver */
 	protected function get_current_edit_translation_resolver() {
 		return new CurrentEditTranslationResolver();
 	}

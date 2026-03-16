@@ -150,6 +150,52 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Adds AI translation settings to edit screen script config.
+	 *
+	 * @return void
+	 */
+	public function test_build_translation_edit_script_config_includes_ai_translation_values() {
+		i18nly_test_reset_options();
+		update_option(
+			'i18nly_translation_settings',
+			array(
+				'deepl_api_key' => 'test-api-key',
+			)
+		);
+
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
+			/**
+			 * Returns deterministic edit screen assets for test config composition.
+			 *
+			 * @return object
+			 */
+			protected function get_edit_screen_assets() {
+				return new class() {
+					/**
+					 * Builds base script config.
+					 *
+					 * @param int $translation_id Translation ID.
+					 * @return array<string, mixed>
+					 */
+					public function build_script_config( $translation_id ) {
+						return array(
+							'translationId' => (int) $translation_id,
+							'ajaxUrl'       => 'https://example.test/wp-admin/admin-ajax.php',
+						);
+					}
+				};
+			}
+		};
+
+		$config = $page->build_translation_edit_script_config( 42 );
+
+		$this->assertSame( 42, $config['translationId'] );
+		$this->assertSame( 'i18nly_ai_translate_entry', $config['translateAction'] );
+		$this->assertSame( 'nonce-i18nly_translate_entry_42', $config['translateNonce'] );
+		$this->assertTrue( $config['hasDeeplKey'] );
+	}
+
+	/**
 	 * Renders translation meta box fields on native editor screen.
 	 *
 	 * @return void

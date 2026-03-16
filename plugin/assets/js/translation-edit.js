@@ -249,6 +249,53 @@
 			);
 		}
 
+		function translateWithAI(button) {
+			var inputId        = button.getAttribute( 'data-for' );
+			var input          = inputId ? document.getElementById( inputId ) : null;
+			var sourceEntryId  = input ? input.getAttribute( 'data-i18nly-source-entry-id' ) : null;
+			var formIndex      = input ? input.getAttribute( 'data-i18nly-form-index' ) : null;
+			var sourceText     = input ? input.getAttribute( 'data-i18nly-source-text' ) : null;
+			var translateAction = config.translateAction || 'i18nly_ai_translate_entry';
+			var translateNonce  = config.translateNonce || '';
+
+			if ( ! input || ! sourceEntryId || ! formIndex || ! sourceText ) {
+				return;
+			}
+
+			button.disabled = true;
+			button.setAttribute( 'aria-busy', 'true' );
+
+			var body = toFormBody(
+				{
+					action: translateAction,
+					translation_id: config.translationId,
+					source_entry_id: sourceEntryId,
+					form_index: formIndex,
+					source_text: sourceText,
+					nonce: translateNonce
+				}
+			);
+
+			postForm( body ).then(
+				function (payload) {
+					button.disabled = false;
+					button.removeAttribute( 'aria-busy' );
+
+					if ( ! payload || ! payload.success || ! payload.data ) {
+						return;
+					}
+
+					input.value = payload.data.translation || '';
+					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				}
+			).catch(
+				function () {
+					button.disabled = false;
+					button.removeAttribute( 'aria-busy' );
+				}
+			);
+		}
+
 		function applyBulkAction(action) {
 			getSelectedRows().forEach(
 				function (row) {
@@ -331,6 +378,22 @@
 		if ( obsoleteToggle ) {
 			obsoleteToggle.addEventListener( 'change', applyObsoleteFilter );
 		}
+
+		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
+			function (button) {
+				if ( config.hasDeeplKey === false ) {
+					button.disabled = true;
+					button.title    = 'DeepL API key not configured';
+				}
+
+				button.addEventListener(
+					'click',
+					function () {
+						translateWithAI( button );
+					}
+				);
+			}
+		);
 
 		applyObsoleteFilter();
 		updateBulkActionState();

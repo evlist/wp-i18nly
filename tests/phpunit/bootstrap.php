@@ -1179,6 +1179,39 @@ if ( ! function_exists( 'update_option' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_Error' ) ) {
+	/**
+	 * Minimal WP_Error stub for unit tests.
+	 */
+	class WP_Error {
+		/**
+		 * @var string
+		 */
+		private $code;
+
+		/**
+		 * @var string
+		 */
+		private $message;
+
+		/**
+		 * @param string $code Error code.
+		 * @param string $message Error message.
+		 */
+		public function __construct( $code = '', $message = '' ) {
+			$this->code    = (string) $code;
+			$this->message = (string) $message;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function get_error_message() {
+			return $this->message;
+		}
+	}
+}
+
 if ( ! function_exists( 'is_wp_error' ) ) {
 	/**
 	 * Returns whether a value is a WP_Error.
@@ -1187,9 +1220,7 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 	 * @return bool
 	 */
 	function is_wp_error( $value ) {
-		unset( $value );
-
-		return false;
+		return $value instanceof WP_Error;
 	}
 }
 
