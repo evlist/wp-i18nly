@@ -126,7 +126,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	public function column_translation( $item ) {
-		$singular       = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
+		$singular      = isset( $item['msgid'] ) ? (string) $item['msgid'] : '';
 		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural    = '' !== trim( $source_plural );
 		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;

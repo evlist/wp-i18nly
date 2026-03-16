@@ -149,7 +149,7 @@
 	}
 
 	function installEntriesTableInteractions() {
-		var container = document.getElementById( config.tableContainerId );
+		var container      = document.getElementById( config.tableContainerId );
 		var obsoleteToggle = document.getElementById( 'i18nly-show-obsolete-entries' );
 		var rowCheckboxes;
 		var selectAllCheckboxes;
@@ -177,9 +177,9 @@
 
 			bulkApplyButtons.forEach(
 				function (button) {
-					var wrapper = button.closest( '.bulkactions' );
-					var select = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
-					var hasAction = !! select && '' !== select.value;
+					var wrapper   = button.closest( '.bulkactions' );
+					var select    = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
+					var hasAction = ! ! select && '' !== select.value;
 
 					button.disabled = ! hasSelection || ! hasAction;
 					if (button.disabled) {
@@ -197,11 +197,11 @@
 					return checkbox.checked;
 				}
 			).length;
-			var totalCount = rowCheckboxes.length;
+			var totalCount   = rowCheckboxes.length;
 
 			selectAllCheckboxes.forEach(
 				function (checkbox) {
-					checkbox.checked = totalCount > 0 && checkedCount === totalCount;
+					checkbox.checked       = totalCount > 0 && checkedCount === totalCount;
 					checkbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
 				}
 			);
@@ -210,14 +210,14 @@
 		}
 
 		function applyObsoleteFilter() {
-			var showObsolete = !! obsoleteToggle && obsoleteToggle.checked;
+			var showObsolete = ! ! obsoleteToggle && obsoleteToggle.checked;
 
 			Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) ).forEach(
 				function (row) {
-					var status = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
+					var status     = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
 					var isObsolete = status === 'obsolete';
-					var checkbox = row.querySelector( '.i18nly-entry-checkbox' );
-					var mustHide = isObsolete && ! showObsolete;
+					var checkbox   = row.querySelector( '.i18nly-entry-checkbox' );
+					var mustHide   = isObsolete && ! showObsolete;
 
 					row.style.display = mustHide ? 'none' : '';
 					row.setAttribute( 'aria-hidden', mustHide ? 'true' : 'false' );
@@ -268,10 +268,10 @@
 			return;
 		}
 
-		rowCheckboxes = container.querySelectorAll( '.i18nly-entry-checkbox' );
+		rowCheckboxes       = container.querySelectorAll( '.i18nly-entry-checkbox' );
 		selectAllCheckboxes = container.querySelectorAll( '.i18nly-bulk-select-all' );
-		bulkActionSelects = container.querySelectorAll( '.i18nly-bulk-action-selector' );
-		bulkApplyButtons = container.querySelectorAll( '.i18nly-bulk-apply' );
+		bulkActionSelects   = container.querySelectorAll( '.i18nly-bulk-action-selector' );
+		bulkApplyButtons    = container.querySelectorAll( '.i18nly-bulk-apply' );
 
 		selectAllCheckboxes.forEach(
 			function (checkbox) {
@@ -316,7 +316,7 @@
 					'click',
 					function () {
 						var wrapper = button.closest( '.bulkactions' );
-						var select = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
+						var select  = wrapper ? wrapper.querySelector( '.i18nly-bulk-action-selector' ) : null;
 
 						if ( ! select || '' === select.value ) {
 							return;
