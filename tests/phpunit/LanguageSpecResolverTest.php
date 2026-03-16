@@ -25,19 +25,11 @@ class LanguageSpecResolverTest extends TestCase {
 
 		$this->assertSame( '(n != 1)', $spec['plural_expression'] );
 		$this->assertSame( 2, $spec['nplurals'] );
-		$this->assertSame(
-			array(
-				array(
-					'label'   => '1',
-					'tooltip' => 'One',
-				),
-				array(
-					'label'   => 'n',
-					'tooltip' => 'Other than one',
-				),
-			),
-			$spec['forms']
-		);
+		$this->assertCount( 2, $spec['forms'] );
+		$this->assertSame( '1', $spec['forms'][0]['label'] );
+		$this->assertSame( 'One', $spec['forms'][0]['tooltip'] );
+		$this->assertSame( 'n', $spec['forms'][1]['label'] );
+		$this->assertSame( 'Other than one', $spec['forms'][1]['tooltip'] );
 	}
 
 	/**
@@ -77,19 +69,11 @@ class LanguageSpecResolverTest extends TestCase {
 		$spec     = $resolver->resolve_spec_for_locale( 'de_DE' );
 
 		$this->assertSame( '(n != 1)', $spec['plural_expression'] );
-		$this->assertSame(
-			array(
-				array(
-					'label'   => '1',
-					'tooltip' => 'One',
-				),
-				array(
-					'label'   => 'n',
-					'tooltip' => 'Other than one',
-				),
-			),
-			$spec['forms']
-		);
+		$this->assertCount( 2, $spec['forms'] );
+		$this->assertSame( '1', $spec['forms'][0]['label'] );
+		$this->assertSame( 'One', $spec['forms'][0]['tooltip'] );
+		$this->assertSame( 'n', $spec['forms'][1]['label'] );
+		$this->assertSame( 'Other than one', $spec['forms'][1]['tooltip'] );
 	}
 
 	/**
@@ -102,15 +86,9 @@ class LanguageSpecResolverTest extends TestCase {
 		$spec     = $resolver->resolve_spec_for_locale( 'ja' );
 
 		$this->assertSame( 1, $spec['nplurals'] );
-		$this->assertSame(
-			array(
-				array(
-					'label'   => '*',
-					'tooltip' => 'Any number',
-				),
-			),
-			$spec['forms']
-		);
+		$this->assertCount( 1, $spec['forms'] );
+		$this->assertSame( '*', $spec['forms'][0]['label'] );
+		$this->assertSame( 'Any number', $spec['forms'][0]['tooltip'] );
 	}
 
 	/**

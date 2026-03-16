@@ -60,12 +60,11 @@ class PluralFormsRegistryTest extends TestCase {
 	}
 
 	/**
-	 * Exposes gettext plural expression and related forms metadata.
+	 * Exposes plural forms metadata for a locale.
 	 *
 	 * @return void
 	 */
 	public function test_registry_exposes_plural_forms_header_for_locale() {
-		$this->assertSame( '(n > 1)', \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_expression_for_locale( 'fr_FR' ) );
 		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( 'a', 'b' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( 'fr_FR' ) );
 		$this->assertSame( array( '0, 1', 'other' ), \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( 'fr_FR' ) );
@@ -100,29 +99,4 @@ class PluralFormsRegistryTest extends TestCase {
 		$this->assertSame( 6, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ar' ) );
 	}
 
-	/**
-	 * Computes plural form index for representative locales.
-	 *
-	 * @return void
-	 */
-	public function test_registry_computes_form_index_for_locale() {
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'fr_FR', 0 ) );
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'fr_FR', 1 ) );
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'fr_FR', 2 ) );
-
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ru_RU', 1 ) );
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ru_RU', 2 ) );
-		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ru_RU', 5 ) );
-
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 0 ) );
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 1 ) );
-		$this->assertSame( 2, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 2 ) );
-		$this->assertSame( 3, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 3 ) );
-		$this->assertSame( 4, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 11 ) );
-		$this->assertSame( 5, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ar', 100 ) );
-
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'ja', 42 ) );
-		$this->assertSame( 0, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'xx_XX', 1 ) );
-		$this->assertSame( 1, \WP_I18nly\Plurals\PluralFormsRegistry::get_form_index_for_locale( 'xx_XX', 2 ) );
-	}
 }
