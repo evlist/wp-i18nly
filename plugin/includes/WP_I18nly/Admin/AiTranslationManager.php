@@ -64,6 +64,21 @@ class AiTranslationManager {
 			$get_translation,
 			function () {
 				return $this->get_api_key();
+			},
+			null,
+			function ( $translation_id, $source_entry_id, $form_index, $translation, $status ) {
+				$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
+				$schema_manager->maybe_upgrade();
+
+				$repository = new \WP_I18nly\Storage\SourceWpdbRepository( $schema_manager );
+				$repository->upsert_translated_entry(
+					(int) $translation_id,
+					(int) $source_entry_id,
+					(int) $form_index,
+					(string) $translation,
+					gmdate( 'Y-m-d H:i:s' ),
+					(string) $status
+				);
 			}
 		);
 	}

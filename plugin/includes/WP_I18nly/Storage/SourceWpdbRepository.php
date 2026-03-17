@@ -413,11 +413,12 @@ class SourceWpdbRepository {
 						'source_entry_id' => $source_entry_id,
 						'form_index'      => $form_index,
 						'translation'     => '',
+						'status'          => 'draft',
 						'comment'         => '',
 						'created_at_gmt'  => (string) $now_gmt,
 						'updated_at_gmt'  => (string) $now_gmt,
 					),
-					array( '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
+					array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
 				);
 
 				if ( false !== $result ) {
@@ -450,7 +451,7 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.status AS translated_status, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			$translated_entries_table,
@@ -477,7 +478,7 @@ class SourceWpdbRepository {
 					'msgid'              => isset( $row['msgid'] ) ? (string) $row['msgid'] : '',
 					'msgid_plural'       => isset( $row['msgid_plural'] ) ? (string) $row['msgid_plural'] : '',
 					'translator_comment' => isset( $row['translator_comment'] ) ? (string) $row['translator_comment'] : '',
-					'status'             => isset( $row['status'] ) ? (string) $row['status'] : '',
+					'source_status'      => isset( $row['source_status'] ) ? (string) $row['source_status'] : '',
 					'last_seen_at_gmt'   => isset( $row['last_seen_at_gmt'] ) ? (string) $row['last_seen_at_gmt'] : '',
 					'updated_at_gmt'     => isset( $row['updated_at_gmt'] ) ? (string) $row['updated_at_gmt'] : '',
 					'translations'       => array(),
@@ -491,6 +492,7 @@ class SourceWpdbRepository {
 					'source_entry_id' => $source_entry_id,
 					'form_index'      => $form_index,
 					'translation'     => isset( $row['translation'] ) ? (string) $row['translation'] : '',
+					'status'          => isset( $row['translated_status'] ) ? (string) $row['translated_status'] : 'draft',
 				);
 			}
 		}
@@ -508,6 +510,7 @@ class SourceWpdbRepository {
 					'source_entry_id' => (int) $normalized_row['source_entry_id'],
 					'form_index'      => $form_index,
 					'translation'     => '',
+					'status'          => 'draft',
 				);
 			}
 
@@ -522,20 +525,19 @@ class SourceWpdbRepository {
 	/**
 	 * Upserts one translated entry value row.
 	 *
-	 * @param int    $translation_id Translation ID.
-	 * @param int    $source_entry_id Source entry ID.
-	 * @param int    $form_index Target plural form index.
-	 * @param string $translation Translated value.
-	 * @param string $now_gmt Current GMT datetime.
+	 * @param int         $translation_id Translation ID.
+	 * @param int         $source_entry_id Source entry ID.
+	 * @param int         $form_index Target plural form index.
+	 * @param string      $translation Translated value.
+	 * @param string      $now_gmt Current GMT datetime.
+	 * @param string|null $status Translated entry status. Null preserves existing status.
 	 * @return bool
 	 */
-	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt ) {
+	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null ) {
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
-
 		if ( '' === $translated_entries_table ) {
 			return false;
 		}
-
 		$translated_entry_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
 				'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d AND form_index = %d',
@@ -547,16 +549,18 @@ class SourceWpdbRepository {
 		);
 
 		if ( $translated_entry_id > 0 ) {
-			$result = $this->wpdb->update(
-				$translated_entries_table,
-				array(
-					'translation'    => (string) $translation,
-					'updated_at_gmt' => (string) $now_gmt,
-				),
-				array( 'id' => (int) $translated_entry_id ),
-				array( '%s', '%s' ),
-				array( '%d' )
+			$update_data   = array(
+				'translation'    => (string) $translation,
+				'updated_at_gmt' => (string) $now_gmt,
 			);
+			$update_format = array( '%s', '%s' );
+
+			if ( null !== $status ) {
+				$update_data['status'] = (string) $status;
+				$update_format[]       = '%s';
+			}
+
+			$result = $this->wpdb->update( $translated_entries_table, $update_data, array( 'id' => (int) $translated_entry_id ), $update_format, array( '%d' ) );
 
 			return false !== $result;
 		}
@@ -568,11 +572,12 @@ class SourceWpdbRepository {
 				'source_entry_id' => (int) $source_entry_id,
 				'form_index'      => (int) $form_index,
 				'translation'     => (string) $translation,
+				'status'          => null === $status ? 'draft' : (string) $status,
 				'comment'         => '',
 				'created_at_gmt'  => (string) $now_gmt,
 				'updated_at_gmt'  => (string) $now_gmt,
 			),
-			array( '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
+			array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		return false !== $result;

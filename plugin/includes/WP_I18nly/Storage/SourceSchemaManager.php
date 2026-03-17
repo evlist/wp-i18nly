@@ -19,7 +19,7 @@ class SourceSchemaManager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.0.7';
+	private const SCHEMA_VERSION = '0.0.9';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -150,6 +150,7 @@ class SourceSchemaManager {
 			source_entry_id bigint(20) unsigned NOT NULL,
 			form_index smallint(5) unsigned NOT NULL DEFAULT 0,
 			translation longtext DEFAULT NULL,
+			status varchar(32) NOT NULL DEFAULT 'draft',
 			comment text DEFAULT NULL,
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,

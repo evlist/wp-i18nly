@@ -278,10 +278,12 @@ class TranslationEntriesListTableTest extends TestCase {
 					'msgid'           => 'Hello',
 					'msgid_plural'    => '',
 					'status'          => 'obsolete',
+					'source_status'   => 'obsolete',
 					'translations'    => array(
 						array(
 							'form_index'  => 0,
 							'translation' => 'Bonjour',
+							'status'      => 'draft',
 						),
 					),
 				),
@@ -296,8 +298,42 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'class="i18nly-bulk-select-all"', $html );
 		$this->assertStringContainsString( 'class="i18nly-entry-checkbox"', $html );
-		$this->assertStringContainsString( 'i18nly-entry-status--obsolete', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--draft', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-text="Hello"', $html );
+	}
+
+	/**
+	 * Displays translated status badges independently from source entry lifecycle status.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_renders_translated_status_badge() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 73,
+					'msgctxt'         => '',
+					'msgid'           => 'Needs review',
+					'msgid_plural'    => '',
+					'source_status'   => 'active',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => 'A verifier',
+							'status'      => 'draft_ai_needs_fix',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--needs-fix', $html );
 	}
 
 	/**

@@ -231,7 +231,7 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'value="Bienvenues"', $response['data']['html'] );
 		$this->assertStringNotContainsString( 'name="_wpnonce"', $response['data']['html'] );
 		$this->assertStringNotContainsString( 'name="_wp_http_referer"', $response['data']['html'] );
-		$this->assertStringContainsString( 'active', $response['data']['html'] );
+		$this->assertStringContainsString( 'i18nly-entry-status--draft', $response['data']['html'] );
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );
 	}

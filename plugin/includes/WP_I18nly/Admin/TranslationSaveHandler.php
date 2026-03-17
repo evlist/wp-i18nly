@@ -181,7 +181,7 @@ class TranslationSaveHandler {
 	 * Normalizes translation entries payload rows.
 	 *
 	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
-	 * @return array<int|string, array{forms: array<int, string>}>
+	 * @return array<int|string, array{forms: array<int, string>, statuses?: array<int, string>}>
 	 */
 	private function normalize_translation_entries_payload( array $entries_payload ) {
 		$normalized_payload = array();
@@ -195,15 +195,33 @@ class TranslationSaveHandler {
 				? $entry_payload['forms']
 				: array();
 
-			$normalized_forms = array();
+			$statuses = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
+				? $entry_payload['statuses']
+				: array();
+
+			$normalized_forms    = array();
+			$normalized_statuses = array();
 
 			foreach ( $forms as $form_index => $form_translation ) {
-				$normalized_forms[ absint( $form_index ) ] = sanitize_text_field( (string) $form_translation );
+				$normalized_index                      = absint( $form_index );
+				$normalized_forms[ $normalized_index ] = sanitize_text_field( (string) $form_translation );
+
+				if ( array_key_exists( $normalized_index, $statuses ) ) {
+					$normalized_statuses[ $normalized_index ] = sanitize_key( (string) $statuses[ $normalized_index ] );
+				} elseif ( array_key_exists( $form_index, $statuses ) ) {
+					$normalized_statuses[ $normalized_index ] = sanitize_key( (string) $statuses[ $form_index ] );
+				}
 			}
 
-			$normalized_payload[ $source_entry_id ] = array(
+			$entry = array(
 				'forms' => $normalized_forms,
 			);
+
+			if ( ! empty( $normalized_statuses ) ) {
+				$entry['statuses'] = $normalized_statuses;
+			}
+
+			$normalized_payload[ $source_entry_id ] = $entry;
 		}
 
 		return $normalized_payload;

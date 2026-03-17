@@ -129,7 +129,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 				return array(
 					'success'      => true,
 					'translation'  => 'Bonjour monde',
-					'review_token' => 'ai_draft_ok',
+					'review_token' => 'draft_ai',
 				);
 			}
 		);
@@ -138,7 +138,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 		$response = i18nly_test_get_last_json_response();
 		$this->assertTrue( $response['success'] );
 		$this->assertSame( 'Bonjour monde', $response['data']['translation'] );
-		$this->assertSame( 'ai_draft_ok', $response['data']['review_token'] );
+		$this->assertSame( 'draft_ai', $response['data']['review_token'] );
 		$this->assertSame( 3, $response['data']['source_entry_id'] );
 		$this->assertSame( 0, $response['data']['form_index'] );
 	}
@@ -189,7 +189,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 				return array(
 					'success'      => true,
 					'translation'  => 'ok',
-					'review_token' => 'ai_draft_ok',
+					'review_token' => 'draft_ai',
 				);
 			}
 		);
@@ -221,7 +221,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 				return array(
 					'success'      => true,
 					'translation'  => '0 traductions ont ete deplacees dans la corbeille.',
-					'review_token' => 'ai_draft_ok',
+					'review_token' => 'draft_ai',
 				);
 			}
 		);
@@ -254,7 +254,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 				return array(
 					'success'      => true,
 					'translation'  => 'ok',
-					'review_token' => 'ai_draft_ok',
+					'review_token' => 'draft_ai',
 				);
 			}
 		);
@@ -262,6 +262,45 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 		$handler->handle_translate_entry();
 
 		$this->assertSame( '%1$s moved %2$d items.', $captured_source );
+	}
+
+	/**
+	 * Persists translated text and mapped status through optional callback.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_persists_translation_with_mapped_status() {
+		$_POST                = $this->valid_post( 7 );
+		$_POST['source_text'] = '%s translations moved to the Trash.';
+		$_POST['witness_n']   = '0';
+
+		$persist_calls = array();
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'      => true,
+					'translation'  => 'aucune traduction n\'a ete deplacee dans la corbeille.',
+					'review_token' => 'draft_ai',
+				);
+			},
+			function ( $translation_id, $source_entry_id, $form_index, $translation, $status ) use ( &$persist_calls ) {
+				$persist_calls[] = array(
+					$translation_id,
+					$source_entry_id,
+					$form_index,
+					$translation,
+					$status,
+				);
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$this->assertCount( 1, $persist_calls );
+		$this->assertSame( array( 7, 3, 0, 'aucune traduction n\'a ete deplacee dans la corbeille.', 'draft_ai_needs_fix' ), $persist_calls[0] );
 	}
 
 	/**
@@ -286,9 +325,10 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	 * @param callable|null $get_translation Override for translation callback.
 	 * @param callable|null $get_api_key Override for API key callback.
 	 * @param callable|null $translate Override for translate callable.
+	 * @param callable|null $persist Override for persist callback.
 	 * @return \WP_I18nly\AI\TranslationAiAjaxHandler
 	 */
-	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null ) {
+	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null ) {
 		$get_translation = $get_translation ?? function () {
 			return array(
 				'source_slug'     => 'myplugin/myplugin.php',
@@ -304,10 +344,10 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 			return array(
 				'success'      => true,
 				'translation'  => 'Bonjour monde',
-				'review_token' => 'ai_draft_ok',
+				'review_token' => 'draft_ai',
 			);
 		};
 
-		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate );
+		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist );
 	}
 }

@@ -231,15 +231,112 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	public function column_status( $item ) {
-		$status       = isset( $item['status'] ) ? (string) $item['status'] : 'active';
-		$status_class = 'obsolete' === $status ? 'i18nly-entry-status--obsolete' : 'i18nly-entry-status--active';
-		$label        = 'obsolete' === $status ? __( 'Obsolete', 'i18nly' ) : __( 'Active', 'i18nly' );
+		$status = $this->resolve_translation_status_for_row( $item );
+
+		$status_map = array(
+			'draft'              => array(
+				'class' => 'i18nly-entry-status--draft',
+				'label' => __( 'Draft', 'i18nly' ),
+			),
+			'draft_ai'           => array(
+				'class' => 'i18nly-entry-status--ai-draft',
+				'label' => __( 'AI draft', 'i18nly' ),
+			),
+			'draft_ai_suspect'   => array(
+				'class' => 'i18nly-entry-status--suspect',
+				'label' => __( 'AI draft (suspect)', 'i18nly' ),
+			),
+			'draft_ai_needs_fix' => array(
+				'class' => 'i18nly-entry-status--needs-fix',
+				'label' => __( 'AI draft (needs fix)', 'i18nly' ),
+			),
+			'validated'          => array(
+				'class' => 'i18nly-entry-status--validated',
+				'label' => __( 'Validated', 'i18nly' ),
+			),
+		);
+
+		if ( ! isset( $status_map[ $status ] ) ) {
+			return '<span class="i18nly-entry-status" data-status-token=""></span>';
+		}
+
+		$status_meta = $status_map[ $status ];
 
 		return sprintf(
-			'<span class="i18nly-entry-status %1$s">%2$s</span>',
-			esc_attr( $status_class ),
-			esc_html( $label )
+			'<span class="i18nly-entry-status %1$s" data-status-token="%2$s">%3$s</span>',
+			esc_attr( (string) $status_meta['class'] ),
+			esc_attr( $status ),
+			esc_html( (string) $status_meta['label'] )
 		);
+	}
+
+	/**
+	 * Resolves one aggregate translated-entry status for one row.
+	 *
+	 * @param array<string, mixed> $item Row item.
+	 * @return string
+	 */
+	private function resolve_translation_status_for_row( $item ) {
+		$translations = isset( $item['translations'] ) && is_array( $item['translations'] )
+			? $item['translations']
+			: array();
+
+		$rank = array(
+			'validated'          => 1,
+			'draft'              => 2,
+			'draft_ai'           => 3,
+			'draft_ai_suspect'   => 4,
+			'draft_ai_needs_fix' => 5,
+		);
+
+		$resolved_status = '';
+
+		foreach ( $translations as $translation_row ) {
+			if ( ! is_array( $translation_row ) ) {
+				continue;
+			}
+
+			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
+
+			if ( '' === trim( $current_translation ) ) {
+				continue;
+			}
+
+			$current_status = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
+
+			if ( '' === $current_status ) {
+				$current_status = 'draft';
+			}
+
+			if ( '' === $resolved_status || $rank[ $current_status ] > $rank[ $resolved_status ] ) {
+				$resolved_status = $current_status;
+			}
+		}
+
+		return $resolved_status;
+	}
+
+	/**
+	 * Normalizes translated status values, including legacy tokens.
+	 *
+	 * @param string $status Raw status.
+	 * @return string
+	 */
+	private function normalize_translation_status( $status ) {
+		$status = (string) $status;
+
+		$legacy_map = array(
+			'unvalidated'        => 'draft',
+			'ai_draft_ok'        => 'draft_ai',
+			'ai_draft_suspect'   => 'draft_ai_suspect',
+			'ai_draft_needs_fix' => 'draft_ai_needs_fix',
+		);
+
+		if ( isset( $legacy_map[ $status ] ) ) {
+			return $legacy_map[ $status ];
+		}
+
+		return $status;
 	}
 
 	/**
@@ -436,7 +533,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return void
 	 */
 	public function single_row( $item ) {
-		$status = isset( $item['status'] ) ? (string) $item['status'] : 'active';
+		$status = isset( $item['source_status'] )
+			? (string) $item['source_status']
+			: ( isset( $item['status'] ) ? (string) $item['status'] : 'active' );
 
 		echo '<tr class="i18nly-translation-entry" data-entry-status="' . esc_attr( $status ) . '">';
 		$this->single_row_columns( $item );

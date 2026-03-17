@@ -79,6 +79,27 @@
 		var translationInputs;
 		var hiddenField;
 
+		function clearStatusBadgeForInput(input) {
+			var row = input.closest( 'tr' );
+			var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+			var hasText = '' !== String( input.value || '' ).trim();
+
+			if ( ! badge ) {
+				return;
+			}
+
+			if (hasText) {
+				badge.className = 'i18nly-entry-status i18nly-entry-status--draft';
+				badge.textContent = 'Draft';
+				badge.setAttribute( 'data-status-token', 'draft' );
+				return;
+			}
+
+			badge.className = 'i18nly-entry-status';
+			badge.textContent = '';
+			badge.removeAttribute( 'data-status-token' );
+		}
+
 		function rebuildPayload() {
 			var payload     = {};
 			var index       = 0;
@@ -98,10 +119,15 @@
 				}
 
 				if ( ! payload[sourceEntryId]) {
-					payload[sourceEntryId] = { forms: {} };
+					payload[sourceEntryId] = { forms: {}, statuses: {} };
 				}
 
+				var row = input.closest( 'tr' );
+				var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+				var token = badge ? ( badge.getAttribute( 'data-status-token' ) || '' ) : '';
+
 				payload[sourceEntryId].forms[formIndex] = input.value;
+				payload[sourceEntryId].statuses[formIndex] = token;
 			}
 
 			hiddenField.value = JSON.stringify( payload );
@@ -133,7 +159,13 @@
 					return;
 				}
 
-				input.addEventListener( 'input', rebuildPayload );
+				input.addEventListener(
+					'input',
+					function () {
+						clearStatusBadgeForInput( input );
+						rebuildPayload();
+					}
+				);
 			}
 		);
 
@@ -289,6 +321,38 @@
 
 					input.value = payload.data.translation || '';
 					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+
+					var row = input.closest( 'tr' );
+					var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+					var token = payload.data.review_token || '';
+
+					if ('ai_draft_ok' === token) {
+						token = 'draft_ai';
+					} else if ('ai_draft_suspect' === token) {
+						token = 'draft_ai_suspect';
+					} else if ('ai_draft_needs_fix' === token) {
+						token = 'draft_ai_needs_fix';
+					}
+
+					var tokenMap = {
+						draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
+						validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
+						draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
+						draft_ai_suspect: { className: 'i18nly-entry-status--suspect', label: 'AI draft (suspect)' },
+						draft_ai_needs_fix: { className: 'i18nly-entry-status--needs-fix', label: 'AI draft (needs fix)' }
+					};
+
+					if ( badge && tokenMap[token] ) {
+						badge.className = 'i18nly-entry-status ' + tokenMap[token].className;
+						badge.textContent = tokenMap[token].label;
+						badge.setAttribute( 'data-status-token', token );
+					}
+
+					if ( badge && ! tokenMap[token] ) {
+						badge.className = 'i18nly-entry-status';
+						badge.textContent = '';
+						badge.removeAttribute( 'data-status-token' );
+					}
 				}
 			).catch(
 				function () {

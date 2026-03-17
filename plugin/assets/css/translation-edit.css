@@ -96,6 +96,31 @@
 	color: #8a2424;
 }
 
+.i18nly-entry-status--draft {
+	background: #f0f0f1;
+	color: #3c434a;
+}
+
+.i18nly-entry-status--ai-draft {
+	background: #e8f3ff;
+	color: #0a4b78;
+}
+
+.i18nly-entry-status--suspect {
+	background: #fff7e6;
+	color: #8a4f00;
+}
+
+.i18nly-entry-status--needs-fix {
+	background: #ffe7e7;
+	color: #8a1f11;
+}
+
+.i18nly-entry-status--validated {
+	background: #edf7ed;
+	color: #116329;
+}
+
 tr.i18nly-translation-entry[data-entry-status="obsolete"] td {
 	background: #fff8f1;
 }

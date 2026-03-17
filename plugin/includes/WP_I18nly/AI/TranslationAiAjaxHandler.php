@@ -40,16 +40,25 @@ class TranslationAiAjaxHandler {
 	private $translate_callable;
 
 	/**
+	 * Optional callback persisting translated-entry status.
+	 *
+	 * @var callable|null
+	 */
+	private $persist_status_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param callable      $get_translation_callback Callback returning translation row for one ID.
 	 * @param callable      $get_api_key_callback Callback returning saved DeepL API key.
 	 * @param callable|null $translate_callable Optional translation callable override (defaults to DeepLClient).
+	 * @param callable|null $persist_status_callback Optional callback to persist translated status.
 	 */
 	public function __construct(
 		callable $get_translation_callback,
 		callable $get_api_key_callback,
-		$translate_callable = null
+		$translate_callable = null,
+		$persist_status_callback = null
 	) {
 		$this->get_translation_callback = $get_translation_callback;
 		$this->get_api_key_callback     = $get_api_key_callback;
@@ -60,6 +69,7 @@ class TranslationAiAjaxHandler {
 				$client  = new DeepLClient( $api_key );
 				return $client->translate_item( $source_text, $source_locale, $target_locale, $context );
 			};
+		$this->persist_status_callback  = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
 	}
 
 	/**
@@ -134,6 +144,7 @@ class TranslationAiAjaxHandler {
 
 		$context = $this->build_deepl_context( $source_text, $witness_n );
 		$result  = $translate( $prepared_text, 'en_US', $target_locale, $context );
+		$status  = $this->review_token_to_translated_status( isset( $result['review_token'] ) ? (string) $result['review_token'] : '' );
 
 		// Restore placeholder in translated output when we used witness injection.
 		if ( ! empty( $result['success'] ) && isset( $result['translation'] ) && '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
@@ -141,6 +152,12 @@ class TranslationAiAjaxHandler {
 			$pattern               = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';
 			$restored              = preg_replace( $pattern, $placeholder, $translated, 1 );
 			$result['translation'] = is_string( $restored ) ? $restored : $translated;
+
+			if ( ! is_string( $restored ) || $restored === $translated ) {
+				$status = 'draft_ai_needs_fix';
+			}
+		} elseif ( '' !== $placeholder && ! $has_witness_n ) {
+			$status = 'draft_ai_suspect';
 		}
 
 		if ( empty( $result['success'] ) ) {
@@ -153,14 +170,59 @@ class TranslationAiAjaxHandler {
 			return;
 		}
 
+		$result['review_token'] = $status;
+
+		if ( is_callable( $this->persist_status_callback ) ) {
+			call_user_func(
+				$this->persist_status_callback,
+				$translation_id,
+				$source_entry_id,
+				$form_index,
+				isset( $result['translation'] ) ? (string) $result['translation'] : '',
+				$status
+			);
+		}
+
 		wp_send_json_success(
 			array(
 				'source_entry_id' => $source_entry_id,
 				'form_index'      => $form_index,
 				'translation'     => isset( $result['translation'] ) ? (string) $result['translation'] : '',
-				'review_token'    => isset( $result['review_token'] ) ? (string) $result['review_token'] : 'ai_draft_ok',
+				'review_token'    => (string) $status,
 			)
 		);
+	}
+
+	/**
+	 * Maps review token to translated-entry status stored in DB.
+	 *
+	 * @param string $review_token Review token.
+	 * @return string
+	 */
+	private function review_token_to_translated_status( $review_token ) {
+		$review_token = (string) $review_token;
+
+		if ( 'draft_ai_needs_fix' === $review_token || 'ai_draft_needs_fix' === $review_token ) {
+			return 'draft_ai_needs_fix';
+		}
+
+		if ( 'draft_ai_suspect' === $review_token || 'ai_draft_suspect' === $review_token ) {
+			return 'draft_ai_suspect';
+		}
+
+		if ( 'draft_ai' === $review_token || 'ai_draft_ok' === $review_token ) {
+			return 'draft_ai';
+		}
+
+		if ( 'draft' === $review_token ) {
+			return 'draft';
+		}
+
+		if ( 'validated' === $review_token ) {
+			return 'validated';
+		}
+
+		return 'draft_ai';
 	}
 
 	/**

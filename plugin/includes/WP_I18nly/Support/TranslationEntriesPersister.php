@@ -55,15 +55,28 @@ class TranslationEntriesPersister {
 				? $entry_payload['forms']
 				: array();
 
+			$statuses = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
+				? $entry_payload['statuses']
+				: array();
+
 			foreach ( $forms as $form_index => $form_translation ) {
 				$normalized_form_index = absint( $form_index );
+				$normalized_text       = sanitize_text_field( (string) $form_translation );
+				$explicit_status       = array_key_exists( $normalized_form_index, $statuses )
+					? sanitize_key( (string) $statuses[ $normalized_form_index ] )
+					: null;
+
+				if ( '' === (string) $explicit_status ) {
+					$explicit_status = '' === trim( $normalized_text ) ? null : 'draft';
+				}
 
 				$repository->upsert_translated_entry(
 					(int) $translation_id,
 					$normalized_source_entry_id,
 					$normalized_form_index,
-					sanitize_text_field( (string) $form_translation ),
-					$now_gmt
+					$normalized_text,
+					$now_gmt,
+					$explicit_status
 				);
 			}
 		}
@@ -73,7 +86,7 @@ class TranslationEntriesPersister {
 	 * Normalizes translation entries payload rows.
 	 *
 	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
-	 * @return array<int|string, array{forms: array<int, string>}>
+	 * @return array<int|string, array{forms: array<int, string>, statuses?: array<int, string>}>
 	 */
 	public function normalize( array $entries_payload ) {
 		$normalized_payload = array();
@@ -87,15 +100,33 @@ class TranslationEntriesPersister {
 				? $entry_payload['forms']
 				: array();
 
-			$normalized_forms = array();
+			$normalized_forms    = array();
+			$statuses            = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
+				? $entry_payload['statuses']
+				: array();
+			$normalized_statuses = array();
 
 			foreach ( $forms as $form_index => $form_translation ) {
 				$normalized_forms[ absint( $form_index ) ] = sanitize_text_field( (string) $form_translation );
+
+				if ( ! array_key_exists( $form_index, $statuses ) && ! array_key_exists( absint( $form_index ), $statuses ) ) {
+					continue;
+				}
+
+				$status_value = array_key_exists( absint( $form_index ), $statuses ) ? $statuses[ absint( $form_index ) ] : $statuses[ $form_index ];
+
+				$normalized_statuses[ absint( $form_index ) ] = sanitize_key( (string) $status_value );
 			}
 
-			$normalized_payload[ $source_entry_id ] = array(
+			$entry = array(
 				'forms' => $normalized_forms,
 			);
+
+			if ( ! empty( $normalized_statuses ) ) {
+				$entry['statuses'] = $normalized_statuses;
+			}
+
+			$normalized_payload[ $source_entry_id ] = $entry;
 		}
 
 		return $normalized_payload;
