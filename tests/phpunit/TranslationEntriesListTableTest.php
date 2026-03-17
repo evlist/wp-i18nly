@@ -236,6 +236,28 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Declares AI translate among available bulk actions.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_declares_ai_translate_bulk_action() {
+		$list_table = new class( array() ) extends \WP_I18nly\Admin\UI\TranslationEntriesListTable {
+			/**
+			 * Exposes protected bulk actions for test purposes.
+			 *
+			 * @return array<string, string>
+			 */
+			public function exposed_get_bulk_actions() {
+				return $this->get_bulk_actions();
+			}
+		};
+
+		$bulk_actions = $list_table->exposed_get_bulk_actions();
+
+		$this->assertArrayHasKey( 'ai_translate_selected', $bulk_actions );
+	}
+
+	/**
 	 * Renders one AI translate button bound to each translation input.
 	 *
 	 * @return void

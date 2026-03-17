@@ -66,6 +66,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		return array(
 			'clear_selected_translations' => __( 'Clear selected translations', 'i18nly' ),
 			'copy_source_to_translation'  => __( 'Copy source to translation', 'i18nly' ),
+			'ai_translate_selected'       => __( 'Translate selected with AI', 'i18nly' ),
 		);
 	}
 

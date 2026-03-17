@@ -259,7 +259,7 @@
 			var translateNonce  = config.translateNonce || '';
 
 			if ( ! input || ! sourceEntryId || ! formIndex || ! sourceText ) {
-				return;
+				return Promise.resolve();
 			}
 
 			button.disabled = true;
@@ -276,7 +276,7 @@
 				}
 			);
 
-			postForm( body ).then(
+			return postForm( body ).then(
 				function (payload) {
 					button.disabled = false;
 					button.removeAttribute( 'aria-busy' );
@@ -296,7 +296,28 @@
 			);
 		}
 
+		function translateSelectedRowsWithAI() {
+			if ( config.hasDeeplKey === false ) {
+				return;
+			}
+
+			getSelectedRows().forEach(
+				function (row) {
+					Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
+						function (button) {
+							translateWithAI( button );
+						}
+					);
+				}
+			);
+		}
+
 		function applyBulkAction(action) {
+			if ( 'ai_translate_selected' === action ) {
+				translateSelectedRowsWithAI();
+				return;
+			}
+
 			getSelectedRows().forEach(
 				function (row) {
 					if ( 'copy_source_to_translation' === action ) {
