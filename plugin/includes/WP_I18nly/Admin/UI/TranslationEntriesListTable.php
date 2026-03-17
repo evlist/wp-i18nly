@@ -180,6 +180,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
 			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
 			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips );
+			$witness      = $this->resolve_form_witness_example( $form_index, $forms );
 			$input_label  = '' !== trim( $form_tooltip ) ? $form_tooltip : $form_label;
 			$input_html   = $this->render_translation_input(
 				$input_id,
@@ -187,7 +188,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$form_index,
 				$value,
 				$input_label,
-				$this->get_source_text_for_form( $form_index, $singular, $source_plural, $forms )
+				$this->get_source_text_for_form( $form_index, $singular, $source_plural, $forms ),
+				$witness
 			);
 
 			$lines[] = sprintf(
@@ -209,7 +211,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 					0,
 					'',
 					__( 'Translation', 'i18nly' ),
-					$singular
+					$singular,
+					1
 				)
 			);
 		}
@@ -332,16 +335,18 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @param string $input_value Input value.
 	 * @param string $input_label Accessible label.
 	 * @param string $source_text Source text used by client-side bulk actions.
+	 * @param int    $witness_example Representative numeric witness for this form.
 	 * @return string
 	 */
-	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label, $source_text ) {
+	private function render_translation_input( $input_id, $source_entry, $form_index, $input_value, $input_label, $source_text, $witness_example = 0 ) {
 		$input_html = sprintf(
-			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" data-i18nly-source-text="%5$s" aria-label="%6$s"/>',
+			'<input type="text" class="regular-text i18nly-translation-input" id="%1$s" value="%2$s" data-i18nly-source-entry-id="%3$d" data-i18nly-form-index="%4$d" data-i18nly-source-text="%5$s" data-i18nly-witness="%6$d" aria-label="%7$s"/>',
 			esc_attr( $input_id ),
 			esc_attr( $input_value ),
 			(int) $source_entry,
 			(int) $form_index,
 			esc_attr( $source_text ),
+			(int) $witness_example,
 			esc_attr( $input_label )
 		);
 
@@ -375,6 +380,25 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		}
 
 		return 0 === (int) $form_index ? $singular : $plural;
+	}
+
+	/**
+	 * Returns one representative witness number for one target form.
+	 *
+	 * @param int                              $form_index Plural form index.
+	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
+	 * @return int
+	 */
+	private function resolve_form_witness_example( $form_index, array $forms ) {
+		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['examples'] ) && is_array( $forms[ $form_index ]['examples'] ) ) {
+			$examples = array_values( $forms[ $form_index ]['examples'] );
+
+			if ( ! empty( $examples ) ) {
+				return (int) $examples[0];
+			}
+		}
+
+		return 0 === (int) $form_index ? 1 : 2;
 	}
 
 	/**

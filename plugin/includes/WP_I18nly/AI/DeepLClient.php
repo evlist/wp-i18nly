@@ -51,10 +51,12 @@ class DeepLClient {
 	 * @param string $source_text Source text to translate.
 	 * @param string $source_locale WordPress source locale (e.g. en_US).
 	 * @param string $target_locale WordPress target locale (e.g. fr_FR).
+	 * @param string $context Optional context hint for disambiguation.
 	 * @return array{success: bool, translation?: string, review_token?: string, message?: string}
 	 */
-	public function translate_item( $source_text, $source_locale, $target_locale ) {
+	public function translate_item( $source_text, $source_locale, $target_locale, $context = '' ) {
 		$source_text = (string) $source_text;
+		$context     = trim( (string) $context );
 
 		if ( '' === trim( $source_text ) ) {
 			return array(
@@ -67,13 +69,17 @@ class DeepLClient {
 		$source_lang = $this->to_deepl_source_lang( (string) $source_locale );
 		$target_lang = $this->to_deepl_target_lang( (string) $target_locale );
 
-		$body = http_build_query(
-			array(
-				'text'        => $source_text,
-				'source_lang' => $source_lang,
-				'target_lang' => $target_lang,
-			)
+		$params = array(
+			'text'        => $source_text,
+			'source_lang' => $source_lang,
+			'target_lang' => $target_lang,
 		);
+
+		if ( '' !== $context ) {
+			$params['context'] = $context;
+		}
+
+		$body = http_build_query( $params );
 
 		$response = call_user_func(
 			$this->http_post,

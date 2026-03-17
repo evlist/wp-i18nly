@@ -255,6 +255,7 @@
 			var sourceEntryId  = input ? input.getAttribute( 'data-i18nly-source-entry-id' ) : null;
 			var formIndex      = input ? input.getAttribute( 'data-i18nly-form-index' ) : null;
 			var sourceText     = input ? input.getAttribute( 'data-i18nly-source-text' ) : null;
+			var witness        = input ? input.getAttribute( 'data-i18nly-witness' ) : null;
 			var translateAction = config.translateAction || 'i18nly_ai_translate_entry';
 			var translateNonce  = config.translateNonce || '';
 
@@ -272,6 +273,7 @@
 					source_entry_id: sourceEntryId,
 					form_index: formIndex,
 					source_text: sourceText,
+					witness_n: witness || '',
 					nonce: translateNonce
 				}
 			);

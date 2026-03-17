@@ -55,10 +55,10 @@ class TranslationAiAjaxHandler {
 		$this->get_api_key_callback     = $get_api_key_callback;
 		$this->translate_callable       = is_callable( $translate_callable )
 			? $translate_callable
-			: function ( $source_text, $source_locale, $target_locale ) use ( &$get_api_key_callback ) {
+			: function ( $source_text, $source_locale, $target_locale, $context = '' ) use ( &$get_api_key_callback ) {
 				$api_key = call_user_func( $get_api_key_callback );
 				$client  = new DeepLClient( $api_key );
-				return $client->translate_item( $source_text, $source_locale, $target_locale );
+				return $client->translate_item( $source_text, $source_locale, $target_locale, $context );
 			};
 	}
 
@@ -83,6 +83,10 @@ class TranslationAiAjaxHandler {
 		$source_entry_id = absint( wp_unslash( $_POST['source_entry_id'] ) );
 		$form_index      = absint( wp_unslash( $_POST['form_index'] ) );
 		$source_text     = sanitize_text_field( wp_unslash( $_POST['source_text'] ) );
+		$witness_raw     = isset( $_POST['witness_n'] ) ? sanitize_text_field( wp_unslash( $_POST['witness_n'] ) ) : '';
+		$witness_raw     = trim( (string) $witness_raw );
+		$has_witness_n   = '' !== $witness_raw;
+		$witness_n       = $has_witness_n ? (int) $witness_raw : 0;
 		$nonce           = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
 
 		if ( $translation_id <= 0 ) {
@@ -118,7 +122,23 @@ class TranslationAiAjaxHandler {
 
 		$target_locale = (string) $translation['target_language'];
 		$translate     = $this->translate_callable;
-		$result        = $translate( $source_text, 'en_US', $target_locale );
+		$placeholder   = $this->extract_single_printf_placeholder( $source_text );
+		$prepared_text = $source_text;
+
+		if ( '' !== $placeholder && $has_witness_n && false === strpos( $source_text, (string) $witness_n ) ) {
+			$prepared_text = preg_replace( '/' . preg_quote( $placeholder, '/' ) . '/', (string) $witness_n, $source_text, 1 );
+			$prepared_text = is_string( $prepared_text ) ? $prepared_text : $source_text;
+		}
+
+		$context = $this->build_deepl_context( $source_text, $witness_n );
+		$result  = $translate( $prepared_text, 'en_US', $target_locale, $context );
+
+		if ( ! empty( $result['success'] ) && isset( $result['translation'] ) && '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
+			$translated            = (string) $result['translation'];
+			$pattern               = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';
+			$restored              = preg_replace( $pattern, $placeholder, $translated, 1 );
+			$result['translation'] = is_string( $restored ) ? $restored : $translated;
+		}
 
 		if ( empty( $result['success'] ) ) {
 			wp_send_json_error(
@@ -138,5 +158,52 @@ class TranslationAiAjaxHandler {
 				'review_token'    => isset( $result['review_token'] ) ? (string) $result['review_token'] : 'ai_draft_ok',
 			)
 		);
+	}
+
+	/**
+	 * Builds optional DeepL context for placeholder semantics.
+	 *
+	 * @param string $source_text Source text.
+	 * @param int    $witness_n Representative value for current plural form.
+	 * @return string
+	 */
+	private function build_deepl_context( $source_text, $witness_n ) {
+		$source_text = (string) $source_text;
+		$has_printf  = 1 === preg_match( '/%([0-9]+\$)?[sd]/', $source_text );
+
+		if ( ! $has_printf ) {
+			return '';
+		}
+
+		$lines   = array();
+		$lines[] = 'Software UI message.';
+		$lines[] = 'Keep printf placeholders (%s, %d) unchanged.';
+
+		if ( $witness_n >= 0 ) {
+			$lines[] = 'The placeholder represents a numeric count; representative value n=' . (int) $witness_n . '.';
+		}
+
+		return implode( ' ', $lines );
+	}
+
+	/**
+	 * Returns the single printf-style placeholder token when unambiguous.
+	 *
+	 * @param string $source_text Source text.
+	 * @return string
+	 */
+	private function extract_single_printf_placeholder( $source_text ) {
+		$source_text = (string) $source_text;
+		$matches     = array();
+
+		if ( 1 !== preg_match_all( '/%(?:[0-9]+\\$)?[sd]/', $source_text, $matches ) ) {
+			return '';
+		}
+
+		if ( ! isset( $matches[0] ) || 1 !== count( $matches[0] ) ) {
+			return '';
+		}
+
+		return (string) $matches[0][0];
 	}
 }

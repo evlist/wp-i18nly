@@ -230,4 +230,29 @@ class DeepLClientTest extends TestCase {
 		$body = isset( $calls[0]['body'] ) ? (string) $calls[0]['body'] : '';
 		$this->assertStringContainsString( 'target_lang=PT-BR', $body );
 	}
+
+	/**
+	 * Context hint is sent to DeepL when provided.
+	 *
+	 * @return void
+	 */
+	public function test_translate_item_sends_context_when_provided() {
+		$calls  = array();
+		$client = new DeepLClient(
+			'prokey',
+			function ( $url, array $args ) use ( &$calls ) {
+				$calls[] = $args;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"translations":[{"text":"ok"}]}',
+				);
+			}
+		);
+
+		$client->translate_item( 'Hello %s', 'en_US', 'fr_FR', 'The placeholder is a numeric count.' );
+
+		$body = isset( $calls[0]['body'] ) ? (string) $calls[0]['body'] : '';
+		$this->assertStringContainsString( 'context=', $body );
+	}
 }

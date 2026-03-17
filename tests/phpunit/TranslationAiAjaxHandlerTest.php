@@ -168,6 +168,103 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Witness value is translated into numeric-placeholder context.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_builds_context_from_witness() {
+		$_POST                = $this->valid_post( 7 );
+		$_POST['source_text'] = '%s translations not updated';
+		$_POST['witness_n']   = '2';
+
+		$received_context = '';
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function ( $source_text, $source_locale, $target_locale, $context = '' ) use ( &$received_context ) {
+				unset( $source_text, $source_locale, $target_locale );
+				$received_context = (string) $context;
+
+				return array(
+					'success'      => true,
+					'translation'  => 'ok',
+					'review_token' => 'ai_draft_ok',
+				);
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$this->assertStringContainsString( 'numeric count', strtolower( $received_context ) );
+		$this->assertStringContainsString( 'n=2', strtolower( $received_context ) );
+	}
+
+	/**
+	 * Replaces one single placeholder with witness before translation and restores it afterwards.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_replaces_and_restores_single_placeholder_with_witness() {
+		$_POST                = $this->valid_post( 7 );
+		$_POST['source_text'] = '%s translations moved to the Trash.';
+		$_POST['witness_n']   = '0';
+
+		$captured_source = '';
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function ( $source_text ) use ( &$captured_source ) {
+				$captured_source = (string) $source_text;
+
+				return array(
+					'success'      => true,
+					'translation'  => '0 traductions ont ete deplacees dans la corbeille.',
+					'review_token' => 'ai_draft_ok',
+				);
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertSame( '0 translations moved to the Trash.', $captured_source );
+		$this->assertSame( '%s traductions ont ete deplacees dans la corbeille.', $response['data']['translation'] );
+	}
+
+	/**
+	 * Keeps original source text when multiple placeholders are present.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_does_not_replace_when_multiple_placeholders_exist() {
+		$_POST                = $this->valid_post( 7 );
+		$_POST['source_text'] = '%1$s moved %2$d items.';
+		$_POST['witness_n']   = '2';
+
+		$captured_source = '';
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function ( $source_text ) use ( &$captured_source ) {
+				$captured_source = (string) $source_text;
+
+				return array(
+					'success'      => true,
+					'translation'  => 'ok',
+					'review_token' => 'ai_draft_ok',
+				);
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$this->assertSame( '%1$s moved %2$d items.', $captured_source );
+	}
+
+	/**
 	 * Builds a valid POST payload for translation_id.
 	 *
 	 * @param int $translation_id Translation ID.
