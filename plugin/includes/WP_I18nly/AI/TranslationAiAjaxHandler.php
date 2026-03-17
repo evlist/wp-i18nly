@@ -125,6 +125,8 @@ class TranslationAiAjaxHandler {
 		$placeholder   = $this->extract_single_printf_placeholder( $source_text );
 		$prepared_text = $source_text;
 
+		// Deterministic fallback for one-placeholder strings:
+		// inject witness n before translation to bias MT morphology.
 		if ( '' !== $placeholder && $has_witness_n && false === strpos( $source_text, (string) $witness_n ) ) {
 			$prepared_text = preg_replace( '/' . preg_quote( $placeholder, '/' ) . '/', (string) $witness_n, $source_text, 1 );
 			$prepared_text = is_string( $prepared_text ) ? $prepared_text : $source_text;
@@ -133,6 +135,7 @@ class TranslationAiAjaxHandler {
 		$context = $this->build_deepl_context( $source_text, $witness_n );
 		$result  = $translate( $prepared_text, 'en_US', $target_locale, $context );
 
+		// Restore placeholder in translated output when we used witness injection.
 		if ( ! empty( $result['success'] ) && isset( $result['translation'] ) && '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
 			$translated            = (string) $result['translation'];
 			$pattern               = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';

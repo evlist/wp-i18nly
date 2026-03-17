@@ -397,6 +397,29 @@ Placeholder checks must be strict but non-blocking for UX:
 
 This policy replaces hard rejection for initial slices.
 
+### Deterministic Placeholder Strategy (Current Implementation)
+
+For reliability, current implementation uses a deterministic fallback in addition
+to provider context hints:
+
+1. only activate when exactly one printf placeholder exists (`%s` or `%d`,
+	including positional forms like `%1$s`),
+2. use the plural-form witness `n` selected from generated examples,
+3. replace the placeholder with witness `n` before translation,
+4. skip this replacement when the same witness value already exists in source
+	text (to avoid ambiguous reverse replacement),
+5. translate,
+6. restore placeholder by replacing the first standalone witness occurrence in
+	translated text.
+
+Scope limitations (intentional for V1):
+
+- no substitution when multiple placeholders are present,
+- no substitution when witness value is unavailable.
+
+DeepL `context` is still sent as a secondary hint, but correctness for this
+slice should not rely on context alone.
+
 ### Plural Strategy (Current Constraint: Source Locale Is English)
 
 Current simplification accepted for V1:
