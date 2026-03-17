@@ -187,7 +187,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$form_index,
 				$value,
 				$input_label,
-				$this->get_source_text_for_form( $form_index, $singular, $source_plural )
+				$this->get_source_text_for_form( $form_index, $singular, $source_plural, $forms )
 			);
 
 			$lines[] = sprintf(
@@ -357,12 +357,23 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	/**
 	 * Returns the source text matching one target form.
 	 *
-	 * @param int    $form_index Plural form index.
-	 * @param string $singular Singular source string.
-	 * @param string $plural Plural source string.
+	 * @param int                              $form_index Plural form index.
+	 * @param string                           $singular Singular source string.
+	 * @param string                           $plural Plural source string.
+	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
 	 * @return string
 	 */
-	private function get_source_text_for_form( $form_index, $singular, $plural ) {
+	private function get_source_text_for_form( $form_index, $singular, $plural, array $forms = array() ) {
+		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['examples'] ) && is_array( $forms[ $form_index ]['examples'] ) ) {
+			$examples = array_values( $forms[ $form_index ]['examples'] );
+
+			if ( ! empty( $examples ) ) {
+				$witness = (int) $examples[0];
+
+				return 1 === $witness ? $singular : $plural;
+			}
+		}
+
 		return 0 === (int) $form_index ? $singular : $plural;
 	}
 

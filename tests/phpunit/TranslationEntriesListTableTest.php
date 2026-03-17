@@ -200,6 +200,71 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Uses witness examples to map each target plural form to singular or plural source text.
+	 *
+	 * @return void
+	 */
+	public function test_translation_inputs_use_witness_examples_for_source_text_mapping() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 61,
+					'msgctxt'         => '',
+					'msgid'           => '%s apple',
+					'msgid_plural'    => '%s apples',
+					'status'          => 'active',
+					'forms'           => array(
+						array(
+							'marker'   => 'a',
+							'label'    => 'a',
+							'tooltip'  => 'one',
+							'examples' => array( 1 ),
+						),
+						array(
+							'marker'   => 'b',
+							'label'    => 'b',
+							'tooltip'  => 'few',
+							'examples' => array( 2 ),
+						),
+						array(
+							'marker'   => 'c',
+							'label'    => 'c',
+							'tooltip'  => 'special singular witness',
+							'examples' => array( 1 ),
+						),
+					),
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '',
+						),
+						array(
+							'form_index'  => 1,
+							'translation' => '',
+						),
+						array(
+							'form_index'  => 2,
+							'translation' => '',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'id="i18nly-translation-61-0"', $html );
+		$this->assertStringContainsString( 'id="i18nly-translation-61-1"', $html );
+		$this->assertStringContainsString( 'id="i18nly-translation-61-2"', $html );
+		$this->assertStringContainsString( 'id="i18nly-translation-61-1" value="" data-i18nly-source-entry-id="61" data-i18nly-form-index="1" data-i18nly-source-text="%s apples"', $html );
+		$this->assertStringContainsString( 'id="i18nly-translation-61-2" value="" data-i18nly-source-entry-id="61" data-i18nly-form-index="2" data-i18nly-source-text="%s apple"', $html );
+	}
+
+	/**
 	 * Renders selection and bulk actions with status metadata.
 	 *
 	 * @return void
