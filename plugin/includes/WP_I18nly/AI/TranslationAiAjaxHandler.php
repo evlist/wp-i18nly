@@ -47,18 +47,27 @@ class TranslationAiAjaxHandler {
 	private $persist_status_callback;
 
 	/**
+	 * Optional callback waiting for throttle slot before external request.
+	 *
+	 * @var callable|null
+	 */
+	private $throttle_wait_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param callable      $get_translation_callback Callback returning translation row for one ID.
 	 * @param callable      $get_api_key_callback Callback returning saved DeepL API key.
 	 * @param callable|null $translate_callable Optional translation callable override (defaults to DeepLClient).
 	 * @param callable|null $persist_status_callback Optional callback to persist translated status.
+	 * @param callable|null $throttle_wait_callback Optional callback enforcing throttling.
 	 */
 	public function __construct(
 		callable $get_translation_callback,
 		callable $get_api_key_callback,
 		$translate_callable = null,
-		$persist_status_callback = null
+		$persist_status_callback = null,
+		$throttle_wait_callback = null
 	) {
 		$this->get_translation_callback = $get_translation_callback;
 		$this->get_api_key_callback     = $get_api_key_callback;
@@ -70,6 +79,7 @@ class TranslationAiAjaxHandler {
 				return $client->translate_item( $source_text, $source_locale, $target_locale, $context );
 			};
 		$this->persist_status_callback  = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
+		$this->throttle_wait_callback   = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
 	}
 
 	/**
@@ -78,6 +88,11 @@ class TranslationAiAjaxHandler {
 	 * @return void
 	 */
 	public function handle_translate_entry() {
+		if ( isset( $_POST['items_json'] ) ) {
+			$this->handle_translate_entries_batch();
+			return;
+		}
+
 		if ( ! isset(
 			$_POST['translation_id'],
 			$_POST['source_entry_id'],
@@ -131,22 +146,163 @@ class TranslationAiAjaxHandler {
 		}
 
 		$target_locale = (string) $translation['target_language'];
+		$result        = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $has_witness_n ? $witness_n : null, $target_locale );
+
+		if ( empty( $result['success'] ) ) {
+			wp_send_json_error(
+				array(
+					'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
+				),
+				500
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'source_entry_id' => $source_entry_id,
+				'form_index'      => $form_index,
+				'translation'     => isset( $result['translation'] ) ? (string) $result['translation'] : '',
+				'review_token'    => isset( $result['review_token'] ) ? (string) $result['review_token'] : '',
+			)
+		);
+	}
+
+	/**
+	 * Handles AJAX request to translate one batch of entry forms.
+	 *
+	 * @return void
+	 */
+	public function handle_translate_entries_batch() {
+		if ( ! isset( $_POST['translation_id'], $_POST['items_json'], $_POST['nonce'] ) ) {
+			wp_send_json_error( array( 'message' => 'Missing parameters.' ), 400 );
+			return;
+		}
+
+		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
+		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+
+		if ( $translation_id <= 0 ) {
+			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $translation_id ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
+			return;
+		}
+
+		if (
+			! wp_verify_nonce( $nonce, 'i18nly_translate_entries_batch_' . $translation_id )
+			&& ! wp_verify_nonce( $nonce, 'i18nly_translate_entry_' . $translation_id )
+		) {
+			wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
+			return;
+		}
+
+		$items_json = sanitize_textarea_field( wp_unslash( $_POST['items_json'] ) );
+		$items      = json_decode( $items_json, true );
+
+		if ( ! is_array( $items ) || empty( $items ) ) {
+			wp_send_json_error( array( 'message' => 'Batch payload is empty.' ), 400 );
+			return;
+		}
+
+		$get_translation = $this->get_translation_callback;
+		$translation     = $get_translation( $translation_id );
+
+		if ( ! is_array( $translation ) || empty( $translation['target_language'] ) ) {
+			wp_send_json_error( array( 'message' => 'Translation target locale is missing.' ), 400 );
+			return;
+		}
+
+		$get_api_key = $this->get_api_key_callback;
+		$api_key     = (string) $get_api_key();
+
+		if ( '' === $api_key ) {
+			wp_send_json_error( array( 'message' => 'No DeepL API key configured.' ), 400 );
+			return;
+		}
+
+		$target_locale = (string) $translation['target_language'];
+		$results       = array();
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$source_entry_id = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
+			$form_index      = isset( $item['form_index'] ) ? absint( $item['form_index'] ) : 0;
+			$source_text     = isset( $item['source_text'] ) ? sanitize_text_field( (string) $item['source_text'] ) : '';
+			$witness_n       = null;
+			$item_result     = array();
+
+			if ( isset( $item['witness_n'] ) && '' !== trim( (string) $item['witness_n'] ) ) {
+				$witness_n = (int) $item['witness_n'];
+			}
+
+			if ( $source_entry_id <= 0 || '' === $source_text ) {
+				$results[] = array(
+					'source_entry_id' => $source_entry_id,
+					'form_index'      => $form_index,
+					'success'         => false,
+					'message'         => 'Invalid item payload.',
+				);
+				continue;
+			}
+
+			$item_result = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $witness_n, $target_locale );
+
+			$results[] = array(
+				'source_entry_id' => $source_entry_id,
+				'form_index'      => $form_index,
+				'success'         => ! empty( $item_result['success'] ),
+				'translation'     => isset( $item_result['translation'] ) ? (string) $item_result['translation'] : '',
+				'review_token'    => isset( $item_result['review_token'] ) ? (string) $item_result['review_token'] : '',
+				'message'         => isset( $item_result['message'] ) ? (string) $item_result['message'] : '',
+			);
+		}
+
+		wp_send_json_success( array( 'results' => $results ) );
+	}
+
+	/**
+	 * Translates one item and optionally persists status.
+	 *
+	 * @param int      $translation_id Translation ID.
+	 * @param int      $source_entry_id Source entry ID.
+	 * @param int      $form_index Form index.
+	 * @param string   $source_text Source text.
+	 * @param int|null $witness_n Optional witness number.
+	 * @param string   $target_locale Target locale.
+	 * @return array{success: bool, translation?: string, review_token?: string, message?: string}
+	 */
+	private function translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $witness_n, $target_locale ) {
 		$translate     = $this->translate_callable;
 		$placeholder   = $this->extract_single_printf_placeholder( $source_text );
 		$prepared_text = $source_text;
+		$wait_callback = $this->throttle_wait_callback;
+		$has_witness_n = null !== $witness_n;
 
-		// Deterministic fallback for one-placeholder strings:
-		// inject witness n before translation to bias MT morphology.
 		if ( '' !== $placeholder && $has_witness_n && false === strpos( $source_text, (string) $witness_n ) ) {
 			$prepared_text = preg_replace( '/' . preg_quote( $placeholder, '/' ) . '/', (string) $witness_n, $source_text, 1 );
 			$prepared_text = is_string( $prepared_text ) ? $prepared_text : $source_text;
 		}
 
-		$context = $this->build_deepl_context( $source_text, $witness_n );
-		$result  = $translate( $prepared_text, 'en_US', $target_locale, $context );
-		$status  = $this->review_token_to_translated_status( isset( $result['review_token'] ) ? (string) $result['review_token'] : '' );
+		$context = $this->build_deepl_context( $source_text, $has_witness_n ? (int) $witness_n : -1 );
 
-		// Restore placeholder in translated output when we used witness injection.
+		if ( is_callable( $wait_callback ) ) {
+			try {
+				call_user_func( $wait_callback );
+			} catch ( \Throwable $throwable ) {
+				unset( $throwable );
+			}
+		}
+
+		$result = $translate( $prepared_text, 'en_US', $target_locale, $context );
+		$status = $this->review_token_to_translated_status( isset( $result['review_token'] ) ? (string) $result['review_token'] : '' );
+
 		if ( ! empty( $result['success'] ) && isset( $result['translation'] ) && '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
 			$translated            = (string) $result['translation'];
 			$pattern               = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';
@@ -161,13 +317,10 @@ class TranslationAiAjaxHandler {
 		}
 
 		if ( empty( $result['success'] ) ) {
-			wp_send_json_error(
-				array(
-					'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
-				),
-				500
+			return array(
+				'success' => false,
+				'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
 			);
-			return;
 		}
 
 		$result['review_token'] = $status;
@@ -183,14 +336,7 @@ class TranslationAiAjaxHandler {
 			);
 		}
 
-		wp_send_json_success(
-			array(
-				'source_entry_id' => $source_entry_id,
-				'form_index'      => $form_index,
-				'translation'     => isset( $result['translation'] ) ? (string) $result['translation'] : '',
-				'review_token'    => (string) $status,
-			)
-		);
+		return $result;
 	}
 
 	/**

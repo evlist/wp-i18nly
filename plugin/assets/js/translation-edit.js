@@ -45,6 +45,16 @@
 		);
 	}
 
+	function parsePositiveInteger(value, fallback) {
+		var parsed = parseInt( value, 10 );
+
+		if ( Number.isNaN( parsed ) || parsed < 1 ) {
+			return fallback;
+		}
+
+		return parsed;
+	}
+
 	function getStatusBadgeForInput(input) {
 		var row;
 		var inputId;
@@ -378,19 +388,186 @@
 		}
 
 		function translateSelectedRowsWithAI() {
+			var buttons = [];
+			var batchSize;
+			var maxConcurrentBatches;
+			var batches = [];
+			var batchIndex = 0;
+			var batchAction = config.translateBatchAction || '';
+			var batchNonce = config.translateBatchNonce || '';
+
 			if ( config.hasDeeplKey === false ) {
 				return;
 			}
+
+			batchSize = parsePositiveInteger( config.translateBatchSize, 12 );
+			maxConcurrentBatches = parsePositiveInteger( config.translateMaxConcurrentBatches, 2 );
 
 			getSelectedRows().forEach(
 				function (row) {
 					Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
 						function (button) {
-							translateWithAI( button );
+							buttons.push( button );
 						}
 					);
 				}
 			);
+
+			if (0 === buttons.length) {
+				return;
+			}
+
+			for (var i = 0; i < buttons.length; i += batchSize) {
+				batches.push( buttons.slice( i, i + batchSize ) );
+			}
+
+			function runBatchSequentially(batch) {
+				return batch.reduce(
+					function (promise, button) {
+						return promise.then(
+							function () {
+								return translateWithAI( button );
+							}
+						);
+					},
+					Promise.resolve()
+				);
+			}
+
+			function runNextBatch() {
+				if (batchIndex >= batches.length) {
+					return Promise.resolve();
+				}
+
+				var currentBatch = batches[batchIndex];
+				batchIndex += 1;
+
+				if ( '' === batchAction || '' === batchNonce ) {
+					return runBatchSequentially( currentBatch ).then( runNextBatch );
+				}
+
+				var batchItems = currentBatch.map(
+					function (button) {
+						var inputId = button.getAttribute( 'data-for' );
+						var input = inputId ? document.getElementById( inputId ) : null;
+						var sourceEntryId = input ? input.getAttribute( 'data-i18nly-source-entry-id' ) : '';
+						var formIndex = input ? input.getAttribute( 'data-i18nly-form-index' ) : '0';
+						var sourceText = input ? input.getAttribute( 'data-i18nly-source-text' ) : '';
+						var witness = input ? input.getAttribute( 'data-i18nly-witness' ) : '';
+
+						button.disabled = true;
+						button.setAttribute( 'aria-busy', 'true' );
+
+						return {
+							button: button,
+							input: input,
+							request: {
+								source_entry_id: parseInt( sourceEntryId || '0', 10 ),
+								form_index: parseInt( formIndex || '0', 10 ),
+								source_text: sourceText || '',
+								witness_n: witness || ''
+							}
+						};
+					}
+				).filter(
+					function (item) {
+						return item.input && item.request.source_entry_id > 0 && '' !== item.request.source_text;
+					}
+				);
+
+				if (0 === batchItems.length) {
+					return runNextBatch();
+				}
+
+				var body = toFormBody(
+					{
+						action: batchAction,
+						translation_id: config.translationId,
+						items_json: JSON.stringify( batchItems.map( function (item) { return item.request; } ) ),
+						nonce: batchNonce
+					}
+				);
+
+				return postForm( body ).then(
+					function (payload) {
+						batchItems.forEach(
+							function (item) {
+								item.button.disabled = false;
+								item.button.removeAttribute( 'aria-busy' );
+							}
+						);
+
+						if ( ! payload || ! payload.success || ! payload.data || ! Array.isArray( payload.data.results ) ) {
+							return;
+						}
+
+						payload.data.results.forEach(
+							function (result) {
+								if ( ! result || ! result.success ) {
+									return;
+								}
+
+								var matchedItem = batchItems.find(
+									function (item) {
+										return item.request.source_entry_id === parseInt( result.source_entry_id || '0', 10 )
+											&& item.request.form_index === parseInt( result.form_index || '0', 10 );
+									}
+								);
+
+								if ( ! matchedItem || ! matchedItem.input ) {
+									return;
+								}
+
+								matchedItem.input.value = result.translation || '';
+								matchedItem.input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+
+								var badge = getStatusBadgeForInput( matchedItem.input );
+								var token = result.review_token || '';
+
+								if ('ai_draft_ok' === token) {
+									token = 'draft_ai';
+								} else if ('ai_draft_suspect' === token) {
+									token = 'draft_ai_suspect';
+								} else if ('ai_draft_needs_fix' === token) {
+									token = 'draft_ai_needs_fix';
+								}
+
+								var tokenMap = {
+									draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
+									validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
+									draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
+									draft_ai_suspect: { className: 'i18nly-entry-status--suspect', label: 'AI draft (suspect)' },
+									draft_ai_needs_fix: { className: 'i18nly-entry-status--needs-fix', label: 'AI draft (needs fix)' }
+								};
+
+								if ( badge && tokenMap[token] ) {
+									badge.className = 'i18nly-entry-status ' + tokenMap[token].className;
+									badge.textContent = tokenMap[token].label;
+									badge.setAttribute( 'data-status-token', token );
+								}
+							}
+						);
+					}
+				).catch(
+					function () {
+						batchItems.forEach(
+							function (item) {
+								item.button.disabled = false;
+								item.button.removeAttribute( 'aria-busy' );
+							}
+						);
+					}
+				).then( runNextBatch );
+			}
+
+			var workers = [];
+			var workersCount = Math.min( maxConcurrentBatches, batches.length );
+
+			for (var workerIndex = 0; workerIndex < workersCount; workerIndex++) {
+				workers.push( runNextBatch() );
+			}
+
+			Promise.all( workers );
 		}
 
 		function applyBulkAction(action) {

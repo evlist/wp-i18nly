@@ -304,6 +304,157 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Invokes optional throttle callback before translation request.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_calls_throttle_callback_when_provided() {
+		$_POST = $this->valid_post( 7 );
+
+		$throttle_calls = 0;
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'      => true,
+					'translation'  => 'Bonjour monde',
+					'review_token' => 'draft_ai',
+				);
+			},
+			null,
+			function () use ( &$throttle_calls ) {
+				++$throttle_calls;
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$this->assertSame( 1, $throttle_calls );
+	}
+
+	/**
+	 * Batch endpoint translates multiple items in one AJAX request.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_returns_results_for_each_item() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+						'witness_n'       => 1,
+					),
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 1,
+						'source_text'     => 'World',
+						'witness_n'       => 2,
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$translate_calls = 0;
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function ( $source_text ) use ( &$translate_calls ) {
+				++$translate_calls;
+
+				return array(
+					'success'      => true,
+					'translation'  => 'fr_' . (string) $source_text,
+					'review_token' => 'draft_ai',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertTrue( $response['success'] );
+		$this->assertCount( 2, $response['data']['results'] );
+		$this->assertSame( 2, $translate_calls );
+	}
+
+	/**
+	 * Batch endpoint invokes throttle callback for each translated item.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_calls_throttle_for_each_item() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 1,
+						'source_text'     => 'World',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$throttle_calls = 0;
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function ( $source_text ) {
+				return array(
+					'success'      => true,
+					'translation'  => 'fr_' . (string) $source_text,
+					'review_token' => 'draft_ai',
+				);
+			},
+			null,
+			function () use ( &$throttle_calls ) {
+				++$throttle_calls;
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertTrue( $response['success'] );
+		$this->assertSame( 2, $throttle_calls );
+	}
+
+	/**
+	 * Batch endpoint rejects missing payload.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_rejects_missing_payload() {
+		$_POST = array(
+			'translation_id' => '7',
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$handler = $this->make_handler();
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 400, $response['status'] );
+	}
+
+	/**
 	 * Builds a valid POST payload for translation_id.
 	 *
 	 * @param int $translation_id Translation ID.
@@ -326,9 +477,10 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	 * @param callable|null $get_api_key Override for API key callback.
 	 * @param callable|null $translate Override for translate callable.
 	 * @param callable|null $persist Override for persist callback.
+	 * @param callable|null $throttle_wait Override for throttle callback.
 	 * @return \WP_I18nly\AI\TranslationAiAjaxHandler
 	 */
-	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null ) {
+	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null ) {
 		$get_translation = $get_translation ?? function () {
 			return array(
 				'source_slug'     => 'myplugin/myplugin.php',
@@ -348,6 +500,6 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 			);
 		};
 
-		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist );
+		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait );
 	}
 }

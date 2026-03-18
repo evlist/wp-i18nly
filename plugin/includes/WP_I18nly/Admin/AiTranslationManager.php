@@ -79,6 +79,13 @@ class AiTranslationManager {
 					gmdate( 'Y-m-d H:i:s' ),
 					(string) $status
 				);
+			},
+			function () {
+				$throttle = new \WP_I18nly\Support\FileLockThrottle(
+					'i18nly_ai_translate',
+					$this->get_translate_min_delay_ms()
+				);
+				$throttle->wait_until_allowed();
 			}
 		);
 	}
@@ -94,10 +101,53 @@ class AiTranslationManager {
 		return array_merge(
 			$base_config,
 			array(
-				'translateAction' => 'i18nly_ai_translate_entry',
-				'translateNonce'  => wp_create_nonce( 'i18nly_translate_entry_' . (int) $translation_id ),
-				'hasDeeplKey'     => $this->has_deepl_api_key(),
+				'translateAction'               => 'i18nly_ai_translate_entry',
+				'translateNonce'                => wp_create_nonce( 'i18nly_translate_entry_' . (int) $translation_id ),
+				'translateBatchAction'          => 'i18nly_ai_translate_entry',
+				'translateBatchNonce'           => wp_create_nonce( 'i18nly_translate_entry_' . (int) $translation_id ),
+				'hasDeeplKey'                   => $this->has_deepl_api_key(),
+				'translateBatchSize'            => $this->get_translate_batch_size(),
+				'translateMaxConcurrentBatches' => $this->get_translate_max_concurrent_batches(),
 			)
 		);
+	}
+
+	/**
+	 * Returns client-side batch size for bulk translation.
+	 *
+	 * @return int
+	 */
+	private function get_translate_batch_size() {
+		$size = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_batch_size', 12 )
+			: 12;
+
+		return max( 1, $size );
+	}
+
+	/**
+	 * Returns max number of batches processed in parallel client-side.
+	 *
+	 * @return int
+	 */
+	private function get_translate_max_concurrent_batches() {
+		$concurrency = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_max_concurrent_batches', 2 )
+			: 2;
+
+		return max( 1, $concurrency );
+	}
+
+	/**
+	 * Returns minimal delay between server-side requests.
+	 *
+	 * @return int
+	 */
+	private function get_translate_min_delay_ms() {
+		$delay_ms = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_min_delay_ms', 250 )
+			: 250;
+
+		return max( 0, $delay_ms );
 	}
 }
