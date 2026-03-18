@@ -379,6 +379,62 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Renders one status badge per plural form, not one shared row badge.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_renders_one_status_badge_per_plural_form() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 91,
+					'msgctxt'         => '',
+					'msgid'           => '%s file restored.',
+					'msgid_plural'    => '%s files restored.',
+					'source_status'   => 'active',
+					'forms'           => array(
+						array(
+							'marker'   => 'a',
+							'label'    => 'one',
+							'tooltip'  => 'one',
+							'examples' => array( 1 ),
+						),
+						array(
+							'marker'   => 'b',
+							'label'    => 'other',
+							'tooltip'  => 'other',
+							'examples' => array( 2 ),
+						),
+					),
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '%s fichier restaure.',
+							'status'      => 'draft_ai',
+						),
+						array(
+							'form_index'  => 1,
+							'translation' => '%s fichiers restaures.',
+							'status'      => 'validated',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'data-for="i18nly-translation-91-0"', $html );
+		$this->assertStringContainsString( 'data-for="i18nly-translation-91-1"', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--ai-draft', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--validated', $html );
+	}
+
+	/**
 	 * Declares AI translate among available bulk actions.
 	 *
 	 * @return void

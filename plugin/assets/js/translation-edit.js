@@ -45,6 +45,24 @@
 		);
 	}
 
+	function getStatusBadgeForInput(input) {
+		var row;
+		var inputId;
+
+		if ( ! input) {
+			return null;
+		}
+
+		row = input.closest( 'tr' );
+		inputId = input.id || '';
+
+		if ( ! row || '' === inputId ) {
+			return null;
+		}
+
+		return row.querySelector( '.i18nly-entry-status[data-for="' + inputId + '"]' );
+	}
+
 	function refreshEntriesTable() {
 		var body = toFormBody(
 			{
@@ -80,8 +98,7 @@
 		var hiddenField;
 
 		function clearStatusBadgeForInput(input) {
-			var row = input.closest( 'tr' );
-			var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+			var badge = getStatusBadgeForInput( input );
 			var hasText = '' !== String( input.value || '' ).trim();
 
 			if ( ! badge ) {
@@ -122,8 +139,7 @@
 					payload[sourceEntryId] = { forms: {}, statuses: {} };
 				}
 
-				var row = input.closest( 'tr' );
-				var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+				var badge = getStatusBadgeForInput( input );
 				var token = badge ? ( badge.getAttribute( 'data-status-token' ) || '' ) : '';
 
 				payload[sourceEntryId].forms[formIndex] = input.value;
@@ -322,8 +338,7 @@
 					input.value = payload.data.translation || '';
 					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 
-					var row = input.closest( 'tr' );
-					var badge = row ? row.querySelector( '.i18nly-entry-status' ) : null;
+					var badge = getStatusBadgeForInput( input );
 					var token = payload.data.review_token || '';
 
 					if ('ai_draft_ok' === token) {

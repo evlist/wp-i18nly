@@ -231,8 +231,86 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 * @return string
 	 */
 	public function column_status( $item ) {
-		$status = $this->resolve_translation_status_for_row( $item );
+		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
+		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
+		$has_plural    = '' !== trim( $source_plural );
+		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
+			? $item['translations']
+			: array();
+		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
+			? array_values( $item['form_labels'] )
+			: array();
+		$forms         = isset( $item['forms'] ) && is_array( $item['forms'] )
+			? array_values( $item['forms'] )
+			: array();
+		$form_markers  = isset( $item['form_markers'] ) && is_array( $item['form_markers'] )
+			? array_values( $item['form_markers'] )
+			: array();
+		$form_tooltips = isset( $item['form_tooltips'] ) && is_array( $item['form_tooltips'] )
+			? array_values( $item['form_tooltips'] )
+			: array();
 
+		if ( $source_entry <= 0 ) {
+			return '';
+		}
+
+		$lines = array();
+
+		foreach ( $translations as $translation_row ) {
+			if ( ! is_array( $translation_row ) ) {
+				continue;
+			}
+
+			$form_index          = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
+			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
+			$current_status      = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
+			$input_id            = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
+
+			if ( '' === $current_status && '' !== trim( $current_translation ) ) {
+				$current_status = 'draft';
+			}
+
+			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status );
+
+			if ( ! $has_plural ) {
+				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $badge_html );
+				continue;
+			}
+
+			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
+			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
+			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips );
+			$marker_label = '' !== trim( $form_tooltip ) ? $form_tooltip : $form_label;
+
+			$lines[] = sprintf(
+				'<p class="i18nly-form-line">%1$s %2$s</p>',
+				$this->render_form_marker( $form_marker, $marker_label ),
+				$badge_html
+			);
+		}
+
+		if ( empty( $lines ) ) {
+			$lines[] = sprintf(
+				'<p class="i18nly-form-line">%s</p>',
+				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' )
+			);
+		}
+
+		if ( ! $has_plural ) {
+			return (string) reset( $lines );
+		}
+
+		return implode( '', $lines );
+	}
+
+	/**
+	 * Renders one status badge associated to one translation input.
+	 *
+	 * @param string $input_id Translation input ID.
+	 * @param string $status Normalized status token.
+	 * @return string
+	 */
+	private function render_status_badge_for_input( $input_id, $status ) {
 		$status_map = array(
 			'draft'              => array(
 				'class' => 'i18nly-entry-status--draft',
@@ -257,63 +335,21 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		);
 
 		if ( ! isset( $status_map[ $status ] ) ) {
-			return '<span class="i18nly-entry-status" data-status-token=""></span>';
+			return sprintf(
+				'<span class="i18nly-entry-status" data-for="%1$s" data-status-token=""></span>',
+				esc_attr( $input_id )
+			);
 		}
 
 		$status_meta = $status_map[ $status ];
 
 		return sprintf(
-			'<span class="i18nly-entry-status %1$s" data-status-token="%2$s">%3$s</span>',
+			'<span class="i18nly-entry-status %1$s" data-for="%2$s" data-status-token="%3$s">%4$s</span>',
 			esc_attr( (string) $status_meta['class'] ),
+			esc_attr( $input_id ),
 			esc_attr( $status ),
 			esc_html( (string) $status_meta['label'] )
 		);
-	}
-
-	/**
-	 * Resolves one aggregate translated-entry status for one row.
-	 *
-	 * @param array<string, mixed> $item Row item.
-	 * @return string
-	 */
-	private function resolve_translation_status_for_row( $item ) {
-		$translations = isset( $item['translations'] ) && is_array( $item['translations'] )
-			? $item['translations']
-			: array();
-
-		$rank = array(
-			'validated'          => 1,
-			'draft'              => 2,
-			'draft_ai'           => 3,
-			'draft_ai_suspect'   => 4,
-			'draft_ai_needs_fix' => 5,
-		);
-
-		$resolved_status = '';
-
-		foreach ( $translations as $translation_row ) {
-			if ( ! is_array( $translation_row ) ) {
-				continue;
-			}
-
-			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
-
-			if ( '' === trim( $current_translation ) ) {
-				continue;
-			}
-
-			$current_status = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
-
-			if ( '' === $current_status ) {
-				$current_status = 'draft';
-			}
-
-			if ( '' === $resolved_status || $rank[ $current_status ] > $rank[ $resolved_status ] ) {
-				$resolved_status = $current_status;
-			}
-		}
-
-		return $resolved_status;
 	}
 
 	/**
