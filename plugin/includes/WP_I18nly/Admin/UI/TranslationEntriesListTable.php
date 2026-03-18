@@ -470,9 +470,13 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$examples = array_values( $forms[ $form_index ]['examples'] );
 
 			if ( ! empty( $examples ) ) {
-				$witness = (int) $examples[0];
+				foreach ( $examples as $example ) {
+					if ( 1 === (int) $example ) {
+						return $singular;
+					}
+				}
 
-				return 1 === $witness ? $singular : $plural;
+				return $plural;
 			}
 		}
 
@@ -491,6 +495,12 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$examples = array_values( $forms[ $form_index ]['examples'] );
 
 			if ( ! empty( $examples ) ) {
+				foreach ( $examples as $example ) {
+					if ( 1 === (int) $example ) {
+						return 1;
+					}
+				}
+
 				return (int) $examples[0];
 			}
 		}

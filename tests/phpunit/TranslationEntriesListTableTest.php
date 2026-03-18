@@ -265,6 +265,48 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Treats form examples containing 1 as singular, even when 0 appears first.
+	 *
+	 * @return void
+	 */
+	public function test_translation_inputs_use_singular_when_examples_include_one_after_zero() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 62,
+					'msgctxt'         => '',
+					'msgid'           => '%s translation restored from the Trash.',
+					'msgid_plural'    => '%s translations restored from the Trash.',
+					'status'          => 'active',
+					'forms'           => array(
+						array(
+							'marker'   => 'a',
+							'label'    => 'a',
+							'tooltip'  => 'zero or one',
+							'examples' => array( 0, 1 ),
+						),
+					),
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'data-i18nly-source-text="%s translation restored from the Trash."', $html );
+		$this->assertStringContainsString( 'data-i18nly-witness="1"', $html );
+	}
+
+	/**
 	 * Renders selection and bulk actions with status metadata.
 	 *
 	 * @return void
