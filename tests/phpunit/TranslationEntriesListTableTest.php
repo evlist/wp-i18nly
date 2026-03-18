@@ -379,6 +379,42 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Keeps status badge empty when translation value is empty.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_hides_status_badge_for_empty_translation() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 88,
+					'msgctxt'         => '',
+					'msgid'           => 'Empty sample',
+					'msgid_plural'    => '',
+					'source_status'   => 'active',
+					'translations'    => array(
+						array(
+							'form_index'  => 0,
+							'translation' => '',
+							'status'      => 'draft',
+						),
+					),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'data-for="i18nly-translation-88-0"', $html );
+		$this->assertStringContainsString( 'data-status-token=""', $html );
+		$this->assertStringNotContainsString( 'i18nly-entry-status--draft', $html );
+	}
+
+	/**
 	 * Renders one status badge per plural form, not one shared row badge.
 	 *
 	 * @return void

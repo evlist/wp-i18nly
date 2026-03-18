@@ -114,7 +114,7 @@
 
 			badge.className = 'i18nly-entry-status';
 			badge.textContent = '';
-			badge.removeAttribute( 'data-status-token' );
+			badge.setAttribute( 'data-status-token', '' );
 		}
 
 		function rebuildPayload() {
@@ -366,7 +366,7 @@
 					if ( badge && ! tokenMap[token] ) {
 						badge.className = 'i18nly-entry-status';
 						badge.textContent = '';
-						badge.removeAttribute( 'data-status-token' );
+						badge.setAttribute( 'data-status-token', '' );
 					}
 				}
 			).catch(

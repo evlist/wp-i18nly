@@ -266,6 +266,10 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$current_status      = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
 			$input_id            = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
+			if ( '' === trim( $current_translation ) ) {
+				$current_status = '';
+			}
+
 			if ( '' === $current_status && '' !== trim( $current_translation ) ) {
 				$current_status = 'draft';
 			}
