@@ -443,6 +443,8 @@
 			var batches = [];
 			var batchIndex = 0;
 			var completedBatches = 0;
+			var sustainedDelayMs = 0;
+			var nextAllowedRequestAt = 0;
 			var batchAction = config.translateBatchAction || '';
 			var batchNonce = config.translateBatchNonce || '';
 			var isCancelled = false;
@@ -626,6 +628,31 @@
 				return new window.AbortController();
 			}
 
+			function setSustainedDelay(delayMs) {
+				var normalized = Math.max( 0, parseInt( delayMs, 10 ) || 0 );
+
+				if ( normalized > sustainedDelayMs ) {
+					sustainedDelayMs = normalized;
+				}
+			}
+
+			function applyInterBatchThrottle(currentBatchNum) {
+				var now = Date.now();
+				var waitMs = Math.max( 0, nextAllowedRequestAt - now );
+
+				if ( waitMs <= 0 ) {
+					return Promise.resolve();
+				}
+
+				updateProgress(
+					completedBatches,
+					batches.length,
+					'Throttling before batch ' + currentBatchNum + ' of ' + batches.length + ': waiting ' + Math.ceil( waitMs / 1000 ) + 's...'
+				);
+
+				return wait( waitMs );
+			}
+
 			function requestBatch(body, currentBatchNum, attempt) {
 				activeController = createRequestController();
 
@@ -651,6 +678,8 @@
 							waitMs = retryAfterMs > 0
 								? retryAfterMs
 								: backoffBaseMs * Math.pow( 2, attempt );
+
+							setSustainedDelay( waitMs );
 
 							updateProgress(
 								completedBatches,
@@ -767,7 +796,17 @@
 
 				updateProgress( completedBatches, batches.length, 'Processing batch ' + currentBatchNum + ' of ' + batches.length );
 
-				return requestBatch( body, currentBatchNum, 0 ).then(
+				return applyInterBatchThrottle( currentBatchNum ).then(
+					function () {
+						if ( isCancelled ) {
+							return { cancelled: true };
+						}
+
+						nextAllowedRequestAt = Date.now();
+
+						return requestBatch( body, currentBatchNum, 0 );
+					}
+				).then(
 					function (response) {
 						var currentBatchItems = activeBatchItems;
 						var payload = response && response.payload ? response.payload : null;
@@ -837,6 +876,11 @@
 						);
 
 						completedBatches = currentBatchNum;
+
+						if ( sustainedDelayMs > 0 ) {
+							nextAllowedRequestAt = Date.now() + sustainedDelayMs;
+						}
+
 						return runNextBatch();
 					}
 				).catch(
