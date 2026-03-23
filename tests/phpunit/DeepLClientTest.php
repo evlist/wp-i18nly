@@ -156,6 +156,30 @@ class DeepLClientTest extends TestCase {
 	}
 
 	/**
+	 * HTTP 429 includes rate-limit metadata and Retry-After milliseconds.
+	 *
+	 * @return void
+	 */
+	public function test_translate_item_maps_rate_limit_with_retry_after_seconds() {
+		$client = new DeepLClient(
+			'prokey',
+			function () {
+				return array(
+					'response' => array( 'code' => 429 ),
+					'headers'  => array( 'retry-after' => '2' ),
+					'body'     => '',
+				);
+			}
+		);
+
+		$result = $client->translate_item( 'Hello', 'en_US', 'fr_FR' );
+
+		$this->assertFalse( $result['success'] );
+		$this->assertTrue( $result['rate_limited'] );
+		$this->assertSame( 2000, $result['retry_after_ms'] );
+	}
+
+	/**
 	 * Source locale is always normalized to DeepL two-letter code.
 	 *
 	 * @return void

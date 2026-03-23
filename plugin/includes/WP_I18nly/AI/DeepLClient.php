@@ -115,6 +115,17 @@ class DeepLClient {
 				);
 			}
 
+			if ( 429 === $code ) {
+				$retry_after_ms = $this->extract_retry_after_ms( $response );
+
+				return array(
+					'success'        => false,
+					'rate_limited'   => true,
+					'retry_after_ms' => $retry_after_ms,
+					'message'        => __( 'DeepL rate limit reached. Please retry later.', 'i18nly' ),
+				);
+			}
+
 			return array(
 				'success' => false,
 				'message' => sprintf(
@@ -147,6 +158,51 @@ class DeepLClient {
 			'translation'  => $translation,
 			'review_token' => 'ai_draft_ok',
 		);
+	}
+
+	/**
+	 * Extracts Retry-After header as milliseconds.
+	 *
+	 * @param array<string, mixed> $response HTTP response array.
+	 * @return int
+	 */
+	private function extract_retry_after_ms( array $response ) {
+		if ( ! isset( $response['headers'] ) || ! is_array( $response['headers'] ) ) {
+			return 0;
+		}
+
+		$headers = $response['headers'];
+		$value   = '';
+
+		if ( isset( $headers['retry-after'] ) ) {
+			$value = (string) $headers['retry-after'];
+		} elseif ( isset( $headers['Retry-After'] ) ) {
+			$value = (string) $headers['Retry-After'];
+		}
+
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return 0;
+		}
+
+		if ( ctype_digit( $value ) ) {
+			return max( 0, (int) $value * 1000 );
+		}
+
+		$timestamp = strtotime( $value );
+
+		if ( false === $timestamp ) {
+			return 0;
+		}
+
+		$delta_seconds = $timestamp - time();
+
+		if ( $delta_seconds <= 0 ) {
+			return 0;
+		}
+
+		return (int) $delta_seconds * 1000;
 	}
 
 	/**

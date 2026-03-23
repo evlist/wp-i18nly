@@ -195,8 +195,10 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertSame( 'i18nly_ai_translate_entry', $config['translateBatchAction'] );
 		$this->assertSame( 'nonce-i18nly_translate_entry_42', $config['translateBatchNonce'] );
 		$this->assertTrue( $config['hasDeeplKey'] );
-		$this->assertSame( 12, $config['translateBatchSize'] );
-		$this->assertSame( 2, $config['translateMaxConcurrentBatches'] );
+		$this->assertSame( 50, $config['translateBatchSize'] );
+		$this->assertSame( 50, $config['translateMaxItemsPerRequest'] );
+		$this->assertSame( 1000, $config['translateBackoffBaseMs'] );
+		$this->assertSame( 1, $config['translateMaxConcurrentBatches'] );
 	}
 
 	/**

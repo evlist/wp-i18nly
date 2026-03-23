@@ -107,6 +107,8 @@ class AiTranslationManager {
 				'translateBatchNonce'           => wp_create_nonce( 'i18nly_translate_entry_' . (int) $translation_id ),
 				'hasDeeplKey'                   => $this->has_deepl_api_key(),
 				'translateBatchSize'            => $this->get_translate_batch_size(),
+				'translateMaxItemsPerRequest'   => $this->get_translate_max_items_per_request(),
+				'translateBackoffBaseMs'        => $this->get_translate_backoff_base_ms(),
 				'translateMaxConcurrentBatches' => $this->get_translate_max_concurrent_batches(),
 			)
 		);
@@ -118,11 +120,41 @@ class AiTranslationManager {
 	 * @return int
 	 */
 	private function get_translate_batch_size() {
-		$size = function_exists( 'apply_filters' )
-			? (int) apply_filters( 'i18nly_ai_translate_batch_size', 12 )
-			: 12;
+		$max_items = $this->get_translate_max_items_per_request();
 
-		return max( 1, $size );
+		$size = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_batch_size', $max_items )
+			: $max_items;
+
+		return max( 1, min( $max_items, $size ) );
+	}
+
+	/**
+	 * Returns max number of source strings allowed per request.
+	 *
+	 * DeepL accepts up to 50 texts per /translate request.
+	 *
+	 * @return int
+	 */
+	private function get_translate_max_items_per_request() {
+		$max_items = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_max_items_per_request', 50 )
+			: 50;
+
+		return max( 1, min( 50, $max_items ) );
+	}
+
+	/**
+	 * Returns base delay used by client exponential backoff.
+	 *
+	 * @return int
+	 */
+	private function get_translate_backoff_base_ms() {
+		$delay_ms = function_exists( 'apply_filters' )
+			? (int) apply_filters( 'i18nly_ai_translate_backoff_base_ms', 1000 )
+			: 1000;
+
+		return max( 100, $delay_ms );
 	}
 
 	/**
@@ -132,8 +164,8 @@ class AiTranslationManager {
 	 */
 	private function get_translate_max_concurrent_batches() {
 		$concurrency = function_exists( 'apply_filters' )
-			? (int) apply_filters( 'i18nly_ai_translate_max_concurrent_batches', 2 )
-			: 2;
+			? (int) apply_filters( 'i18nly_ai_translate_max_concurrent_batches', 1 )
+			: 1;
 
 		return max( 1, $concurrency );
 	}

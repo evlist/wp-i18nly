@@ -149,6 +149,17 @@ class TranslationAiAjaxHandler {
 		$result        = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $has_witness_n ? $witness_n : null, $target_locale );
 
 		if ( empty( $result['success'] ) ) {
+			if ( ! empty( $result['rate_limited'] ) ) {
+				wp_send_json_error(
+					array(
+						'message'        => isset( $result['message'] ) ? (string) $result['message'] : 'Rate limit reached.',
+						'retry_after_ms' => isset( $result['retry_after_ms'] ) ? (int) $result['retry_after_ms'] : 0,
+					),
+					429
+				);
+				return;
+			}
+
 			wp_send_json_error(
 				array(
 					'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
@@ -181,6 +192,8 @@ class TranslationAiAjaxHandler {
 
 		$translation_id = absint( wp_unslash( $_POST['translation_id'] ) );
 		$nonce          = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+		$batch_index    = isset( $_POST['batch_index'] ) ? absint( wp_unslash( $_POST['batch_index'] ) ) : 0;
+		$total_batches  = isset( $_POST['total_batches'] ) ? absint( wp_unslash( $_POST['total_batches'] ) ) : 1;
 
 		if ( $translation_id <= 0 ) {
 			wp_send_json_error( array( 'message' => 'Invalid translation id.' ), 400 );
@@ -254,6 +267,19 @@ class TranslationAiAjaxHandler {
 
 			$item_result = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $witness_n, $target_locale );
 
+			if ( ! empty( $item_result['rate_limited'] ) ) {
+				wp_send_json_error(
+					array(
+						'message'        => isset( $item_result['message'] ) ? (string) $item_result['message'] : 'Rate limit reached.',
+						'retry_after_ms' => isset( $item_result['retry_after_ms'] ) ? (int) $item_result['retry_after_ms'] : 0,
+						'batch_index'    => $batch_index,
+						'total_batches'  => $total_batches,
+					),
+					429
+				);
+				return;
+			}
+
 			$results[] = array(
 				'source_entry_id' => $source_entry_id,
 				'form_index'      => $form_index,
@@ -264,7 +290,13 @@ class TranslationAiAjaxHandler {
 			);
 		}
 
-		wp_send_json_success( array( 'results' => $results ) );
+		wp_send_json_success(
+			array(
+				'results'       => $results,
+				'batch_index'   => $batch_index,
+				'total_batches' => $total_batches,
+			)
+		);
 	}
 
 	/**
@@ -318,8 +350,10 @@ class TranslationAiAjaxHandler {
 
 		if ( empty( $result['success'] ) ) {
 			return array(
-				'success' => false,
-				'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
+				'success'        => false,
+				'message'        => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
+				'rate_limited'   => ! empty( $result['rate_limited'] ),
+				'retry_after_ms' => isset( $result['retry_after_ms'] ) ? (int) $result['retry_after_ms'] : 0,
 			);
 		}
 

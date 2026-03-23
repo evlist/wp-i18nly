@@ -45,6 +45,53 @@
 		);
 	}
 
+	function postFormWithMeta(body, options) {
+		var requestOptions = options || {};
+
+		return window.fetch(
+			config.ajaxUrl,
+			{
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': config.contentTypeHeader
+				},
+				body: body,
+				signal: requestOptions.signal
+			}
+		).then(
+			function (response) {
+				return response.text().then(
+					function (text) {
+						var payload = null;
+
+						if ( '' !== text ) {
+							try {
+								payload = JSON.parse( text );
+							} catch (error) {
+								payload = null;
+							}
+						}
+
+						return {
+							ok: response.ok,
+							status: response.status,
+							payload: payload
+						};
+					}
+				);
+			}
+		);
+	}
+
+	function wait(delayMs) {
+		return new Promise(
+			function (resolve) {
+				window.setTimeout( resolve, delayMs );
+			}
+		);
+	}
+
 	function parsePositiveInteger(value, fallback) {
 		var parsed = parseInt( value, 10 );
 
@@ -390,18 +437,29 @@
 		function translateSelectedRowsWithAI() {
 			var buttons = [];
 			var batchSize;
-			var maxConcurrentBatches;
+			var maxItemsPerRequest;
+			var backoffBaseMs;
+			var maxRetryAttempts;
 			var batches = [];
 			var batchIndex = 0;
+			var completedBatches = 0;
 			var batchAction = config.translateBatchAction || '';
 			var batchNonce = config.translateBatchNonce || '';
+			var isCancelled = false;
+			var activeController = null;
+			var activeBatchItems = [];
+			var progressElements;
 
 			if ( config.hasDeeplKey === false ) {
 				return;
 			}
 
 			batchSize = parsePositiveInteger( config.translateBatchSize, 12 );
-			maxConcurrentBatches = parsePositiveInteger( config.translateMaxConcurrentBatches, 2 );
+			maxItemsPerRequest = parsePositiveInteger( config.translateMaxItemsPerRequest, 50 );
+			backoffBaseMs = parsePositiveInteger( config.translateBackoffBaseMs, 1000 );
+			maxRetryAttempts = parsePositiveInteger( config.translateMaxRetryAttempts, 4 );
+
+			batchSize = Math.min( batchSize, maxItemsPerRequest );
 
 			getSelectedRows().forEach(
 				function (row) {
@@ -421,11 +479,215 @@
 				batches.push( buttons.slice( i, i + batchSize ) );
 			}
 
+			function showProgressModal() {
+				var modal = document.createElement( 'div' );
+				var overlay = document.createElement( 'div' );
+				var content = document.createElement( 'div' );
+				var title = document.createElement( 'h2' );
+				var progressText = document.createElement( 'p' );
+				var progressBar = document.createElement( 'div' );
+				var progressFill = document.createElement( 'div' );
+				var actions = document.createElement( 'div' );
+				var cancelButton = document.createElement( 'button' );
+				var closeButton = document.createElement( 'button' );
+
+				modal.id = 'i18nly-progress-modal';
+				modal.setAttribute( 'role', 'dialog' );
+				modal.setAttribute( 'aria-modal', 'true' );
+				modal.setAttribute( 'aria-labelledby', 'i18nly-progress-title' );
+
+				overlay.className = 'i18nly-progress-overlay';
+
+				content.className = 'i18nly-progress-content';
+				title.id = 'i18nly-progress-title';
+				title.textContent = 'AI Translation in Progress';
+				title.className = 'i18nly-progress-title';
+
+				progressText.id = 'i18nly-progress-text';
+				progressText.className = 'i18nly-progress-text';
+				progressText.setAttribute( 'aria-live', 'polite' );
+				progressText.textContent = 'Processing batch 0 of ' + batches.length;
+
+				progressBar.className = 'i18nly-progress-bar';
+				progressFill.id = 'i18nly-progress-fill';
+				progressFill.className = 'i18nly-progress-fill';
+				progressBar.appendChild( progressFill );
+
+				actions.className = 'i18nly-progress-actions';
+
+				cancelButton.type = 'button';
+				cancelButton.className = 'button button-secondary i18nly-progress-cancel';
+				cancelButton.textContent = 'Cancel';
+				cancelButton.addEventListener( 'click', cancelTranslation );
+				actions.appendChild( cancelButton );
+
+				closeButton.type = 'button';
+				closeButton.className = 'button button-primary i18nly-progress-close';
+				closeButton.textContent = 'Close';
+				closeButton.style.display = 'none';
+				closeButton.addEventListener( 'click', closeModal );
+				actions.appendChild( closeButton );
+
+				content.appendChild( title );
+				content.appendChild( progressText );
+				content.appendChild( progressBar );
+				content.appendChild( actions );
+
+				overlay.appendChild( content );
+				modal.appendChild( overlay );
+
+				document.body.appendChild( modal );
+
+				return {
+					modal: modal,
+					progressText: progressText,
+					progressFill: progressFill,
+					cancelButton: cancelButton,
+					closeButton: closeButton
+				};
+			}
+
+			function updateProgress(completed, totalBatches, message) {
+				var percentage = 0;
+
+				if ( progressElements && progressElements.progressText ) {
+					progressElements.progressText.textContent = message || ( 'Processed batch ' + completed + ' of ' + totalBatches );
+				}
+
+				if ( progressElements && progressElements.progressFill ) {
+					percentage = totalBatches > 0 ? Math.min( 100, Math.round( ( completed / totalBatches ) * 100 ) ) : 0;
+					progressElements.progressFill.style.width = percentage + '%';
+				}
+			}
+
+			function closeModal() {
+				if ( progressElements && progressElements.modal && progressElements.modal.parentNode ) {
+					progressElements.modal.parentNode.removeChild( progressElements.modal );
+				}
+
+				progressElements = null;
+			}
+
+			function releaseBatchItems(items) {
+				items.forEach(
+					function (item) {
+						item.button.disabled = false;
+						item.button.removeAttribute( 'aria-busy' );
+					}
+				);
+			}
+
+			function cancelTranslation() {
+				if ( isCancelled ) {
+					return;
+				}
+
+				isCancelled = true;
+
+				if ( activeController ) {
+					activeController.abort();
+					activeController = null;
+				}
+
+				releaseBatchItems( activeBatchItems );
+				updateProgress( completedBatches, batches.length, 'Translation cancelled.' );
+				window.setTimeout( closeModal, 150 );
+			}
+
+			function showCloseAction() {
+				if ( ! progressElements ) {
+					return;
+				}
+
+				if ( progressElements.cancelButton ) {
+					progressElements.cancelButton.style.display = 'none';
+				}
+
+				if ( progressElements.closeButton ) {
+					progressElements.closeButton.style.display = 'inline-flex';
+				}
+			}
+
+			function finishProgress() {
+				updateProgress( batches.length, batches.length, 'Translation completed.' );
+				window.setTimeout( closeModal, 600 );
+			}
+
+			function failProgress(message) {
+				updateProgress( completedBatches, batches.length, message );
+				showCloseAction();
+			}
+
+			function createRequestController() {
+				if ( typeof window.AbortController !== 'function' ) {
+					return null;
+				}
+
+				return new window.AbortController();
+			}
+
+			function requestBatch(body, currentBatchNum, attempt) {
+				activeController = createRequestController();
+
+				return postFormWithMeta(
+					body,
+					activeController ? { signal: activeController.signal } : {}
+				).then(
+					function (response) {
+						var payload = response && response.payload ? response.payload : null;
+						var retryAfterMs = 0;
+						var waitMs = 0;
+						activeController = null;
+
+						if ( isCancelled ) {
+							return { cancelled: true };
+						}
+
+						if ( payload && payload.data && payload.data.retry_after_ms ) {
+							retryAfterMs = parsePositiveInteger( payload.data.retry_after_ms, 0 );
+						}
+
+						if ( 429 === response.status && attempt < maxRetryAttempts ) {
+							waitMs = retryAfterMs > 0
+								? retryAfterMs
+								: backoffBaseMs * Math.pow( 2, attempt );
+
+							updateProgress(
+								completedBatches,
+								batches.length,
+								'Too many requests. Retrying batch ' + currentBatchNum + ' of ' + batches.length + ' in ' + Math.ceil( waitMs / 1000 ) + 's (attempt ' + ( attempt + 1 ) + '/' + maxRetryAttempts + ')...'
+							);
+
+							return wait( waitMs ).then(
+								function () {
+									return requestBatch( body, currentBatchNum, attempt + 1 );
+								}
+							);
+						}
+
+						return response;
+					},
+					function (error) {
+						activeController = null;
+
+						if ( isCancelled || ( error && 'AbortError' === error.name ) ) {
+							return { cancelled: true };
+						}
+
+						throw error;
+					}
+				);
+			}
+
 			function runBatchSequentially(batch) {
 				return batch.reduce(
 					function (promise, button) {
 						return promise.then(
 							function () {
+								if ( isCancelled ) {
+									return Promise.resolve();
+								}
+
 								return translateWithAI( button );
 							}
 						);
@@ -435,18 +697,30 @@
 			}
 
 			function runNextBatch() {
+				if ( isCancelled ) {
+					return Promise.resolve();
+				}
+
 				if (batchIndex >= batches.length) {
+					finishProgress();
 					return Promise.resolve();
 				}
 
 				var currentBatch = batches[batchIndex];
+				var currentBatchNum = batchIndex + 1;
 				batchIndex += 1;
 
 				if ( '' === batchAction || '' === batchNonce ) {
-					return runBatchSequentially( currentBatch ).then( runNextBatch );
+					updateProgress( completedBatches, batches.length, 'Processing batch ' + currentBatchNum + ' of ' + batches.length );
+					return runBatchSequentially( currentBatch ).then(
+						function () {
+							completedBatches = currentBatchNum;
+							return runNextBatch();
+						}
+					);
 				}
 
-				var batchItems = currentBatch.map(
+				activeBatchItems = currentBatch.map(
 					function (button) {
 						var inputId = button.getAttribute( 'data-for' );
 						var input = inputId ? document.getElementById( inputId ) : null;
@@ -475,7 +749,8 @@
 					}
 				);
 
-				if (0 === batchItems.length) {
+				if (0 === activeBatchItems.length) {
+					completedBatches = currentBatchNum;
 					return runNextBatch();
 				}
 
@@ -483,21 +758,34 @@
 					{
 						action: batchAction,
 						translation_id: config.translationId,
-						items_json: JSON.stringify( batchItems.map( function (item) { return item.request; } ) ),
-						nonce: batchNonce
+						items_json: JSON.stringify( activeBatchItems.map( function (item) { return item.request; } ) ),
+						nonce: batchNonce,
+						batch_index: currentBatchNum,
+						total_batches: batches.length
 					}
 				);
 
-				return postForm( body ).then(
-					function (payload) {
-						batchItems.forEach(
-							function (item) {
-								item.button.disabled = false;
-								item.button.removeAttribute( 'aria-busy' );
-							}
-						);
+				updateProgress( completedBatches, batches.length, 'Processing batch ' + currentBatchNum + ' of ' + batches.length );
+
+				return requestBatch( body, currentBatchNum, 0 ).then(
+					function (response) {
+						var currentBatchItems = activeBatchItems;
+						var payload = response && response.payload ? response.payload : null;
+
+						releaseBatchItems( currentBatchItems );
+						activeBatchItems = [];
+
+						if ( response && response.cancelled ) {
+							return;
+						}
+
+						if ( response && 429 === response.status ) {
+							failProgress( 'Translation stopped after repeated rate-limit errors.' );
+							return;
+						}
 
 						if ( ! payload || ! payload.success || ! payload.data || ! Array.isArray( payload.data.results ) ) {
+							failProgress( 'Translation stopped because the batch response was invalid.' );
 							return;
 						}
 
@@ -507,7 +795,7 @@
 									return;
 								}
 
-								var matchedItem = batchItems.find(
+								var matchedItem = currentBatchItems.find(
 									function (item) {
 										return item.request.source_entry_id === parseInt( result.source_entry_id || '0', 10 )
 											&& item.request.form_index === parseInt( result.form_index || '0', 10 );
@@ -547,27 +835,23 @@
 								}
 							}
 						);
+
+						completedBatches = currentBatchNum;
+						return runNextBatch();
 					}
 				).catch(
 					function () {
-						batchItems.forEach(
-							function (item) {
-								item.button.disabled = false;
-								item.button.removeAttribute( 'aria-busy' );
-							}
-						);
+						releaseBatchItems( activeBatchItems );
+						activeBatchItems = [];
+						failProgress( 'Translation stopped because the batch request failed.' );
 					}
-				).then( runNextBatch );
+				);
 			}
 
-			var workers = [];
-			var workersCount = Math.min( maxConcurrentBatches, batches.length );
+			progressElements = showProgressModal();
+			updateProgress( 0, batches.length, 'Processing batch 0 of ' + batches.length );
 
-			for (var workerIndex = 0; workerIndex < workersCount; workerIndex++) {
-				workers.push( runNextBatch() );
-			}
-
-			Promise.all( workers );
+			runNextBatch();
 		}
 
 		function applyBulkAction(action) {

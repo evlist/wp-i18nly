@@ -436,6 +436,78 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Batch endpoint returns HTTP 429 when provider rate limit is reached.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_returns_rate_limit_error() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'        => false,
+					'rate_limited'   => true,
+					'retry_after_ms' => 1500,
+					'message'        => 'DeepL rate limit reached.',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 429, $response['status'] );
+		$this->assertSame( 1500, $response['data']['retry_after_ms'] );
+	}
+
+	/**
+	 * Batch endpoint includes progress metadata in response.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_includes_progress_metadata() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+			'batch_index'    => '2',
+			'total_batches'  => '5',
+		);
+
+		$handler = $this->make_handler();
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertTrue( $response['success'] );
+		$this->assertSame( 2, $response['data']['batch_index'] );
+		$this->assertSame( 5, $response['data']['total_batches'] );
+	}
+
+	/**
 	 * Batch endpoint rejects missing payload.
 	 *
 	 * @return void
