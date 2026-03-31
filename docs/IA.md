@@ -13,20 +13,45 @@ The long-term product goal is to hide low-level translation file complexity from
 
 - Main plugin folder: `plugin/`
 - Main plugin file: `plugin/i18nly.php`
-- Admin page class: `plugin/includes/class-i18nly-admin-page.php`
 - Plugin index guard: `plugin/index.php`
 - License text: `LICENSES/GPL-3.0-or-later.txt`
 - Setup/overview doc: `README.md`
+- Last commit: `cb24671` — AI bulk translation: keep adaptive inter-batch throttle across retries
+- Test suite: **113 tests, 437 assertions**, all green (PHPUnit 11.5)
+
+### Namespace / file structure (current)
+
+PSR-4 autoloader active. All runtime classes live under `plugin/includes/WP_I18nly/`.
+
+| Namespace | Responsibility |
+|-----------|---------------|
+| `WP_I18nly\Admin` | Admin controllers, AJAX handlers, settings |
+| `WP_I18nly\Admin\UI` | Renderers, list tables, view helpers |
+| `WP_I18nly\AI` | DeepL client, credentials validator, AJAX handler |
+| `WP_I18nly\Build` | POT pipeline (generator, importer, extractor, workspace service) |
+| `WP_I18nly\Plurals` | Plural forms registry |
+| `WP_I18nly\Storage` | Schema manager, wpdb repository, temporary storage |
+| `WP_I18nly\Support` | Technical utilities (file-lock throttle, etc.) |
 
 ### Implemented so far
 
-- A first working plugin bootstrap exists.
-- A top-level admin sidebar menu entry (**Translations**) exists.
-- Admin pages now follow WordPress patterns:
-	- `All translations` (WP-style table),
-	- `Add translation` (form),
-	- `Edit translation` (details view).
+- Plugin bootstrap, WordPress CPT-based translation entity, admin sidebar menu.
+- `All translations` (WP-style list table), `Add translation` (form), `Edit translation` (details + entry editing).
 - The `Add` flow creates a translation and redirects to the same `Edit translation` page used by list row links.
+- Per-entry translation status model with AI badge (`ai_draft_ok`, `needs_review_*`, `human_verified`, `human_edited`).
+- Per-form status badges for plural entries; hidden when translation is empty.
+- POT source import pipeline (extract → persist entries in custom table).
+- DeepL API-key based AI translation:
+  - Single-item and batch AJAX translation flows.
+  - Placeholder masking/restoration strategy (witness-based for single printf token).
+  - Plural form mapping heuristic (EN source → form index by witness value).
+  - Settings page with API key storage and connection test.
+- AI bulk translation UI:
+  - Progress modal (centered overlay, cancel/close buttons, fill bar).
+  - Sequential batch execution (one batch at a time, configurable batch size, default 50).
+  - DeepL 429 detection with `Retry-After` header parsing propagated through all layers.
+  - Deterministic exponential backoff: `backoffBaseMs × 2^attempt` (default 1 s, max 4 retries).
+  - Adaptive inter-batch throttle: sustained delay floor raised on each 429, persisted for entire bulk action.
 
 ## 3) UX/Product Direction Agreed in Session
 
@@ -154,10 +179,21 @@ Core principles for this repository:
 
 ## 9) Next Steps (XP Order)
 
-1. Add actions on `All translations` (for example trash/untrash) with minimal status handling.
-2. Expand `Edit translation` page from read-only details to first editable translation entries.
-3. Continue Slice 3 admin decomposition until `WP_I18nly\\Admin\\AdminPage` is a thin admin facade only.
-4. Introduce dedicated entry storage (custom table) while keeping translation entity in CPT + meta.
+Items 1–4 from the previous list are now done or superseded. Current open items:
+
+1. **Multi-text DeepL batch** (next major AI slice):
+   Refactor `DeepLClient::translate_item()` into a `translate_batch(array $items)` method that sends all
+   texts in a single HTTP call to DeepL `/v2/translate`; update `TranslationAiAjaxHandler::handle_translate_entries_batch()`
+   to use it; update tests. This removes the current N-calls-per-lot inefficiency.
+
+2. **Expose `translateMaxRetryAttempts` via PHP filter**:
+   Add `get_translate_max_retry_attempts()` in `AiTranslationManager`, include it in `extend_script_config()`,
+   add assertion in `AdminPageRenderTest`.
+
+3. **Plural forms data source strategy** (see section 17): implement generator script and runtime artifact.
+
+4. **Continue Slice 3 admin decomposition** until `WP_I18nly\Admin\AdminPage` is a thin facade.
+
 5. Repeat with the same loop: implement → validate → commit.
 
 ## 11) Psalm Compatibility & Usage
@@ -452,31 +488,62 @@ These arrays are the runtime input for the EN source-form mapping heuristic.
 
 ### XP Delivery Plan (Small Vertical Slices)
 
-1. **Settings + key validation**
-	- Add secure storage for DeepL key.
-	- Add "Test connection" action.
+1. ✅ **Settings + key validation**
+	- Secure storage for DeepL key.
+	- "Test connection" action.
 
-2. **Single-item translation action**
+2. ✅ **Single-item translation action**
 	- Translate one selected form from edit screen.
 	- Write result back to the corresponding input only.
 
-3. **Plural-aware handling**
-	- Ensure form indexes remain stable for plural entries.
-	- Generate each target plural form using EN-source heuristic (`n=1` -> source singular, otherwise source plural).
-	- Prevent cross-form overwrite.
+3. ✅ **Plural-aware handling**
+	- Form indexes stable for plural entries.
+	- Each target plural form generated using EN-source heuristic (`n=1` → source singular, otherwise source plural).
+	- No cross-form overwrite.
 
-4. **Small batch translation**
-	- Translate selected rows/forms.
-	- Return per-item success/error report and review state token.
+4. ✅ **Small batch translation (bulk action)**
+	- Progress modal with cancel button and fill bar.
+	- Sequential batch execution (one lot at a time).
+	- Per-item success/error report; review state token attached.
 
-5. **Safety checks**
-	- Placeholder integrity (`%s`, `%d`, etc.).
-	- HTML/tag preservation checks.
-	- Flag unsafe outputs per row via review token (no hard reject in V1).
+5. ✅ **DeepL 429 handling and backoff**
+	- `DeepLClient` detects HTTP 429, reads `Retry-After` header (integer seconds or HTTP-date format).
+	- `TranslationAiAjaxHandler` propagates as HTTP 429 JSON response with `retry_after_ms`.
+	- Client-side deterministic exponential backoff: `backoffBaseMs × 2^attempt` (default base 1 s, up to 4 retries).
+	- Server-guided delay used when `retry_after_ms > 0` in response.
+	- Adaptive inter-batch throttle: sustained delay floor raised on each 429, persisted for the full bulk action.
 
-6. **Cost visibility**
-	- Display estimated source-character volume before submit.
-	- Keep behavior transparent for low-volume users.
+6. ✅ **Safety checks**
+	- Placeholder integrity (`%s`, `%d`, etc.) — witness-based masking/restoration.
+	- HTML/tag preservation in place.
+	- Unsafe outputs flagged via review token (no hard reject in V1).
+
+7. ✅ **Cost visibility** — estimated source-character volume display.
+	*(Note: batch now defaults to 50 strings/lot aligned to DeepL API max.)*
+
+8. ⏳ **Multi-text DeepL batch** (next major slice):
+	Send all texts in one HTTP call to DeepL `/v2/translate` instead of one call per string.
+	Requires `translate_batch(array $items)` in `DeepLClient`, handler update, and tests.
+
+### Configuration values (PHP filters + JS config)
+
+| PHP filter | Default | Purpose |
+|---|---|---|
+| `i18nly_ai_translate_batch_size` | 50 (= max items) | JS client lot size |
+| `i18nly_ai_translate_max_items_per_request` | 50 (capped) | DeepL API max texts/call |
+| `i18nly_ai_translate_backoff_base_ms` | 1000 ms | Exponential backoff base |
+| `i18nly_ai_translate_max_concurrent_batches` | 1 | Client parallelism (keep at 1) |
+| `i18nly_ai_translate_min_delay_ms` | 250 ms | Server-side inter-request floor (FileLockThrottle) |
+
+### Key files (AI layer)
+
+| File | Role |
+|---|---|
+| `plugin/includes/WP_I18nly/AI/DeepLClient.php` | HTTP client, 429/Retry-After, placeholder masking |
+| `plugin/includes/WP_I18nly/AI/TranslationAiAjaxHandler.php` | WP AJAX endpoints, 429 propagation, batch progress metadata |
+| `plugin/includes/WP_I18nly/Admin/AiTranslationManager.php` | Config values, `extend_script_config()`, FileLockThrottle wiring |
+| `plugin/assets/js/translation-edit.js` | Bulk flow, progress modal, backoff, inter-batch throttle |
+| `plugin/assets/css/translation-edit.css` | Progress modal styles |
 
 ### UX and Compliance Constraints
 
@@ -497,20 +564,22 @@ Primary architectural concern identified after PSR-4 migration: current `AdminPa
 
 ### Current status (March 2026)
 
-Slice 3 is **in progress**, not closed.
+Slice 3 is **substantially advanced** but not fully closed.
 
 Implemented so far:
 
-- edit-screen behavior has been extracted into `WP_I18nly\\Admin\\TranslationEditController`,
-- admin orchestration classes now live under `WP_I18nly\\Admin` (`AdminPage`, `TranslationAjaxController`, `TranslationSaveHandler`),
-- UI-specific collaborators exist under `WP_I18nly\\Admin\\UI` (messages, list columns, edit assets, meta box renderer, entries list table),
-- technical collaborators exist under `WP_I18nly\\Support`,
-- storage collaborators exist under `WP_I18nly\\Storage`,
-- plural rules now live under `WP_I18nly\\Plurals\\PluralFormsRegistry`.
+- edit-screen behavior extracted into `WP_I18nly\Admin\TranslationEditController`,
+- admin orchestration classes: `AdminPage`, `TranslationAjaxController`, `TranslationSaveHandler`, `TranslationSettingsPage`,
+- UI collaborators under `WP_I18nly\Admin\UI`: `TranslationMessages`, `TranslationListColumns`, `EditScreenAssets`, `TranslationMetaBoxRenderer`, `TranslationEntriesListTable`,
+- technical collaborators under `WP_I18nly\Support` (including `FileLockThrottle`),
+- storage collaborators under `WP_I18nly\Storage` (`SourceSchemaManager`, `SourceWpdbRepository`, `TemporaryStorage`),
+- plural rules under `WP_I18nly\Plurals\PluralFormsRegistry`,
+- AI layer under `WP_I18nly\AI` (`DeepLClient`, `DeepLCredentialsValidator`, `TranslationAiAjaxHandler`),
+- `AiTranslationManager` in `WP_I18nly\Admin` (config + AJAX wiring for AI translation).
 
 Still pending:
 
-- `WP_I18nly\\Admin\\AdminPage` remains a large multi-responsibility class,
+- `WP_I18nly\Admin\AdminPage` remains a large multi-responsibility class,
 - admin orchestration, UI wiring, and technical glue are still partially concentrated in that facade,
 - therefore Slice 3 should be tracked as ongoing until `AdminPage` is reduced to thin composition/root wiring.
 
@@ -680,6 +749,37 @@ This gives a deterministic review surface and prevents silent regressions from a
 - Canonical source file: `locales.php` in GlotPress SVN (`plugins.svn.wordpress.org/glotpress/trunk/locales/locales.php`).
 - Current pinned snapshot in repository: `scripts/plurals/upstream/glotpress-locales.php`.
 - License for imported source data: **GPL-2.0-or-later**.
+
+## 18) Current Codebase Status (March 2026)
+
+### Git state
+
+- Branch: `main`
+- Last commit: `cb24671` — AI bulk translation: keep adaptive inter-batch throttle across retries
+- Working tree: clean (no uncommitted changes)
+
+### Test suite
+
+- **113 tests, 437 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
+
+### Recent commit history (most relevant)
+
+| Hash | Message |
+|------|---------|
+| `cb24671` | AI bulk translation: keep adaptive inter-batch throttle across retries |
+| `161f253` | AI bulk translation: DeepL policy defaults and robust 429 backoff |
+| `7e2d11d` | AI bulk translation: batch AJAX flow with server-side throttling |
+| `359e9e5` | Hide status badges for empty translations |
+| `a417f53` | Per-form status badges for plural translations |
+| `0c0813f` | Plural witnesses: prefer singular when examples include 1 |
+| `46e77b3` | Translation status model: draft workflow and AI badge fix |
+
+### Open items (not yet started)
+
+- **Multi-text DeepL batch** — one HTTP call to DeepL per JS lot (currently one call per string). Entry point: `DeepLClient`, handler `TranslationAiAjaxHandler`.
+- **Expose `translateMaxRetryAttempts` via PHP filter** — add `get_translate_max_retry_attempts()` in `AiTranslationManager`, propagate to JS config, add test.
+- **AdminPage thin-facade remaining work** — `Slice 3` still technically open.
+- **Plural forms generator script** — strategy defined in section 17 but not yet implemented.
 
 ## 10) Session Safety Checklist for Future Runs
 
