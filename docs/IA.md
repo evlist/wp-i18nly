@@ -16,8 +16,8 @@ The long-term product goal is to hide low-level translation file complexity from
 - Plugin index guard: `plugin/index.php`
 - License text: `LICENSES/GPL-3.0-or-later.txt`
 - Setup/overview doc: `README.md`
-- Last commit: `cb24671` — AI bulk translation: keep adaptive inter-batch throttle across retries
-- Test suite: **113 tests, 437 assertions**, all green (PHPUnit 11.5)
+- Last commit: `401f9bf` — refactor ai batch/throttle: unify single+batch flow with adaptive shared delay
+- Test suite: **117 tests, 451 assertions**, all green (PHPUnit 11.5)
 
 ### Namespace / file structure (current)
 
@@ -48,10 +48,11 @@ PSR-4 autoloader active. All runtime classes live under `plugin/includes/WP_I18n
   - Settings page with API key storage and connection test.
 - AI bulk translation UI:
   - Progress modal (centered overlay, cancel/close buttons, fill bar).
-  - Sequential batch execution (one batch at a time, configurable batch size, default 50).
+	- Sequential batch execution (one batch at a time, configurable batch size, default 50).
+	- No client-side artificial delay between successful requests.
   - DeepL 429 detection with `Retry-After` header parsing propagated through all layers.
-  - Deterministic exponential backoff: `backoffBaseMs × 2^attempt` (default 1 s, max 4 retries).
-  - Adaptive inter-batch throttle: sustained delay floor raised on each 429, persisted for entire bulk action.
+	- Server-side adaptive throttle shared by all concurrent clients (file lock based).
+	- Adaptive delay policy: use `Retry-After` when present, otherwise double the delay; TTL = `max(30 min, 10 × delay)`.
 
 ## 3) UX/Product Direction Agreed in Session
 
@@ -181,18 +182,17 @@ Core principles for this repository:
 
 Items 1–4 from the previous list are now done or superseded. Current open items:
 
-1. **Multi-text DeepL batch** (next major AI slice):
-   Refactor `DeepLClient::translate_item()` into a `translate_batch(array $items)` method that sends all
-   texts in a single HTTP call to DeepL `/v2/translate`; update `TranslationAiAjaxHandler::handle_translate_entries_batch()`
-   to use it; update tests. This removes the current N-calls-per-lot inefficiency.
-
-2. **Expose `translateMaxRetryAttempts` via PHP filter**:
+1. **Expose `translateMaxRetryAttempts` via PHP filter**:
    Add `get_translate_max_retry_attempts()` in `AiTranslationManager`, include it in `extend_script_config()`,
    add assertion in `AdminPageRenderTest`.
 
-3. **Plural forms data source strategy** (see section 17): implement generator script and runtime artifact.
+2. **Plural forms data source strategy** (see section 17): implement generator script and runtime artifact.
 
-4. **Continue Slice 3 admin decomposition** until `WP_I18nly\Admin\AdminPage` is a thin facade.
+3. **Continue Slice 3 admin decomposition** until `WP_I18nly\Admin\AdminPage` is a thin facade.
+
+4. **Optional observability slice (recommended)**:
+	Add lightweight telemetry counters for AI translation runtime (`429` count, current adaptive throttle delay,
+	average batch size, and average request duration) to make production behavior visible over time.
 
 5. Repeat with the same loop: implement → validate → commit.
 
@@ -509,9 +509,10 @@ These arrays are the runtime input for the EN source-form mapping heuristic.
 5. ✅ **DeepL 429 handling and backoff**
 	- `DeepLClient` detects HTTP 429, reads `Retry-After` header (integer seconds or HTTP-date format).
 	- `TranslationAiAjaxHandler` propagates as HTTP 429 JSON response with `retry_after_ms`.
-	- Client-side deterministic exponential backoff: `backoffBaseMs × 2^attempt` (default base 1 s, up to 4 retries).
-	- Server-guided delay used when `retry_after_ms > 0` in response.
-	- Adaptive inter-batch throttle: sustained delay floor raised on each 429, persisted for the full bulk action.
+	- `FileLockThrottle` applies one shared server-side delay across all concurrent clients/processes.
+	- Adaptive delay policy: use `Retry-After` when present, otherwise double current delay.
+	- Adaptive delay is persisted with TTL: `max(30 min, 10 × delay)`, then automatically reset.
+	- JS retries sequentially with server-provided `retry_after_ms`, without client-side exponential logic.
 
 6. ✅ **Safety checks**
 	- Placeholder integrity (`%s`, `%d`, etc.) — witness-based masking/restoration.
@@ -521,9 +522,9 @@ These arrays are the runtime input for the EN source-form mapping heuristic.
 7. ✅ **Cost visibility** — estimated source-character volume display.
 	*(Note: batch now defaults to 50 strings/lot aligned to DeepL API max.)*
 
-8. ⏳ **Multi-text DeepL batch** (next major slice):
-	Send all texts in one HTTP call to DeepL `/v2/translate` instead of one call per string.
-	Requires `translate_batch(array $items)` in `DeepLClient`, handler update, and tests.
+8. ✅ **Multi-text DeepL batch**:
+	`DeepLClient::translate_batch(array $items)` now sends one HTTP request for one JS lot.
+	`TranslationAiAjaxHandler` uses one batch provider call per AJAX batch (single item = batch size 1).
 
 ### Configuration values (PHP filters + JS config)
 
@@ -531,18 +532,19 @@ These arrays are the runtime input for the EN source-form mapping heuristic.
 |---|---|---|
 | `i18nly_ai_translate_batch_size` | 50 (= max items) | JS client lot size |
 | `i18nly_ai_translate_max_items_per_request` | 50 (capped) | DeepL API max texts/call |
-| `i18nly_ai_translate_backoff_base_ms` | 1000 ms | Exponential backoff base |
+| `i18nly_ai_translate_backoff_base_ms` | 1000 ms | Legacy value (client exponential backoff removed) |
 | `i18nly_ai_translate_max_concurrent_batches` | 1 | Client parallelism (keep at 1) |
-| `i18nly_ai_translate_min_delay_ms` | 250 ms | Server-side inter-request floor (FileLockThrottle) |
+| `i18nly_ai_translate_min_delay_ms` | 250 ms | Server-side floor before adaptive delay (FileLockThrottle) |
 
 ### Key files (AI layer)
 
 | File | Role |
 |---|---|
-| `plugin/includes/WP_I18nly/AI/DeepLClient.php` | HTTP client, 429/Retry-After, placeholder masking |
-| `plugin/includes/WP_I18nly/AI/TranslationAiAjaxHandler.php` | WP AJAX endpoints, 429 propagation, batch progress metadata |
-| `plugin/includes/WP_I18nly/Admin/AiTranslationManager.php` | Config values, `extend_script_config()`, FileLockThrottle wiring |
-| `plugin/assets/js/translation-edit.js` | Bulk flow, progress modal, backoff, inter-batch throttle |
+| `plugin/includes/WP_I18nly/AI/DeepLClient.php` | HTTP client, one-request multi-text batch translation, 429/Retry-After parsing |
+| `plugin/includes/WP_I18nly/AI/TranslationAiAjaxHandler.php` | Unified single/batch pipeline, one provider call per batch, 429 propagation |
+| `plugin/includes/WP_I18nly/Admin/AiTranslationManager.php` | Config values, handler wiring, adaptive throttle update callback |
+| `plugin/includes/WP_I18nly/Support/FileLockThrottle.php` | Shared file-lock throttle with adaptive delay persistence and TTL reset |
+| `plugin/assets/js/translation-edit.js` | Sequential batch UI loop, server-driven retry waits |
 | `plugin/assets/css/translation-edit.css` | Progress modal styles |
 
 ### UX and Compliance Constraints
@@ -755,31 +757,31 @@ This gives a deterministic review surface and prevents silent regressions from a
 ### Git state
 
 - Branch: `main`
-- Last commit: `cb24671` — AI bulk translation: keep adaptive inter-batch throttle across retries
+- Last commit: `401f9bf` — refactor ai batch/throttle: unify single+batch flow with adaptive shared delay
 - Working tree: clean (no uncommitted changes)
 
 ### Test suite
 
-- **113 tests, 437 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
+- **117 tests, 451 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
 
 ### Recent commit history (most relevant)
 
 | Hash | Message |
 |------|---------|
+| `401f9bf` | refactor ai batch/throttle: unify single+batch flow with adaptive shared delay |
 | `cb24671` | AI bulk translation: keep adaptive inter-batch throttle across retries |
 | `161f253` | AI bulk translation: DeepL policy defaults and robust 429 backoff |
 | `7e2d11d` | AI bulk translation: batch AJAX flow with server-side throttling |
 | `359e9e5` | Hide status badges for empty translations |
 | `a417f53` | Per-form status badges for plural translations |
 | `0c0813f` | Plural witnesses: prefer singular when examples include 1 |
-| `46e77b3` | Translation status model: draft workflow and AI badge fix |
 
 ### Open items (not yet started)
 
-- **Multi-text DeepL batch** — one HTTP call to DeepL per JS lot (currently one call per string). Entry point: `DeepLClient`, handler `TranslationAiAjaxHandler`.
 - **Expose `translateMaxRetryAttempts` via PHP filter** — add `get_translate_max_retry_attempts()` in `AiTranslationManager`, propagate to JS config, add test.
 - **AdminPage thin-facade remaining work** — `Slice 3` still technically open.
 - **Plural forms generator script** — strategy defined in section 17 but not yet implemented.
+- **Optional telemetry slice** — counters for `429`, adaptive throttle delay, request duration, and effective batch size.
 
 ## 10) Session Safety Checklist for Future Runs
 
