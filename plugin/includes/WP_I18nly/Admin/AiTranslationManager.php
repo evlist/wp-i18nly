@@ -86,6 +86,15 @@ class AiTranslationManager {
 					$this->get_translate_min_delay_ms()
 				);
 				$throttle->wait_until_allowed();
+			},
+			null,
+			function ( $retry_after_ms ) {
+				$throttle = new \WP_I18nly\Support\FileLockThrottle(
+					'i18nly_ai_translate',
+					$this->get_translate_min_delay_ms()
+				);
+
+				return $throttle->increase_adaptive_delay( (int) $retry_after_ms );
 			}
 		);
 	}

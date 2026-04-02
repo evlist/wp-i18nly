@@ -104,4 +104,39 @@ class FileLockThrottleTest extends TestCase {
 
 		$this->assertLessThan( 30.0, $elapsed_ms );
 	}
+
+	/**
+	 * Retry-After value sets adaptive delay and it is enforced on next call.
+	 *
+	 * @return void
+	 */
+	public function test_increase_adaptive_delay_enforces_retry_after_delay() {
+		$throttle = new \WP_I18nly\Support\FileLockThrottle( 'unit_test_adaptive_delay', 0, $this->lock_directory );
+
+		$new_delay = $throttle->increase_adaptive_delay( 120 );
+
+		$this->assertSame( 120, $new_delay );
+
+		$throttle->wait_until_allowed();
+		$start = microtime( true );
+		$throttle->wait_until_allowed();
+		$elapsed_ms = ( microtime( true ) - $start ) * 1000;
+
+		$this->assertGreaterThanOrEqual( 90.0, $elapsed_ms );
+	}
+
+	/**
+	 * Missing Retry-After doubles adaptive delay.
+	 *
+	 * @return void
+	 */
+	public function test_increase_adaptive_delay_without_retry_after_doubles_delay() {
+		$throttle = new \WP_I18nly\Support\FileLockThrottle( 'unit_test_adaptive_double', 50, $this->lock_directory );
+
+		$first_delay  = $throttle->increase_adaptive_delay( 0 );
+		$second_delay = $throttle->increase_adaptive_delay( 0 );
+
+		$this->assertSame( 100, $first_delay );
+		$this->assertSame( 200, $second_delay );
+	}
 }

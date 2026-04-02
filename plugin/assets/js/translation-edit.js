@@ -438,13 +438,9 @@
 			var buttons = [];
 			var batchSize;
 			var maxItemsPerRequest;
-			var backoffBaseMs;
-			var maxRetryAttempts;
 			var batches = [];
 			var batchIndex = 0;
 			var completedBatches = 0;
-			var sustainedDelayMs = 0;
-			var nextAllowedRequestAt = 0;
 			var batchAction = config.translateBatchAction || '';
 			var batchNonce = config.translateBatchNonce || '';
 			var isCancelled = false;
@@ -458,8 +454,6 @@
 
 			batchSize = parsePositiveInteger( config.translateBatchSize, 12 );
 			maxItemsPerRequest = parsePositiveInteger( config.translateMaxItemsPerRequest, 50 );
-			backoffBaseMs = parsePositiveInteger( config.translateBackoffBaseMs, 1000 );
-			maxRetryAttempts = parsePositiveInteger( config.translateMaxRetryAttempts, 4 );
 
 			batchSize = Math.min( batchSize, maxItemsPerRequest );
 
@@ -628,32 +622,7 @@
 				return new window.AbortController();
 			}
 
-			function setSustainedDelay(delayMs) {
-				var normalized = Math.max( 0, parseInt( delayMs, 10 ) || 0 );
-
-				if ( normalized > sustainedDelayMs ) {
-					sustainedDelayMs = normalized;
-				}
-			}
-
-			function applyInterBatchThrottle(currentBatchNum) {
-				var now = Date.now();
-				var waitMs = Math.max( 0, nextAllowedRequestAt - now );
-
-				if ( waitMs <= 0 ) {
-					return Promise.resolve();
-				}
-
-				updateProgress(
-					completedBatches,
-					batches.length,
-					'Throttling before batch ' + currentBatchNum + ' of ' + batches.length + ': waiting ' + Math.ceil( waitMs / 1000 ) + 's...'
-				);
-
-				return wait( waitMs );
-			}
-
-			function requestBatch(body, currentBatchNum, attempt) {
+			function requestBatch(body, currentBatchNum) {
 				activeController = createRequestController();
 
 				return postFormWithMeta(
@@ -663,7 +632,6 @@
 					function (response) {
 						var payload = response && response.payload ? response.payload : null;
 						var retryAfterMs = 0;
-						var waitMs = 0;
 						activeController = null;
 
 						if ( isCancelled ) {
@@ -674,22 +642,20 @@
 							retryAfterMs = parsePositiveInteger( payload.data.retry_after_ms, 0 );
 						}
 
-						if ( 429 === response.status && attempt < maxRetryAttempts ) {
-							waitMs = retryAfterMs > 0
-								? retryAfterMs
-								: backoffBaseMs * Math.pow( 2, attempt );
-
-							setSustainedDelay( waitMs );
+						if ( 429 === response.status ) {
+							if ( retryAfterMs <= 0 ) {
+								retryAfterMs = 1000;
+							}
 
 							updateProgress(
 								completedBatches,
 								batches.length,
-								'Too many requests. Retrying batch ' + currentBatchNum + ' of ' + batches.length + ' in ' + Math.ceil( waitMs / 1000 ) + 's (attempt ' + ( attempt + 1 ) + '/' + maxRetryAttempts + ')...'
+								'Too many requests. Retrying batch ' + currentBatchNum + ' of ' + batches.length + ' in ' + Math.ceil( retryAfterMs / 1000 ) + 's...'
 							);
 
-							return wait( waitMs ).then(
+							return wait( retryAfterMs ).then(
 								function () {
-									return requestBatch( body, currentBatchNum, attempt + 1 );
+									return requestBatch( body, currentBatchNum );
 								}
 							);
 						}
@@ -796,17 +762,7 @@
 
 				updateProgress( completedBatches, batches.length, 'Processing batch ' + currentBatchNum + ' of ' + batches.length );
 
-				return applyInterBatchThrottle( currentBatchNum ).then(
-					function () {
-						if ( isCancelled ) {
-							return { cancelled: true };
-						}
-
-						nextAllowedRequestAt = Date.now();
-
-						return requestBatch( body, currentBatchNum, 0 );
-					}
-				).then(
+				return requestBatch( body, currentBatchNum ).then(
 					function (response) {
 						var currentBatchItems = activeBatchItems;
 						var payload = response && response.payload ? response.payload : null;
@@ -876,10 +832,6 @@
 						);
 
 						completedBatches = currentBatchNum;
-
-						if ( sustainedDelayMs > 0 ) {
-							nextAllowedRequestAt = Date.now() + sustainedDelayMs;
-						}
 
 						return runNextBatch();
 					}

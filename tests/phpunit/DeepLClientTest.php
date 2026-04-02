@@ -279,4 +279,45 @@ class DeepLClientTest extends TestCase {
 		$body = isset( $calls[0]['body'] ) ? (string) $calls[0]['body'] : '';
 		$this->assertStringContainsString( 'context=', $body );
 	}
+
+	/**
+	 * Batch translation sends one HTTP request with multiple text parameters.
+	 *
+	 * @return void
+	 */
+	public function test_translate_batch_sends_one_request_for_multiple_items() {
+		$calls  = array();
+		$client = new DeepLClient(
+			'prokey',
+			function ( $url, array $args ) use ( &$calls ) {
+				$calls[] = array(
+					'url'  => (string) $url,
+					'args' => $args,
+				);
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"translations":[{"text":"Bonjour"},{"text":"Monde"}]}',
+				);
+			}
+		);
+
+		$result = $client->translate_batch(
+			array(
+				array( 'text' => 'Hello' ),
+				array( 'text' => 'World' ),
+			),
+			'en_US',
+			'fr_FR'
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 1, $calls );
+		$this->assertCount( 2, $result['items'] );
+
+		$body = isset( $calls[0]['args']['body'] ) ? (string) $calls[0]['args']['body'] : '';
+		$this->assertSame( 2, substr_count( $body, 'text=' ) );
+		$this->assertStringContainsString( 'source_lang=EN', $body );
+		$this->assertStringContainsString( 'target_lang=FR', $body );
+	}
 }

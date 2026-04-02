@@ -40,6 +40,15 @@ class TranslationAiAjaxHandler {
 	private $translate_callable;
 
 	/**
+	 * Callable used to perform one batch translation.
+	 * Receives (array $items, string $source_locale, string $target_locale)
+	 * and returns array{success: bool, items?: array<int, array<string, mixed>>, message?: string, rate_limited?: bool, retry_after_ms?: int}.
+	 *
+	 * @var callable
+	 */
+	private $translate_batch_callable;
+
+	/**
 	 * Optional callback persisting translated-entry status.
 	 *
 	 * @var callable|null
@@ -54,6 +63,13 @@ class TranslationAiAjaxHandler {
 	private $throttle_wait_callback;
 
 	/**
+	 * Optional callback updating shared throttle delay after rate limiting.
+	 *
+	 * @var callable|null
+	 */
+	private $rate_limit_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param callable      $get_translation_callback Callback returning translation row for one ID.
@@ -61,25 +77,72 @@ class TranslationAiAjaxHandler {
 	 * @param callable|null $translate_callable Optional translation callable override (defaults to DeepLClient).
 	 * @param callable|null $persist_status_callback Optional callback to persist translated status.
 	 * @param callable|null $throttle_wait_callback Optional callback enforcing throttling.
+	 * @param callable|null $translate_batch_callable Optional batch translation callable override.
+	 * @param callable|null $rate_limit_callback Optional callback adjusting shared delay after 429.
 	 */
 	public function __construct(
 		callable $get_translation_callback,
 		callable $get_api_key_callback,
 		$translate_callable = null,
 		$persist_status_callback = null,
-		$throttle_wait_callback = null
+		$throttle_wait_callback = null,
+		$translate_batch_callable = null,
+		$rate_limit_callback = null
 	) {
+		$single_translate_callable = $translate_callable;
+
 		$this->get_translation_callback = $get_translation_callback;
 		$this->get_api_key_callback     = $get_api_key_callback;
-		$this->translate_callable       = is_callable( $translate_callable )
-			? $translate_callable
+		$this->translate_callable       = is_callable( $single_translate_callable )
+			? $single_translate_callable
 			: function ( $source_text, $source_locale, $target_locale, $context = '' ) use ( &$get_api_key_callback ) {
 				$api_key = call_user_func( $get_api_key_callback );
 				$client  = new DeepLClient( $api_key );
 				return $client->translate_item( $source_text, $source_locale, $target_locale, $context );
 			};
+		if ( is_callable( $translate_batch_callable ) ) {
+			$this->translate_batch_callable = $translate_batch_callable;
+		} elseif ( is_callable( $single_translate_callable ) ) {
+			$this->translate_batch_callable = function ( array $items, $source_locale, $target_locale ) use ( $single_translate_callable ) {
+				$results = array();
+
+				foreach ( $items as $item ) {
+					$text    = isset( $item['text'] ) ? (string) $item['text'] : '';
+					$context = isset( $item['context'] ) ? (string) $item['context'] : '';
+					$result  = call_user_func( $single_translate_callable, $text, $source_locale, $target_locale, $context );
+
+					if ( empty( $result['success'] ) && ! empty( $result['rate_limited'] ) ) {
+						return array(
+							'success'        => false,
+							'rate_limited'   => true,
+							'retry_after_ms' => isset( $result['retry_after_ms'] ) ? (int) $result['retry_after_ms'] : 0,
+							'message'        => isset( $result['message'] ) ? (string) $result['message'] : 'Rate limit reached.',
+						);
+					}
+
+					$results[] = array(
+						'success'      => ! empty( $result['success'] ),
+						'translation'  => isset( $result['translation'] ) ? (string) $result['translation'] : '',
+						'review_token' => isset( $result['review_token'] ) ? (string) $result['review_token'] : '',
+						'message'      => isset( $result['message'] ) ? (string) $result['message'] : '',
+					);
+				}
+
+				return array(
+					'success' => true,
+					'items'   => $results,
+				);
+			};
+		} else {
+			$this->translate_batch_callable = function ( array $items, $source_locale, $target_locale ) use ( &$get_api_key_callback ) {
+				$api_key = call_user_func( $get_api_key_callback );
+				$client  = new DeepLClient( $api_key );
+				return $client->translate_batch( $items, $source_locale, $target_locale );
+			};
+		}
 		$this->persist_status_callback  = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
 		$this->throttle_wait_callback   = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
+		$this->rate_limit_callback      = is_callable( $rate_limit_callback ) ? $rate_limit_callback : null;
 	}
 
 	/**
@@ -146,20 +209,44 @@ class TranslationAiAjaxHandler {
 		}
 
 		$target_locale = (string) $translation['target_language'];
-		$result        = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $has_witness_n ? $witness_n : null, $target_locale );
+		$batch_result  = $this->translate_items_batch(
+			$translation_id,
+			$target_locale,
+			array(
+				array(
+					'source_entry_id' => $source_entry_id,
+					'form_index'      => $form_index,
+					'source_text'     => $source_text,
+					'witness_n'       => $has_witness_n ? $witness_n : null,
+				),
+			)
+		);
 
-		if ( empty( $result['success'] ) ) {
-			if ( ! empty( $result['rate_limited'] ) ) {
+		if ( empty( $batch_result['success'] ) ) {
+			if ( ! empty( $batch_result['rate_limited'] ) ) {
 				wp_send_json_error(
 					array(
-						'message'        => isset( $result['message'] ) ? (string) $result['message'] : 'Rate limit reached.',
-						'retry_after_ms' => isset( $result['retry_after_ms'] ) ? (int) $result['retry_after_ms'] : 0,
+						'message'        => isset( $batch_result['message'] ) ? (string) $batch_result['message'] : 'Rate limit reached.',
+						'retry_after_ms' => isset( $batch_result['retry_after_ms'] ) ? (int) $batch_result['retry_after_ms'] : 0,
 					),
 					429
 				);
 				return;
 			}
 
+			wp_send_json_error(
+				array(
+					'message' => isset( $batch_result['message'] ) ? (string) $batch_result['message'] : 'Translation failed.',
+				),
+				500
+			);
+			return;
+		}
+
+		$results = isset( $batch_result['results'] ) && is_array( $batch_result['results'] ) ? $batch_result['results'] : array();
+		$result  = isset( $results[0] ) && is_array( $results[0] ) ? $results[0] : array();
+
+		if ( empty( $result['success'] ) ) {
 			wp_send_json_error(
 				array(
 					'message' => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
@@ -238,9 +325,55 @@ class TranslationAiAjaxHandler {
 		}
 
 		$target_locale = (string) $translation['target_language'];
-		$results       = array();
+		$batch_result  = $this->translate_items_batch( $translation_id, $target_locale, $items );
 
-		foreach ( $items as $item ) {
+		if ( empty( $batch_result['success'] ) ) {
+			if ( ! empty( $batch_result['rate_limited'] ) ) {
+				wp_send_json_error(
+					array(
+						'message'        => isset( $batch_result['message'] ) ? (string) $batch_result['message'] : 'Rate limit reached.',
+						'retry_after_ms' => isset( $batch_result['retry_after_ms'] ) ? (int) $batch_result['retry_after_ms'] : 0,
+						'batch_index'    => $batch_index,
+						'total_batches'  => $total_batches,
+					),
+					429
+				);
+				return;
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => isset( $batch_result['message'] ) ? (string) $batch_result['message'] : 'Translation failed.',
+				),
+				500
+			);
+			return;
+		}
+
+		$results = isset( $batch_result['results'] ) && is_array( $batch_result['results'] ) ? $batch_result['results'] : array();
+
+		wp_send_json_success(
+			array(
+				'results'       => $results,
+				'batch_index'   => $batch_index,
+				'total_batches' => $total_batches,
+			)
+		);
+	}
+
+	/**
+	 * Translates one or many items in one provider call and maps results to UI payload.
+	 *
+	 * @param int                           $translation_id Translation ID.
+	 * @param string                        $target_locale Target locale.
+	 * @param array<int, array<string, mixed>> $raw_items Incoming payload items.
+	 * @return array{success: bool, results?: array<int, array<string, mixed>>, message?: string, rate_limited?: bool, retry_after_ms?: int}
+	 */
+	private function translate_items_batch( $translation_id, $target_locale, array $raw_items ) {
+		$prepared_items = array();
+		$results        = array();
+
+		foreach ( $raw_items as $item ) {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
@@ -249,7 +382,6 @@ class TranslationAiAjaxHandler {
 			$form_index      = isset( $item['form_index'] ) ? absint( $item['form_index'] ) : 0;
 			$source_text     = isset( $item['source_text'] ) ? sanitize_text_field( (string) $item['source_text'] ) : '';
 			$witness_n       = null;
-			$item_result     = array();
 
 			if ( isset( $item['witness_n'] ) && '' !== trim( (string) $item['witness_n'] ) ) {
 				$witness_n = (int) $item['witness_n'];
@@ -265,64 +397,34 @@ class TranslationAiAjaxHandler {
 				continue;
 			}
 
-			$item_result = $this->translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $witness_n, $target_locale );
+			$placeholder   = $this->extract_single_printf_placeholder( $source_text );
+			$has_witness_n = null !== $witness_n;
+			$prepared_text = $source_text;
 
-			if ( ! empty( $item_result['rate_limited'] ) ) {
-				wp_send_json_error(
-					array(
-						'message'        => isset( $item_result['message'] ) ? (string) $item_result['message'] : 'Rate limit reached.',
-						'retry_after_ms' => isset( $item_result['retry_after_ms'] ) ? (int) $item_result['retry_after_ms'] : 0,
-						'batch_index'    => $batch_index,
-						'total_batches'  => $total_batches,
-					),
-					429
-				);
-				return;
+			if ( '' !== $placeholder && $has_witness_n && false === strpos( $source_text, (string) $witness_n ) ) {
+				$prepared_text = preg_replace( '/' . preg_quote( $placeholder, '/' ) . '/', (string) $witness_n, $source_text, 1 );
+				$prepared_text = is_string( $prepared_text ) ? $prepared_text : $source_text;
 			}
 
-			$results[] = array(
+			$prepared_items[] = array(
 				'source_entry_id' => $source_entry_id,
 				'form_index'      => $form_index,
-				'success'         => ! empty( $item_result['success'] ),
-				'translation'     => isset( $item_result['translation'] ) ? (string) $item_result['translation'] : '',
-				'review_token'    => isset( $item_result['review_token'] ) ? (string) $item_result['review_token'] : '',
-				'message'         => isset( $item_result['message'] ) ? (string) $item_result['message'] : '',
+				'source_text'     => $source_text,
+				'prepared_text'   => $prepared_text,
+				'placeholder'     => $placeholder,
+				'witness_n'       => $witness_n,
+				'context'         => $this->build_deepl_context( $source_text, $has_witness_n ? (int) $witness_n : -1 ),
 			);
 		}
 
-		wp_send_json_success(
-			array(
-				'results'       => $results,
-				'batch_index'   => $batch_index,
-				'total_batches' => $total_batches,
-			)
-		);
-	}
-
-	/**
-	 * Translates one item and optionally persists status.
-	 *
-	 * @param int      $translation_id Translation ID.
-	 * @param int      $source_entry_id Source entry ID.
-	 * @param int      $form_index Form index.
-	 * @param string   $source_text Source text.
-	 * @param int|null $witness_n Optional witness number.
-	 * @param string   $target_locale Target locale.
-	 * @return array{success: bool, translation?: string, review_token?: string, message?: string}
-	 */
-	private function translate_single_item( $translation_id, $source_entry_id, $form_index, $source_text, $witness_n, $target_locale ) {
-		$translate     = $this->translate_callable;
-		$placeholder   = $this->extract_single_printf_placeholder( $source_text );
-		$prepared_text = $source_text;
-		$wait_callback = $this->throttle_wait_callback;
-		$has_witness_n = null !== $witness_n;
-
-		if ( '' !== $placeholder && $has_witness_n && false === strpos( $source_text, (string) $witness_n ) ) {
-			$prepared_text = preg_replace( '/' . preg_quote( $placeholder, '/' ) . '/', (string) $witness_n, $source_text, 1 );
-			$prepared_text = is_string( $prepared_text ) ? $prepared_text : $source_text;
+		if ( empty( $prepared_items ) ) {
+			return array(
+				'success' => true,
+				'results' => $results,
+			);
 		}
 
-		$context = $this->build_deepl_context( $source_text, $has_witness_n ? (int) $witness_n : -1 );
+		$wait_callback = $this->throttle_wait_callback;
 
 		if ( is_callable( $wait_callback ) ) {
 			try {
@@ -332,45 +434,115 @@ class TranslationAiAjaxHandler {
 			}
 		}
 
-		$result = $translate( $prepared_text, 'en_US', $target_locale, $context );
-		$status = $this->review_token_to_translated_status( isset( $result['review_token'] ) ? (string) $result['review_token'] : '' );
+		$translate_batch = $this->translate_batch_callable;
+		$provider_result = call_user_func(
+			$translate_batch,
+			array_map(
+				function ( array $prepared_item ) {
+					return array(
+						'text'    => (string) $prepared_item['prepared_text'],
+						'context' => (string) $prepared_item['context'],
+					);
+				},
+				$prepared_items
+			),
+			'en_US',
+			$target_locale
+		);
 
-		if ( ! empty( $result['success'] ) && isset( $result['translation'] ) && '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
-			$translated            = (string) $result['translation'];
-			$pattern               = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';
-			$restored              = preg_replace( $pattern, $placeholder, $translated, 1 );
-			$result['translation'] = is_string( $restored ) ? $restored : $translated;
+		if ( empty( $provider_result['success'] ) && ! empty( $provider_result['rate_limited'] ) ) {
+			$retry_after_ms = isset( $provider_result['retry_after_ms'] ) ? (int) $provider_result['retry_after_ms'] : 0;
+			$rate_callback  = $this->rate_limit_callback;
 
-			if ( ! is_string( $restored ) || $restored === $translated ) {
-				$status = 'draft_ai_needs_fix';
+			if ( is_callable( $rate_callback ) ) {
+				try {
+					$retry_after_ms = (int) call_user_func( $rate_callback, $retry_after_ms );
+				} catch ( \Throwable $throwable ) {
+					unset( $throwable );
+				}
 			}
-		} elseif ( '' !== $placeholder && ! $has_witness_n ) {
-			$status = 'draft_ai_suspect';
-		}
 
-		if ( empty( $result['success'] ) ) {
 			return array(
 				'success'        => false,
-				'message'        => isset( $result['message'] ) ? (string) $result['message'] : 'Translation failed.',
-				'rate_limited'   => ! empty( $result['rate_limited'] ),
-				'retry_after_ms' => isset( $result['retry_after_ms'] ) ? (int) $result['retry_after_ms'] : 0,
+				'rate_limited'   => true,
+				'retry_after_ms' => max( 0, $retry_after_ms ),
+				'message'        => isset( $provider_result['message'] ) ? (string) $provider_result['message'] : 'Rate limit reached.',
 			);
 		}
 
-		$result['review_token'] = $status;
+		$provider_items = isset( $provider_result['items'] ) && is_array( $provider_result['items'] ) ? array_values( $provider_result['items'] ) : array();
 
-		if ( is_callable( $this->persist_status_callback ) ) {
-			call_user_func(
-				$this->persist_status_callback,
-				$translation_id,
-				$source_entry_id,
-				$form_index,
-				isset( $result['translation'] ) ? (string) $result['translation'] : '',
-				$status
+		if ( empty( $provider_result['success'] ) || count( $provider_items ) !== count( $prepared_items ) ) {
+			foreach ( $prepared_items as $prepared_item ) {
+				$results[] = array(
+					'source_entry_id' => (int) $prepared_item['source_entry_id'],
+					'form_index'      => (int) $prepared_item['form_index'],
+					'success'         => false,
+					'message'         => isset( $provider_result['message'] ) ? (string) $provider_result['message'] : 'Translation failed.',
+				);
+			}
+
+			return array(
+				'success' => true,
+				'results' => $results,
 			);
 		}
 
-		return $result;
+		foreach ( $prepared_items as $index => $prepared_item ) {
+			$provider_item = isset( $provider_items[ $index ] ) && is_array( $provider_items[ $index ] ) ? $provider_items[ $index ] : array();
+			$success       = ! empty( $provider_item['success'] );
+			$message       = isset( $provider_item['message'] ) ? (string) $provider_item['message'] : '';
+			$translation   = isset( $provider_item['translation'] ) ? (string) $provider_item['translation'] : '';
+			$status        = $this->review_token_to_translated_status( isset( $provider_item['review_token'] ) ? (string) $provider_item['review_token'] : '' );
+
+			if ( $success ) {
+				$placeholder   = isset( $prepared_item['placeholder'] ) ? (string) $prepared_item['placeholder'] : '';
+				$witness_n     = isset( $prepared_item['witness_n'] ) ? $prepared_item['witness_n'] : null;
+				$source_text   = isset( $prepared_item['source_text'] ) ? (string) $prepared_item['source_text'] : '';
+				$prepared_text = isset( $prepared_item['prepared_text'] ) ? (string) $prepared_item['prepared_text'] : '';
+				$has_witness_n = null !== $witness_n;
+
+				if ( '' !== $placeholder && $has_witness_n && $prepared_text !== $source_text ) {
+					$pattern  = '/(?<!\\d)' . preg_quote( (string) $witness_n, '/' ) . '(?!\\d)/';
+					$restored = preg_replace( $pattern, $placeholder, $translation, 1 );
+					if ( is_string( $restored ) ) {
+						if ( $restored === $translation ) {
+							$status = 'draft_ai_needs_fix';
+						}
+						$translation = $restored;
+					} else {
+						$status = 'draft_ai_needs_fix';
+					}
+				} elseif ( '' !== $placeholder && ! $has_witness_n ) {
+					$status = 'draft_ai_suspect';
+				}
+
+				if ( is_callable( $this->persist_status_callback ) ) {
+					call_user_func(
+						$this->persist_status_callback,
+						$translation_id,
+						(int) $prepared_item['source_entry_id'],
+						(int) $prepared_item['form_index'],
+						$translation,
+						$status
+					);
+				}
+			}
+
+			$results[] = array(
+				'source_entry_id' => (int) $prepared_item['source_entry_id'],
+				'form_index'      => (int) $prepared_item['form_index'],
+				'success'         => $success,
+				'translation'     => $success ? $translation : '',
+				'review_token'    => $success ? $status : '',
+				'message'         => $message,
+			);
+		}
+
+		return array(
+			'success' => true,
+			'results' => $results,
+		);
 	}
 
 	/**

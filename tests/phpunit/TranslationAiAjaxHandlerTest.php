@@ -386,11 +386,11 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
-	 * Batch endpoint invokes throttle callback for each translated item.
+	 * Batch endpoint invokes throttle callback once per provider batch request.
 	 *
 	 * @return void
 	 */
-	public function test_handle_translate_entries_batch_calls_throttle_for_each_item() {
+	public function test_handle_translate_entries_batch_calls_throttle_once_per_batch() {
 		$_POST = array(
 			'translation_id' => '7',
 			'items_json'     => wp_json_encode(
@@ -432,7 +432,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 
 		$response = i18nly_test_get_last_json_response();
 		$this->assertTrue( $response['success'] );
-		$this->assertSame( 2, $throttle_calls );
+		$this->assertSame( 1, $throttle_calls );
 	}
 
 	/**
@@ -474,6 +474,59 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 		$this->assertFalse( $response['success'] );
 		$this->assertSame( 429, $response['status'] );
 		$this->assertSame( 1500, $response['data']['retry_after_ms'] );
+	}
+
+	/**
+	 * Batch endpoint lets throttle callback compute retry delay when Retry-After is absent.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_uses_rate_limit_callback_retry_after() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'      => true,
+					'translation'  => 'fr_Hello',
+					'review_token' => 'draft_ai',
+				);
+			},
+			null,
+			null,
+			function () {
+				return array(
+					'success'        => false,
+					'rate_limited'   => true,
+					'retry_after_ms' => 0,
+					'message'        => 'DeepL rate limit reached.',
+				);
+			},
+			function () {
+				return 3200;
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 429, $response['status'] );
+		$this->assertSame( 3200, $response['data']['retry_after_ms'] );
 	}
 
 	/**
@@ -550,9 +603,11 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	 * @param callable|null $translate Override for translate callable.
 	 * @param callable|null $persist Override for persist callback.
 	 * @param callable|null $throttle_wait Override for throttle callback.
+	 * @param callable|null $translate_batch Override for batch translate callable.
+	 * @param callable|null $rate_limit Override for rate-limit callback.
 	 * @return \WP_I18nly\AI\TranslationAiAjaxHandler
 	 */
-	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null ) {
+	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null, $translate_batch = null, $rate_limit = null ) {
 		$get_translation = $get_translation ?? function () {
 			return array(
 				'source_slug'     => 'myplugin/myplugin.php',
@@ -572,6 +627,6 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 			);
 		};
 
-		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait );
+		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait, $translate_batch, $rate_limit );
 	}
 }
