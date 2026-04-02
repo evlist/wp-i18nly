@@ -341,6 +341,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'class="i18nly-bulk-select-all"', $html );
 		$this->assertStringContainsString( 'class="i18nly-entry-checkbox"', $html );
 		$this->assertStringContainsString( 'i18nly-entry-status--draft', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--obsolete', $html );
 		$this->assertStringContainsString( 'data-i18nly-source-text="Hello"', $html );
 	}
 

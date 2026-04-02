@@ -232,6 +232,10 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 */
 	public function column_status( $item ) {
 		$source_entry  = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
+		$source_status = isset( $item['source_status'] )
+			? (string) $item['source_status']
+			: ( isset( $item['status'] ) ? (string) $item['status'] : 'active' );
+		$is_obsolete   = 'obsolete' === $source_status;
 		$source_plural = isset( $item['msgid_plural'] ) ? (string) $item['msgid_plural'] : '';
 		$has_plural    = '' !== trim( $source_plural );
 		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
@@ -274,7 +278,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$current_status = 'draft';
 			}
 
-			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status );
+			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status ) . $this->render_obsolete_badge( $is_obsolete );
 
 			if ( ! $has_plural ) {
 				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $badge_html );
@@ -296,7 +300,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		if ( empty( $lines ) ) {
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%s</p>',
-				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' )
+				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' ) . $this->render_obsolete_badge( $is_obsolete )
 			);
 		}
 
@@ -353,6 +357,23 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			esc_attr( $input_id ),
 			esc_attr( $status ),
 			esc_html( (string) $status_meta['label'] )
+		);
+	}
+
+	/**
+	 * Renders the obsolete badge for source entries marked as obsolete.
+	 *
+	 * @param bool $is_obsolete Whether the source entry is obsolete.
+	 * @return string
+	 */
+	private function render_obsolete_badge( $is_obsolete ) {
+		if ( ! $is_obsolete ) {
+			return '';
+		}
+
+		return sprintf(
+			'<span class="i18nly-entry-status i18nly-entry-status--obsolete" data-status-token="obsolete">%s</span>',
+			esc_html__( 'Obsolete', 'i18nly' )
 		);
 	}
 
