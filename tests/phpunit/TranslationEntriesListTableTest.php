@@ -376,7 +376,8 @@ class TranslationEntriesListTableTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertIsString( $html );
-		$this->assertStringContainsString( 'i18nly-entry-status--needs-fix', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--suspect', $html );
+		$this->assertStringContainsString( 'Suspect', $html );
 	}
 
 	/**

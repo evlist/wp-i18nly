@@ -507,14 +507,14 @@ class TranslationAiAjaxHandler {
 					$restored = preg_replace( $pattern, $placeholder, $translation, 1 );
 					if ( is_string( $restored ) ) {
 						if ( $restored === $translation ) {
-							$status = 'draft_ai_needs_fix';
+							$status = 'suspect';
 						}
 						$translation = $restored;
 					} else {
-						$status = 'draft_ai_needs_fix';
+						$status = 'suspect';
 					}
 				} elseif ( '' !== $placeholder && ! $has_witness_n ) {
-					$status = 'draft_ai_suspect';
+					$status = 'suspect';
 				}
 
 				if ( is_callable( $this->persist_status_callback ) ) {
@@ -554,12 +554,14 @@ class TranslationAiAjaxHandler {
 	private function review_token_to_translated_status( $review_token ) {
 		$review_token = (string) $review_token;
 
-		if ( 'draft_ai_needs_fix' === $review_token || 'ai_draft_needs_fix' === $review_token ) {
-			return 'draft_ai_needs_fix';
-		}
-
-		if ( 'draft_ai_suspect' === $review_token || 'ai_draft_suspect' === $review_token ) {
-			return 'draft_ai_suspect';
+		if (
+			'suspect' === $review_token
+			|| 'draft_ai_needs_fix' === $review_token
+			|| 'ai_draft_needs_fix' === $review_token
+			|| 'draft_ai_suspect' === $review_token
+			|| 'ai_draft_suspect' === $review_token
+		) {
+			return 'suspect';
 		}
 
 		if ( 'draft_ai' === $review_token || 'ai_draft_ok' === $review_token ) {

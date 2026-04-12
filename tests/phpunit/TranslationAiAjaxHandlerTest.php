@@ -300,7 +300,7 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 		$handler->handle_translate_entry();
 
 		$this->assertCount( 1, $persist_calls );
-		$this->assertSame( array( 7, 3, 0, 'aucune traduction n\'a ete deplacee dans la corbeille.', 'draft_ai_needs_fix' ), $persist_calls[0] );
+		$this->assertSame( array( 7, 3, 0, 'aucune traduction n\'a ete deplacee dans la corbeille.', 'suspect' ), $persist_calls[0] );
 	}
 
 	/**

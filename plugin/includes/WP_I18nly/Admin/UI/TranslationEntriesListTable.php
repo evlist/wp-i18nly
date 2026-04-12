@@ -307,13 +307,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				'class' => 'i18nly-entry-status--ai-draft',
 				'label' => __( 'AI draft', 'i18nly' ),
 			),
-			'draft_ai_suspect'   => array(
+			'suspect'            => array(
 				'class' => 'i18nly-entry-status--suspect',
-				'label' => __( 'AI draft (suspect)', 'i18nly' ),
-			),
-			'draft_ai_needs_fix' => array(
-				'class' => 'i18nly-entry-status--needs-fix',
-				'label' => __( 'AI draft (needs fix)', 'i18nly' ),
+				'label' => __( 'Suspect', 'i18nly' ),
 			),
 			'validated'          => array(
 				'class' => 'i18nly-entry-status--validated',
@@ -368,8 +364,10 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$legacy_map = array(
 			'unvalidated'        => 'draft',
 			'ai_draft_ok'        => 'draft_ai',
-			'ai_draft_suspect'   => 'draft_ai_suspect',
-			'ai_draft_needs_fix' => 'draft_ai_needs_fix',
+			'ai_draft_suspect'   => 'suspect',
+			'ai_draft_needs_fix' => 'suspect',
+			'draft_ai_suspect'   => 'suspect',
+			'draft_ai_needs_fix' => 'suspect',
 		);
 
 		if ( isset( $legacy_map[ $status ] ) ) {

@@ -401,17 +401,18 @@
 					if ('ai_draft_ok' === token) {
 						token = 'draft_ai';
 					} else if ('ai_draft_suspect' === token) {
-						token = 'draft_ai_suspect';
+						token = 'suspect';
 					} else if ('ai_draft_needs_fix' === token) {
-						token = 'draft_ai_needs_fix';
+						token = 'suspect';
+					} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
+						token = 'suspect';
 					}
 
 					var tokenMap = {
 						draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
 						validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
 						draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
-						draft_ai_suspect: { className: 'i18nly-entry-status--suspect', label: 'AI draft (suspect)' },
-						draft_ai_needs_fix: { className: 'i18nly-entry-status--needs-fix', label: 'AI draft (needs fix)' }
+						suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
 					};
 
 					if ( badge && tokenMap[token] ) {
@@ -810,17 +811,18 @@
 								if ('ai_draft_ok' === token) {
 									token = 'draft_ai';
 								} else if ('ai_draft_suspect' === token) {
-									token = 'draft_ai_suspect';
+									token = 'suspect';
 								} else if ('ai_draft_needs_fix' === token) {
-									token = 'draft_ai_needs_fix';
+									token = 'suspect';
+								} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
+									token = 'suspect';
 								}
 
 								var tokenMap = {
 									draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
 									validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
 									draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
-									draft_ai_suspect: { className: 'i18nly-entry-status--suspect', label: 'AI draft (suspect)' },
-									draft_ai_needs_fix: { className: 'i18nly-entry-status--needs-fix', label: 'AI draft (needs fix)' }
+									suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
 								};
 
 								if ( badge && tokenMap[token] ) {
