@@ -921,7 +921,7 @@ class AdminPageRenderTest extends TestCase {
 
 		$this->assertTrue( $controller->called );
 		$this->assertSame( 'post.php', $controller->captured['hook_suffix'] );
-		$this->assertSame( '0.1.0', $controller->captured['asset_version'] );
+		$this->assertSame( '0.1.1', $controller->captured['asset_version'] );
 	}
 
 	/**

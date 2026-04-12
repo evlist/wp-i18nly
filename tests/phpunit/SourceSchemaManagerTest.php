@@ -38,7 +38,9 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertStringContainsString( 'translation_source_entry_form', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( 'form_index', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( "status varchar(32) NOT NULL DEFAULT 'draft'", $wpdb_stub->queries[2] );
-		$this->assertSame( '0.0.9', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertStringContainsString( "used_ai tinyint(1) unsigned NOT NULL DEFAULT 0", $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( "used_manual tinyint(1) unsigned NOT NULL DEFAULT 1", $wpdb_stub->queries[2] );
+		$this->assertSame( '0.1.0', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 

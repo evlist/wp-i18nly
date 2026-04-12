@@ -117,7 +117,105 @@
 			return null;
 		}
 
-		return row.querySelector( '.i18nly-entry-status[data-for="' + inputId + '"]' );
+		return row.querySelector( '.i18nly-entry-status--quality[data-for="' + inputId + '"]' );
+	}
+
+	function getProvenanceBadgeForInput(input, token) {
+		var row;
+		var inputId;
+
+		if ( ! input || ! token ) {
+			return null;
+		}
+
+		row = input.closest( 'tr' );
+		inputId = input.id || '';
+
+		if ( ! row || '' === inputId ) {
+			return null;
+		}
+
+		return row.querySelector( '.i18nly-entry-status[data-for="' + inputId + '"][data-provenance-token="' + token + '"]' );
+	}
+
+	function removeProvenanceBadgeForInput(input, token) {
+		var badge = getProvenanceBadgeForInput( input, token );
+
+		if ( ! badge || ! badge.parentNode ) {
+			return;
+		}
+
+		if ( badge.nextSibling && badge.nextSibling.nodeType === 3 && '' === String( badge.nextSibling.nodeValue || '' ).trim() ) {
+			badge.parentNode.removeChild( badge.nextSibling );
+		}
+
+		badge.parentNode.removeChild( badge );
+	}
+
+	function ensureAiProvenanceBadgeForInput(input) {
+		var statusBadge;
+		var aiBadge;
+
+		if ( ! input ) {
+			return;
+		}
+
+		aiBadge = getProvenanceBadgeForInput( input, 'ai' );
+		if ( aiBadge ) {
+			return;
+		}
+
+		statusBadge = getStatusBadgeForInput( input );
+		if ( ! statusBadge || ! statusBadge.parentNode ) {
+			return;
+		}
+
+		aiBadge = document.createElement( 'span' );
+		aiBadge.className = 'i18nly-entry-status i18nly-entry-status--provenance-ai';
+		aiBadge.setAttribute( 'data-for', input.id || '' );
+		aiBadge.setAttribute( 'data-provenance-token', 'ai' );
+		aiBadge.textContent = 'AI';
+
+		if ( statusBadge.nextSibling ) {
+			statusBadge.parentNode.insertBefore( document.createTextNode( ' ' ), statusBadge.nextSibling );
+			statusBadge.parentNode.insertBefore( aiBadge, statusBadge.nextSibling );
+		} else {
+			statusBadge.parentNode.appendChild( document.createTextNode( ' ' ) );
+			statusBadge.parentNode.appendChild( aiBadge );
+		}
+	}
+
+	function ensureManualProvenanceBadgeForInput(input) {
+		var statusBadge;
+		var manualBadge;
+
+		if ( ! input ) {
+			return;
+		}
+
+		manualBadge = getProvenanceBadgeForInput( input, 'manual' );
+		if ( manualBadge ) {
+			return;
+		}
+
+		statusBadge = getStatusBadgeForInput( input );
+		if ( ! statusBadge || ! statusBadge.parentNode ) {
+			return;
+		}
+
+		manualBadge = document.createElement( 'span' );
+		manualBadge.className = 'i18nly-entry-status i18nly-entry-status--provenance-manual';
+		manualBadge.setAttribute( 'data-for', input.id || '' );
+		manualBadge.setAttribute( 'data-provenance-token', 'manual' );
+		manualBadge.textContent = 'Manual';
+
+		if ( statusBadge.nextSibling ) {
+			statusBadge.parentNode.insertBefore( document.createTextNode( ' ' ), statusBadge.nextSibling );
+			statusBadge.parentNode.insertBefore( manualBadge, statusBadge.nextSibling );
+		} else {
+			statusBadge.parentNode.appendChild( document.createTextNode( ' ' ) );
+			statusBadge.parentNode.appendChild( manualBadge );
+		}
 	}
 
 	function refreshEntriesTable() {
@@ -163,15 +261,18 @@
 			}
 
 			if (hasText) {
-				badge.className = 'i18nly-entry-status i18nly-entry-status--draft';
+				badge.className = 'i18nly-entry-status i18nly-entry-status--quality i18nly-entry-status--draft';
 				badge.textContent = 'Draft';
 				badge.setAttribute( 'data-status-token', 'draft' );
 				return;
 			}
 
-			badge.className = 'i18nly-entry-status';
-			badge.textContent = '';
-			badge.setAttribute( 'data-status-token', '' );
+			removeProvenanceBadgeForInput( input, 'ai' );
+			removeProvenanceBadgeForInput( input, 'manual' );
+
+			badge.className = 'i18nly-entry-status i18nly-entry-status--quality i18nly-entry-status--placeholder';
+			badge.textContent = '\u00a0';
+			badge.setAttribute( 'data-status-token', '__empty__' );
 		}
 
 		function rebuildPayload() {
@@ -193,14 +294,21 @@
 				}
 
 				if ( ! payload[sourceEntryId]) {
-					payload[sourceEntryId] = { forms: {}, statuses: {} };
+					payload[sourceEntryId] = { forms: {}, statuses: {}, used_ai: {}, used_manual: {} };
 				}
 
 				var badge = getStatusBadgeForInput( input );
 				var token = badge ? ( badge.getAttribute( 'data-status-token' ) || '' ) : '';
+				if ( '__empty__' === token ) {
+					token = '';
+				}
+				var usedAiBadge = getProvenanceBadgeForInput( input, 'ai' );
+				var usedManualBadge = getProvenanceBadgeForInput( input, 'manual' );
 
 				payload[sourceEntryId].forms[formIndex] = input.value;
 				payload[sourceEntryId].statuses[formIndex] = token;
+				payload[sourceEntryId].used_ai[formIndex] = usedAiBadge ? 1 : 0;
+				payload[sourceEntryId].used_manual[formIndex] = usedManualBadge ? 1 : 0;
 			}
 
 			hiddenField.value = JSON.stringify( payload );
@@ -234,7 +342,11 @@
 
 				input.addEventListener(
 					'input',
-					function () {
+					function (event) {
+						if ( event && event.isTrusted ) {
+							ensureManualProvenanceBadgeForInput( input );
+						}
+
 						clearStatusBadgeForInput( input );
 						rebuildPayload();
 					}
@@ -399,11 +511,13 @@
 					var token = payload.data.review_token || '';
 
 					if ('ai_draft_ok' === token) {
-						token = 'draft_ai';
+						token = 'draft';
 					} else if ('ai_draft_suspect' === token) {
 						token = 'suspect';
 					} else if ('ai_draft_needs_fix' === token) {
 						token = 'suspect';
+					} else if ('draft_ai' === token) {
+						token = 'draft';
 					} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
 						token = 'suspect';
 					}
@@ -411,21 +525,23 @@
 					var tokenMap = {
 						draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
 						validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
-						draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
 						suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
 					};
 
 					if ( badge && tokenMap[token] ) {
-						badge.className = 'i18nly-entry-status ' + tokenMap[token].className;
+						badge.className = 'i18nly-entry-status i18nly-entry-status--quality ' + tokenMap[token].className;
 						badge.textContent = tokenMap[token].label;
 						badge.setAttribute( 'data-status-token', token );
 					}
 
 					if ( badge && ! tokenMap[token] ) {
-						badge.className = 'i18nly-entry-status';
+						badge.className = 'i18nly-entry-status i18nly-entry-status--quality';
 						badge.textContent = '';
 						badge.setAttribute( 'data-status-token', '' );
 					}
+
+					ensureAiProvenanceBadgeForInput( input );
+					removeProvenanceBadgeForInput( input, 'manual' );
 				}
 			).catch(
 				function () {
@@ -809,11 +925,13 @@
 								var token = result.review_token || '';
 
 								if ('ai_draft_ok' === token) {
-									token = 'draft_ai';
+									token = 'draft';
 								} else if ('ai_draft_suspect' === token) {
 									token = 'suspect';
 								} else if ('ai_draft_needs_fix' === token) {
 									token = 'suspect';
+								} else if ('draft_ai' === token) {
+									token = 'draft';
 								} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
 									token = 'suspect';
 								}
@@ -821,15 +939,23 @@
 								var tokenMap = {
 									draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
 									validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
-									draft_ai: { className: 'i18nly-entry-status--ai-draft', label: 'AI draft' },
 									suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
 								};
 
 								if ( badge && tokenMap[token] ) {
-									badge.className = 'i18nly-entry-status ' + tokenMap[token].className;
+									badge.className = 'i18nly-entry-status i18nly-entry-status--quality ' + tokenMap[token].className;
 									badge.textContent = tokenMap[token].label;
 									badge.setAttribute( 'data-status-token', token );
 								}
+
+								if ( badge && ! tokenMap[token] ) {
+									badge.className = 'i18nly-entry-status i18nly-entry-status--quality';
+									badge.textContent = '';
+									badge.setAttribute( 'data-status-token', '' );
+								}
+
+								ensureAiProvenanceBadgeForInput( matchedItem.input );
+								removeProvenanceBadgeForInput( matchedItem.input, 'manual' );
 							}
 						);
 

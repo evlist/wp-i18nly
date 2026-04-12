@@ -451,7 +451,7 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.status AS translated_status, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			$translated_entries_table,
@@ -493,6 +493,8 @@ class SourceWpdbRepository {
 					'form_index'      => $form_index,
 					'translation'     => isset( $row['translation'] ) ? (string) $row['translation'] : '',
 					'status'          => isset( $row['translated_status'] ) ? (string) $row['translated_status'] : 'draft',
+					'used_ai'         => isset( $row['used_ai'] ) ? (int) $row['used_ai'] : 0,
+					'used_manual'     => isset( $row['used_manual'] ) ? (int) $row['used_manual'] : 1,
 				);
 			}
 		}
@@ -511,6 +513,8 @@ class SourceWpdbRepository {
 					'form_index'      => $form_index,
 					'translation'     => '',
 					'status'          => 'draft',
+					'used_ai'         => 0,
+					'used_manual'     => 1,
 				);
 			}
 
@@ -531,9 +535,11 @@ class SourceWpdbRepository {
 	 * @param string      $translation Translated value.
 	 * @param string      $now_gmt Current GMT datetime.
 	 * @param string|null $status Translated entry status. Null preserves existing status.
+	 * @param int|null    $used_ai AI provenance flag. Null preserves existing value.
+	 * @param int|null    $used_manual Manual provenance flag. Null preserves existing value.
 	 * @return bool
 	 */
-	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null ) {
+	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
 		if ( '' === $translated_entries_table ) {
 			return false;
@@ -560,6 +566,16 @@ class SourceWpdbRepository {
 				$update_format[]       = '%s';
 			}
 
+			if ( null !== $used_ai ) {
+				$update_data['used_ai'] = max( 0, min( 1, (int) $used_ai ) );
+				$update_format[]        = '%d';
+			}
+
+			if ( null !== $used_manual ) {
+				$update_data['used_manual'] = max( 0, min( 1, (int) $used_manual ) );
+				$update_format[]            = '%d';
+			}
+
 			$result = $this->wpdb->update( $translated_entries_table, $update_data, array( 'id' => (int) $translated_entry_id ), $update_format, array( '%d' ) );
 
 			return false !== $result;
@@ -573,11 +589,13 @@ class SourceWpdbRepository {
 				'form_index'      => (int) $form_index,
 				'translation'     => (string) $translation,
 				'status'          => null === $status ? 'draft' : (string) $status,
+				'used_ai'         => null === $used_ai ? 0 : max( 0, min( 1, (int) $used_ai ) ),
+				'used_manual'     => null === $used_manual ? 1 : max( 0, min( 1, (int) $used_manual ) ),
 				'comment'         => '',
 				'created_at_gmt'  => (string) $now_gmt,
 				'updated_at_gmt'  => (string) $now_gmt,
 			),
-			array( '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%d', '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
 		);
 
 		return false !== $result;

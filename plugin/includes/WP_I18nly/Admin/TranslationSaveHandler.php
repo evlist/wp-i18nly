@@ -181,7 +181,7 @@ class TranslationSaveHandler {
 	 * Normalizes translation entries payload rows.
 	 *
 	 * @param array<int|string, mixed> $entries_payload Raw entries payload.
-	 * @return array<int|string, array{forms: array<int, string>, statuses?: array<int, string>}>
+	 * @return array<int|string, array{forms: array<int, string>, statuses?: array<int, string>, used_ai?: array<int, int>, used_manual?: array<int, int>}>
 	 */
 	private function normalize_translation_entries_payload( array $entries_payload ) {
 		$normalized_payload = array();
@@ -198,9 +198,17 @@ class TranslationSaveHandler {
 			$statuses = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
 				? $entry_payload['statuses']
 				: array();
+			$used_ai = isset( $entry_payload['used_ai'] ) && is_array( $entry_payload['used_ai'] )
+				? $entry_payload['used_ai']
+				: array();
+			$used_manual = isset( $entry_payload['used_manual'] ) && is_array( $entry_payload['used_manual'] )
+				? $entry_payload['used_manual']
+				: array();
 
-			$normalized_forms    = array();
-			$normalized_statuses = array();
+			$normalized_forms       = array();
+			$normalized_statuses    = array();
+			$normalized_used_ai     = array();
+			$normalized_used_manual = array();
 
 			foreach ( $forms as $form_index => $form_translation ) {
 				$normalized_index                      = absint( $form_index );
@@ -211,6 +219,18 @@ class TranslationSaveHandler {
 				} elseif ( array_key_exists( $form_index, $statuses ) ) {
 					$normalized_statuses[ $normalized_index ] = sanitize_key( (string) $statuses[ $form_index ] );
 				}
+
+				if ( array_key_exists( $normalized_index, $used_ai ) ) {
+					$normalized_used_ai[ $normalized_index ] = max( 0, min( 1, (int) $used_ai[ $normalized_index ] ) );
+				} elseif ( array_key_exists( $form_index, $used_ai ) ) {
+					$normalized_used_ai[ $normalized_index ] = max( 0, min( 1, (int) $used_ai[ $form_index ] ) );
+				}
+
+				if ( array_key_exists( $normalized_index, $used_manual ) ) {
+					$normalized_used_manual[ $normalized_index ] = max( 0, min( 1, (int) $used_manual[ $normalized_index ] ) );
+				} elseif ( array_key_exists( $form_index, $used_manual ) ) {
+					$normalized_used_manual[ $normalized_index ] = max( 0, min( 1, (int) $used_manual[ $form_index ] ) );
+				}
 			}
 
 			$entry = array(
@@ -219,6 +239,14 @@ class TranslationSaveHandler {
 
 			if ( ! empty( $normalized_statuses ) ) {
 				$entry['statuses'] = $normalized_statuses;
+			}
+
+			if ( ! empty( $normalized_used_ai ) ) {
+				$entry['used_ai'] = $normalized_used_ai;
+			}
+
+			if ( ! empty( $normalized_used_manual ) ) {
+				$entry['used_manual'] = $normalized_used_manual;
 			}
 
 			$normalized_payload[ $source_entry_id ] = $entry;

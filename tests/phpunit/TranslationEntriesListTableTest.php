@@ -363,7 +363,7 @@ class TranslationEntriesListTableTest extends TestCase {
 						array(
 							'form_index'  => 0,
 							'translation' => 'A verifier',
-							'status'      => 'draft_ai_needs_fix',
+							'status'      => 'suspect',
 						),
 					),
 				),
@@ -468,7 +468,7 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'data-for="i18nly-translation-91-0"', $html );
 		$this->assertStringContainsString( 'data-for="i18nly-translation-91-1"', $html );
-		$this->assertStringContainsString( 'i18nly-entry-status--ai-draft', $html );
+		$this->assertStringContainsString( 'i18nly-entry-status--draft', $html );
 		$this->assertStringContainsString( 'i18nly-entry-status--validated', $html );
 	}
 

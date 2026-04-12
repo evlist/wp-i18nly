@@ -393,7 +393,7 @@ class AdminPage {
 	public function render_translation_edit_pot_generation_script( $hook_suffix = '' ) {
 		$this->get_translation_edit_controller()->render_translation_edit_pot_generation_script(
 			$hook_suffix,
-			defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '0.1.0'
+			defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '0.1.1'
 		);
 	}
 

@@ -5,7 +5,7 @@
  *
  * Plugin Name: I18nly
  * Description: Because translating a plugin in WordPress should be as simple as writing a blog post.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Requires at least: 6.6
  * Requires PHP: 8.1
  * Author: Eric van der Vlist
@@ -26,7 +26,7 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 	}
 }
 
-define( 'I18NLY_VERSION', '0.1.0' );
+define( 'I18NLY_VERSION', '0.1.1' );
 define( 'I18NLY_PLUGIN_FILE', __FILE__ );
 
 require_once plugin_dir_path( __FILE__ ) . 'third-party/vendor/autoload.php';

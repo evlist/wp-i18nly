@@ -256,6 +256,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$form_index          = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
 			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
 			$current_status      = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
+			$used_ai             = isset( $translation_row['used_ai'] ) ? (int) $translation_row['used_ai'] : 0;
+			$used_manual         = isset( $translation_row['used_manual'] ) ? (int) $translation_row['used_manual'] : 1;
 			$input_id            = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
 			if ( '' === trim( $current_translation ) ) {
@@ -266,7 +268,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$current_status = 'draft';
 			}
 
-			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status ) . $this->render_obsolete_badge( $is_obsolete );
+			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status )
+				. $this->render_provenance_badges_for_input( $input_id, $used_ai, $used_manual )
+				. $this->render_obsolete_badge( $is_obsolete );
 
 			if ( ! $has_plural ) {
 				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $badge_html );
@@ -279,7 +283,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		if ( empty( $lines ) ) {
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%s</p>',
-				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' ) . $this->render_obsolete_badge( $is_obsolete )
+				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 'draft' )
+				. $this->render_provenance_badges_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 0, 1 )
+				. $this->render_obsolete_badge( $is_obsolete )
 			);
 		}
 
@@ -303,10 +309,6 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				'class' => 'i18nly-entry-status--draft',
 				'label' => __( 'Draft', 'i18nly' ),
 			),
-			'draft_ai'           => array(
-				'class' => 'i18nly-entry-status--ai-draft',
-				'label' => __( 'AI draft', 'i18nly' ),
-			),
 			'suspect'            => array(
 				'class' => 'i18nly-entry-status--suspect',
 				'label' => __( 'Suspect', 'i18nly' ),
@@ -319,7 +321,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 
 		if ( ! isset( $status_map[ $status ] ) ) {
 			return sprintf(
-				'<span class="i18nly-entry-status" data-for="%1$s" data-status-token=""></span>',
+				'<span class="i18nly-entry-status i18nly-entry-status--quality" data-for="%1$s" data-status-token=""></span>',
 				esc_attr( $input_id )
 			);
 		}
@@ -327,7 +329,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$status_meta = $status_map[ $status ];
 
 		return sprintf(
-			'<span class="i18nly-entry-status %1$s" data-for="%2$s" data-status-token="%3$s">%4$s</span>',
+			'<span class="i18nly-entry-status i18nly-entry-status--quality %1$s" data-for="%2$s" data-status-token="%3$s">%4$s</span>',
 			esc_attr( (string) $status_meta['class'] ),
 			esc_attr( $input_id ),
 			esc_attr( $status ),
@@ -353,7 +355,37 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	}
 
 	/**
-	 * Normalizes translated status values, including legacy tokens.
+	 * Renders provenance chips associated to one translation input.
+	 *
+	 * @param string $input_id Translation input ID.
+	 * @param int    $used_ai Whether AI was used.
+	 * @param int    $used_manual Whether manual editing was used.
+	 * @return string
+	 */
+	private function render_provenance_badges_for_input( $input_id, $used_ai, $used_manual ) {
+		$chips = array();
+
+		if ( 1 === (int) $used_ai ) {
+			$chips[] = sprintf(
+				'<span class="i18nly-entry-status i18nly-entry-status--provenance-ai" data-for="%1$s" data-provenance-token="ai">%2$s</span>',
+				esc_attr( $input_id ),
+				esc_html__( 'AI', 'i18nly' )
+			);
+		}
+
+		if ( 1 === (int) $used_manual ) {
+			$chips[] = sprintf(
+				'<span class="i18nly-entry-status i18nly-entry-status--provenance-manual" data-for="%1$s" data-provenance-token="manual">%2$s</span>',
+				esc_attr( $input_id ),
+				esc_html__( 'Manual', 'i18nly' )
+			);
+		}
+
+		return implode( ' ', $chips );
+	}
+
+	/**
+	 * Normalizes translated quality status values.
 	 *
 	 * @param string $status Raw status.
 	 * @return string
@@ -361,20 +393,15 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	private function normalize_translation_status( $status ) {
 		$status = (string) $status;
 
-		$legacy_map = array(
-			'unvalidated'        => 'draft',
-			'ai_draft_ok'        => 'draft_ai',
-			'ai_draft_suspect'   => 'suspect',
-			'ai_draft_needs_fix' => 'suspect',
-			'draft_ai_suspect'   => 'suspect',
-			'draft_ai_needs_fix' => 'suspect',
-		);
-
-		if ( isset( $legacy_map[ $status ] ) ) {
-			return $legacy_map[ $status ];
+		if ( 'draft_ai' === $status || 'ai_draft_ok' === $status ) {
+			return 'draft';
 		}
 
-		return $status;
+		if ( in_array( $status, array( 'draft', 'suspect', 'validated' ), true ) ) {
+			return $status;
+		}
+
+		return 'draft';
 	}
 
 	/**
