@@ -107,6 +107,9 @@
 		suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' },
 		validated: { className: 'i18nly-entry-status--validated', label: 'Validated' }
 	};
+	var FILTER_QUERY_KEY_ENTRY = 'i18nly_filter_entries';
+	var FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
+	var FILTER_NONE_TOKEN = '__none__';
 
 	function normalizeQualityToken(token) {
 		if ('ai_draft_ok' === token || 'draft_ai' === token) {
@@ -309,6 +312,22 @@
 		var translationInputs;
 		var hiddenField;
 
+		function syncPostRefererWithCurrentLocation() {
+			var refererField;
+
+			if ( ! form || ! window.location ) {
+				return;
+			}
+
+			refererField = form.querySelector( 'input[name="_wp_http_referer"]' );
+			if ( ! refererField ) {
+				return;
+			}
+
+			refererField.value = String( window.location.pathname || '' ) + String( window.location.search || '' );
+			form.action = String( window.location.pathname || '' ) + String( window.location.search || '' );
+		}
+
 		function clearStatusBadgeForInput(input) {
 			var badge = getStatusBadgeForInput( input );
 			var hasText = '' !== String( input.value || '' ).trim();
@@ -414,6 +433,7 @@
 			'submit',
 			function () {
 				rebuildPayload();
+				syncPostRefererWithCurrentLocation();
 			},
 			{ once: true }
 		);
@@ -495,6 +515,87 @@
 					return '' !== value;
 				}
 			);
+		}
+
+		function getAvailableFilterValues(filtersNodeList) {
+			return Array.prototype.slice.call( filtersNodeList || [] ).map(
+				function (checkbox) {
+					return String( checkbox.value || '' ).toLowerCase().trim();
+				}
+			).filter(
+				function (value) {
+					return '' !== value;
+				}
+			);
+		}
+
+		function restoreFilterSelectionFromQuery(filtersNodeList, queryKey) {
+			var params;
+			var rawValue;
+			var allowedValues;
+			var selectedValues;
+
+			if ( 'function' !== typeof window.URLSearchParams ) {
+				return;
+			}
+
+			params = new window.URLSearchParams( window.location.search || '' );
+			rawValue = params.get( queryKey );
+
+			if ( null === rawValue ) {
+				return;
+			}
+
+			allowedValues = getAvailableFilterValues( filtersNodeList );
+
+			if ( FILTER_NONE_TOKEN === rawValue ) {
+				Array.prototype.slice.call( filtersNodeList || [] ).forEach(
+					function (checkbox) {
+						checkbox.checked = false;
+					}
+				);
+				return;
+			}
+
+			selectedValues = String( rawValue )
+				.split( ',' )
+				.map(
+					function (token) {
+						return token.toLowerCase().trim();
+					}
+				)
+				.filter(
+					function (token) {
+						return '' !== token && allowedValues.indexOf( token ) !== -1;
+					}
+				);
+
+			Array.prototype.slice.call( filtersNodeList || [] ).forEach(
+				function (checkbox) {
+					var checkboxValue = String( checkbox.value || '' ).toLowerCase().trim();
+
+					checkbox.checked = selectedValues.indexOf( checkboxValue ) !== -1;
+				}
+			);
+		}
+
+		function persistFiltersToQueryString() {
+			var params;
+			var entryStatuses;
+			var qualityStatuses;
+
+			if ( 'function' !== typeof window.URLSearchParams || ! window.history || 'function' !== typeof window.history.replaceState ) {
+				return;
+			}
+
+			params = new window.URLSearchParams( window.location.search || '' );
+			entryStatuses = getSelectedFilterValues( entryStatusFilters );
+			qualityStatuses = getSelectedFilterValues( qualityStatusFilters );
+
+			params.set( FILTER_QUERY_KEY_ENTRY, entryStatuses.length > 0 ? entryStatuses.join( ',' ) : FILTER_NONE_TOKEN );
+			params.set( FILTER_QUERY_KEY_QUALITY, qualityStatuses.length > 0 ? qualityStatuses.join( ',' ) : FILTER_NONE_TOKEN );
+
+			window.history.replaceState( null, '', String( window.location.pathname || '' ) + '?' + params.toString() + String( window.location.hash || '' ) );
 		}
 
 		function getRowQualityTokens(row) {
@@ -1143,15 +1244,31 @@
 
 		Array.prototype.slice.call( entryStatusFilters ).forEach(
 			function (checkbox) {
-				checkbox.addEventListener( 'change', applyTableFilters );
+				checkbox.addEventListener(
+					'change',
+					function () {
+						persistFiltersToQueryString();
+						applyTableFilters();
+					}
+				);
 			}
 		);
 
 		Array.prototype.slice.call( qualityStatusFilters ).forEach(
 			function (checkbox) {
-				checkbox.addEventListener( 'change', applyTableFilters );
+				checkbox.addEventListener(
+					'change',
+					function () {
+						persistFiltersToQueryString();
+						applyTableFilters();
+					}
+				);
 			}
 		);
+
+		restoreFilterSelectionFromQuery( entryStatusFilters, FILTER_QUERY_KEY_ENTRY );
+		restoreFilterSelectionFromQuery( qualityStatusFilters, FILTER_QUERY_KEY_QUALITY );
+		persistFiltersToQueryString();
 
 		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
 			function (button) {

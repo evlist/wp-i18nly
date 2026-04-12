@@ -35,6 +35,16 @@ class AdminPage {
 	private const POST_TYPE = 'i18nly_translation';
 
 	/**
+	 * Query key for entry lifecycle filters.
+	 */
+	private const FILTER_QUERY_KEY_ENTRY = 'i18nly_filter_entries';
+
+	/**
+	 * Query key for quality status filters.
+	 */
+	private const FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
+
+	/**
 	 * Source slug post meta key.
 	 */
 	private const META_SOURCE_SLUG = '_i18nly_source_slug';
@@ -94,6 +104,7 @@ class AdminPage {
 		add_action( 'wp_ajax_i18nly_ai_translate_entry', array( $this, 'ajax_ai_translate_entry' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
+		add_filter( 'redirect_post_location', array( $this, 'filter_translation_edit_redirect_location' ), 10, 2 );
 		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
 		add_filter( 'bulk_post_updated_messages', array( $this, 'filter_translation_bulk_updated_messages' ), 10, 2 );
 		add_filter( 'post_row_actions', array( $this, 'filter_translation_row_actions' ), 10, 2 );
@@ -169,6 +180,36 @@ class AdminPage {
 	 */
 	public function save_translation_meta_box( $post_id, $post, $update ) {
 		$this->get_translation_edit_controller()->handle_save_translation_meta_box( $post_id, $post, $update );
+	}
+
+	/**
+	 * Keeps translation filters in post-save redirect URL.
+	 *
+	 * @param string $location Redirect location.
+	 * @param int    $post_id Updated post ID.
+	 * @return string
+	 */
+	public function filter_translation_edit_redirect_location( $location, $post_id ) {
+		if ( ! is_string( $location ) || '' === $location ) {
+			return '';
+		}
+
+		$post_id = absint( $post_id );
+		if ( $post_id <= 0 || self::POST_TYPE !== (string) get_post_type( $post_id ) ) {
+			return $location;
+		}
+
+		$filter_values = $this->extract_translation_filter_query_values_from_request();
+
+		foreach ( $filter_values as $query_key => $query_value ) {
+			if ( '' === $query_value ) {
+				continue;
+			}
+
+			$location = add_query_arg( $query_key, $query_value, $location );
+		}
+
+		return $location;
 	}
 
 	/**
@@ -655,6 +696,90 @@ class AdminPage {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Extracts current translation filter query values from request context.
+	 *
+	 * @return array<string, string>
+	 */
+	private function extract_translation_filter_query_values_from_request() {
+		$values = array(
+			self::FILTER_QUERY_KEY_ENTRY   => '',
+			self::FILTER_QUERY_KEY_QUALITY => '',
+		);
+
+		foreach ( array_keys( $values ) as $query_key ) {
+			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( $this->get_request_query_or_post_parameter( $query_key ) );
+		}
+
+		$referer = $this->get_request_query_or_post_parameter( '_wp_http_referer' );
+		if ( '' === $referer ) {
+			return $values;
+		}
+
+		$parsed_query = wp_parse_url( $referer, PHP_URL_QUERY );
+		if ( ! is_string( $parsed_query ) || '' === $parsed_query ) {
+			return $values;
+		}
+
+		$referer_args = array();
+		parse_str( $parsed_query, $referer_args );
+
+		if ( ! is_array( $referer_args ) ) {
+			return $values;
+		}
+
+		foreach ( array_keys( $values ) as $query_key ) {
+			if ( '' !== $values[ $query_key ] ) {
+				continue;
+			}
+
+			if ( ! isset( $referer_args[ $query_key ] ) || ! is_scalar( $referer_args[ $query_key ] ) ) {
+				continue;
+			}
+
+			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( (string) $referer_args[ $query_key ] );
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Returns one request parameter from POST first, then GET.
+	 *
+	 * @param string $key Parameter key.
+	 * @return string
+	 */
+	private function get_request_query_or_post_parameter( $key ) {
+		$post_value = filter_input( INPUT_POST, (string) $key, FILTER_UNSAFE_RAW );
+		if ( is_string( $post_value ) && '' !== $post_value ) {
+			return (string) wp_unslash( $post_value );
+		}
+
+		$get_value = filter_input( INPUT_GET, (string) $key, FILTER_UNSAFE_RAW );
+		if ( is_string( $get_value ) && '' !== $get_value ) {
+			return $get_value;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Sanitizes one translation filter query value.
+	 *
+	 * @param string $value Raw filter query value.
+	 * @return string
+	 */
+	private function sanitize_translation_filter_query_value( $value ) {
+		$normalized = strtolower( trim( (string) $value ) );
+		$normalized = preg_replace( '/[^a-z_,]/', '', $normalized );
+
+		if ( ! is_string( $normalized ) ) {
+			return '';
+		}
+
+		return trim( $normalized, ',' );
 	}
 
 	/**
