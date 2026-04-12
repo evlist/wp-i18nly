@@ -523,6 +523,9 @@ class TranslationEntriesListTableTest extends TestCase {
 		$bulk_actions = $list_table->exposed_get_bulk_actions();
 
 		$this->assertArrayHasKey( 'ai_translate_selected', $bulk_actions );
+		$this->assertArrayHasKey( 'mark_as_draft', $bulk_actions );
+		$this->assertArrayHasKey( 'mark_as_suspect', $bulk_actions );
+		$this->assertArrayHasKey( 'mark_as_validated', $bulk_actions );
 	}
 
 	/**

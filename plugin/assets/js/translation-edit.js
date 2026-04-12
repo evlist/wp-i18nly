@@ -520,6 +520,33 @@
 			);
 		}
 
+		function markSelectedRowsQuality(row, token) {
+			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
+				function (input) {
+					var badge;
+					var hasText;
+
+					if ( ! input ) {
+						return;
+					}
+
+					badge = getStatusBadgeForInput( input );
+					hasText = '' !== String( input.value || '' ).trim();
+
+					if ( ! badge ) {
+						return;
+					}
+
+					if ( hasText ) {
+						applyQualityBadgeState( badge, token );
+						return;
+					}
+
+					applyQualityBadgeState( badge, '' );
+				}
+			);
+		}
+
 		function translateWithAI(button) {
 			var inputId        = button.getAttribute( 'data-for' );
 			var input          = inputId ? document.getElementById( inputId ) : null;
@@ -975,6 +1002,13 @@
 		}
 
 		function applyBulkAction(action) {
+			var qualityActionMap = {
+				mark_as_draft: 'draft',
+				mark_as_suspect: 'suspect',
+				mark_as_validated: 'validated'
+			};
+			var qualityToken = qualityActionMap[action] || '';
+
 			if ( 'ai_translate_selected' === action ) {
 				translateSelectedRowsWithAI();
 				return;
@@ -982,6 +1016,11 @@
 
 			getSelectedRows().forEach(
 				function (row) {
+					if ( '' !== qualityToken ) {
+						markSelectedRowsQuality( row, qualityToken );
+						return;
+					}
+
 					if ( 'copy_source_to_translation' === action ) {
 						copySourceToTranslation( row );
 						return;
@@ -992,6 +1031,10 @@
 					}
 				}
 			);
+
+			if ( typeof window.i18nlyRebuildEntriesPayload === 'function' ) {
+				window.i18nlyRebuildEntriesPayload();
+			}
 		}
 
 		if ( ! container ) {
