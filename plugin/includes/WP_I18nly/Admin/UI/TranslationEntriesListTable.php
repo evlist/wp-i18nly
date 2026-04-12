@@ -241,18 +241,6 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
 			? $item['translations']
 			: array();
-		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
-			? array_values( $item['form_labels'] )
-			: array();
-		$forms         = isset( $item['forms'] ) && is_array( $item['forms'] )
-			? array_values( $item['forms'] )
-			: array();
-		$form_markers  = isset( $item['form_markers'] ) && is_array( $item['form_markers'] )
-			? array_values( $item['form_markers'] )
-			: array();
-		$form_tooltips = isset( $item['form_tooltips'] ) && is_array( $item['form_tooltips'] )
-			? array_values( $item['form_tooltips'] )
-			: array();
 
 		if ( $source_entry <= 0 ) {
 			return '';
@@ -285,16 +273,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				continue;
 			}
 
-			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
-			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
-			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips );
-			$marker_label = '' !== trim( $form_tooltip ) ? $form_tooltip : $form_label;
-
-			$lines[] = sprintf(
-				'<p class="i18nly-form-line">%1$s %2$s</p>',
-				$this->render_form_marker( $form_marker, $marker_label ),
-				$badge_html
-			);
+			$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $badge_html );
 		}
 
 		if ( empty( $lines ) ) {
