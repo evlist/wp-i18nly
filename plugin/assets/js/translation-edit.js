@@ -544,6 +544,8 @@
 			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
 				function (input) {
 					input.value = input.getAttribute( 'data-i18nly-source-text' ) || '';
+					removeProvenanceBadgeForInput( input, 'ai' );
+					removeProvenanceBadgeForInput( input, 'manual' );
 					input.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 				}
 			);
