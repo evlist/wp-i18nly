@@ -414,6 +414,37 @@ class TranslationEntriesListTableTest extends TestCase {
 		$this->assertStringContainsString( 'data-for="i18nly-translation-88-0"', $html );
 		$this->assertStringContainsString( 'data-status-token="__empty__"', $html );
 		$this->assertStringNotContainsString( 'i18nly-entry-status--draft', $html );
+		$this->assertStringNotContainsString( 'data-provenance-token="manual"', $html );
+	}
+
+	/**
+	 * Does not render manual provenance when no translation row exists yet.
+	 *
+	 * @return void
+	 */
+	public function test_list_table_does_not_render_manual_badge_for_new_empty_row() {
+		$list_table = new \WP_I18nly\Admin\UI\TranslationEntriesListTable(
+			array(
+				array(
+					'source_entry_id' => 98,
+					'msgctxt'         => '',
+					'msgid'           => 'New source string',
+					'msgid_plural'    => '',
+					'source_status'   => 'active',
+					'translations'    => array(),
+				),
+			)
+		);
+
+		ob_start();
+		$list_table->prepare_items();
+		$list_table->display();
+		$html = ob_get_clean();
+
+		$this->assertIsString( $html );
+		$this->assertStringContainsString( 'data-for="i18nly-translation-98-0"', $html );
+		$this->assertStringContainsString( 'data-status-token="__empty__"', $html );
+		$this->assertStringNotContainsString( 'data-provenance-token="manual"', $html );
 	}
 
 	/**

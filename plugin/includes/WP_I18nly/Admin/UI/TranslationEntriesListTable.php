@@ -257,11 +257,15 @@ class TranslationEntriesListTable extends \WP_List_Table {
 			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
 			$current_status      = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
 			$used_ai             = isset( $translation_row['used_ai'] ) ? (int) $translation_row['used_ai'] : 0;
-			$used_manual         = isset( $translation_row['used_manual'] ) ? (int) $translation_row['used_manual'] : 1;
+			$used_manual         = isset( $translation_row['used_manual'] )
+				? (int) $translation_row['used_manual']
+				: ( '' !== trim( $current_translation ) ? 1 : 0 );
 			$input_id            = sprintf( 'i18nly-translation-%d-%d', $source_entry, $form_index );
 
 			if ( '' === trim( $current_translation ) ) {
 				$current_status = '';
+				$used_ai        = 0;
+				$used_manual    = 0;
 			}
 
 			if ( '' === $current_status && '' !== trim( $current_translation ) ) {
@@ -283,8 +287,8 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		if ( empty( $lines ) ) {
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%s</p>',
-				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 'draft' )
-				. $this->render_provenance_badges_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 0, 1 )
+				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' )
+				. $this->render_provenance_badges_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 0, 0 )
 				. $this->render_obsolete_badge( $is_obsolete )
 			);
 		}
