@@ -65,12 +65,38 @@ class TranslationMetaBoxRenderer {
 
 		<?php if ( $is_locked ) : ?>
 			<h3><?php echo esc_html__( 'Translation entries', 'i18nly' ); ?></h3>
-			<p>
-				<label for="i18nly-show-obsolete-entries">
-					<input type="checkbox" id="i18nly-show-obsolete-entries" />
-					<?php echo esc_html__( 'Show obsolete entries', 'i18nly' ); ?>
-				</label>
-			</p>
+			<div class="i18nly-entry-filters" role="group" aria-label="<?php echo esc_attr__( 'Translation entry filters', 'i18nly' ); ?>">
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title"><?php echo esc_html__( 'Entries', 'i18nly' ); ?></span>
+					<label for="i18nly-filter-entry-status-active">
+						<input type="checkbox" id="i18nly-filter-entry-status-active" class="i18nly-filter-entry-status" value="active" checked="checked" />
+						<?php echo esc_html__( 'Active', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-entry-status-obsolete">
+						<input type="checkbox" id="i18nly-filter-entry-status-obsolete" class="i18nly-filter-entry-status" value="obsolete" />
+						<?php echo esc_html__( 'Obsolete', 'i18nly' ); ?>
+					</label>
+				</div>
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title"><?php echo esc_html__( 'Status', 'i18nly' ); ?></span>
+					<label for="i18nly-filter-quality-status-suspect">
+						<input type="checkbox" id="i18nly-filter-quality-status-suspect" class="i18nly-filter-quality-status" value="suspect" checked="checked" />
+						<?php echo esc_html__( 'Suspect', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-quality-status-draft">
+						<input type="checkbox" id="i18nly-filter-quality-status-draft" class="i18nly-filter-quality-status" value="draft" checked="checked" />
+						<?php echo esc_html__( 'Draft', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-quality-status-validated">
+						<input type="checkbox" id="i18nly-filter-quality-status-validated" class="i18nly-filter-quality-status" value="validated" checked="checked" />
+						<?php echo esc_html__( 'Validated', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-quality-status-empty">
+						<input type="checkbox" id="i18nly-filter-quality-status-empty" class="i18nly-filter-quality-status" value="empty" checked="checked" />
+						<?php echo esc_html__( 'Non translated', 'i18nly' ); ?>
+					</label>
+				</div>
+			</div>
 			<div id="i18nly-source-entries-table">
 				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>
 			</div>

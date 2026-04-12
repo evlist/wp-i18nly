@@ -421,7 +421,8 @@
 
 	function installEntriesTableInteractions() {
 		var container      = document.getElementById( config.tableContainerId );
-		var obsoleteToggle = document.getElementById( 'i18nly-show-obsolete-entries' );
+		var entryStatusFilters = document.querySelectorAll( '.i18nly-filter-entry-status' );
+		var qualityStatusFilters = document.querySelectorAll( '.i18nly-filter-quality-status' );
 		var rowCheckboxes;
 		var selectAllCheckboxes;
 		var bulkActionSelects;
@@ -480,20 +481,57 @@
 			updateBulkActionState();
 		}
 
-		function applyObsoleteFilter() {
-			var showObsolete = ! ! obsoleteToggle && obsoleteToggle.checked;
+		function getSelectedFilterValues(filtersNodeList) {
+			return Array.prototype.slice.call( filtersNodeList || [] ).filter(
+				function (checkbox) {
+					return checkbox.checked;
+				}
+			).map(
+				function (checkbox) {
+					return String( checkbox.value || '' ).toLowerCase().trim();
+				}
+			).filter(
+				function (value) {
+					return '' !== value;
+				}
+			);
+		}
+
+		function getRowQualityTokens(row) {
+			return Array.prototype.slice.call( row.querySelectorAll( '.i18nly-entry-status--quality' ) ).map(
+				function (badge) {
+					var token = String( badge.getAttribute( 'data-status-token' ) || '' ).toLowerCase().trim();
+
+					if ( '__empty__' === token || '' === token ) {
+						return 'empty';
+					}
+
+					return token;
+				}
+			);
+		}
+
+		function applyTableFilters() {
+			var selectedEntryStatuses = getSelectedFilterValues( entryStatusFilters );
+			var selectedQualityStatuses = getSelectedFilterValues( qualityStatusFilters );
 
 			Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) ).forEach(
 				function (row) {
-					var status     = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
-					var isObsolete = status === 'obsolete';
-					var checkbox   = row.querySelector( '.i18nly-entry-checkbox' );
-					var mustHide   = isObsolete && ! showObsolete;
+					var entryStatus = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
+					var rowQualityTokens = getRowQualityTokens( row );
+					var checkbox = row.querySelector( '.i18nly-entry-checkbox' );
+					var matchesEntryStatus = selectedEntryStatuses.indexOf( entryStatus ) !== -1;
+					var matchesQualityStatus = rowQualityTokens.some(
+						function (token) {
+							return selectedQualityStatuses.indexOf( token ) !== -1;
+						}
+					);
+					var mustHide = ! matchesEntryStatus || ! matchesQualityStatus;
 
 					row.style.display = mustHide ? 'none' : '';
 					row.setAttribute( 'aria-hidden', mustHide ? 'true' : 'false' );
 
-					if (mustHide && checkbox) {
+					if ( mustHide && checkbox ) {
 						checkbox.checked = false;
 					}
 				}
@@ -1101,9 +1139,17 @@
 			}
 		);
 
-		if ( obsoleteToggle ) {
-			obsoleteToggle.addEventListener( 'change', applyObsoleteFilter );
-		}
+		Array.prototype.slice.call( entryStatusFilters ).forEach(
+			function (checkbox) {
+				checkbox.addEventListener( 'change', applyTableFilters );
+			}
+		);
+
+		Array.prototype.slice.call( qualityStatusFilters ).forEach(
+			function (checkbox) {
+				checkbox.addEventListener( 'change', applyTableFilters );
+			}
+		);
 
 		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
 			function (button) {
@@ -1218,7 +1264,7 @@
 			}
 		);
 
-		applyObsoleteFilter();
+		applyTableFilters();
 		updateBulkActionState();
 	}
 

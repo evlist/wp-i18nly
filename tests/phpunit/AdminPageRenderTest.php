@@ -290,8 +290,10 @@ class AdminPageRenderTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertStringContainsString( 'id="i18nly-source-entries-table"', $html );
-		$this->assertStringContainsString( 'id="i18nly-show-obsolete-entries"', $html );
-		$this->assertStringContainsString( 'Show obsolete entries', $html );
+		$this->assertStringContainsString( 'class="i18nly-entry-filters"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-entry-status-active"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-entry-status-obsolete"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-quality-status-empty"', $html );
 		$this->assertStringContainsString( 'Loading translation entries…', $html );
 	}
 
