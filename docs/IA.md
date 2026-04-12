@@ -16,8 +16,8 @@ The long-term product goal is to hide low-level translation file complexity from
 - Plugin index guard: `plugin/index.php`
 - License text: `LICENSES/GPL-3.0-or-later.txt`
 - Setup/overview doc: `README.md`
-- Last commit: `401f9bf` — refactor ai batch/throttle: unify single+batch flow with adaptive shared delay
-- Test suite: **117 tests, 451 assertions**, all green (PHPUnit 11.5)
+- Last commit: `bbc0ca2` — refactor statuses: persist provenance on save draft and fix quality/provenance badges
+- Test suite: **117 tests, 455 assertions**, all green (PHPUnit 11.5)
 
 ### Namespace / file structure (current)
 
@@ -195,6 +195,59 @@ Items 1–4 from the previous list are now done or superseded. Current open item
 	average batch size, and average request duration) to make production behavior visible over time.
 
 5. Repeat with the same loop: implement → validate → commit.
+
+## 10) Implemented Slice: Quality/Provenance Decoupling (Current Behavior)
+
+This slice is now implemented end-to-end in backend, payload handling, and UI rendering.
+
+### Persistence policy
+
+- **No immediate DB persistence** on AI AJAX translation anymore.
+- Persistence happens on post save flow only (`Save draft` / update submit).
+- On save, each translated form persists:
+	- translated text,
+	- quality status (`draft`, `suspect`, `validated`),
+	- provenance flags (`used_ai`, `used_manual`).
+
+### Data model semantics
+
+- `status` represents **quality only**.
+- `used_ai` and `used_manual` represent **provenance only**.
+- Legacy tokens are normalized to current quality tokens:
+	- `draft_ai`, `ai_draft_ok` -> `draft`
+	- legacy suspect variants -> `suspect`
+
+### UI badge rules (Edit screen)
+
+- Status column displays badges in this order:
+	1. quality badge,
+	2. provenance badges,
+	3. obsolete badge (if source entry is obsolete).
+- Quality and provenance are visually distinct concepts, but `AI` and `Manual` provenance chips intentionally share the same visual style.
+
+### Dynamic interaction rules
+
+- After AI translation succeeds for a form:
+	- add/show `AI` provenance chip,
+	- remove `Manual` provenance chip,
+	- update quality badge from returned review token.
+- After a user manually edits a non-empty field:
+	- ensure `Manual` provenance chip is present,
+	- keep `AI` chip if already present,
+	- set quality badge to `Draft`.
+- When a field is cleared (empty translation):
+	- remove both `AI` and `Manual` provenance chips,
+	- clear effective quality status for persistence.
+
+### Plural forms alignment rule
+
+- Clearing one plural form must not shift badges for subsequent forms.
+- A non-semantic placeholder quality badge is kept in the emptied line only for layout stability.
+- The placeholder token is converted back to empty status in the payload before persistence.
+
+### Asset cache-busting note
+
+- Plugin asset version was bumped to `0.1.1` to force admin JS/CSS refresh and avoid stale badge behavior from browser cache.
 
 ## 11) Psalm Compatibility & Usage
 
