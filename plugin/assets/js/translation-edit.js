@@ -109,6 +109,7 @@
 	};
 	var FILTER_QUERY_KEY_ENTRY = 'i18nly_filter_entries';
 	var FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
+	var FILTER_QUERY_KEY_PROVENANCE = 'i18nly_filter_provenance';
 	var FILTER_NONE_TOKEN = '__none__';
 
 	function normalizeQualityToken(token) {
@@ -443,6 +444,7 @@
 		var container      = document.getElementById( config.tableContainerId );
 		var entryStatusFilters = document.querySelectorAll( '.i18nly-filter-entry-status' );
 		var qualityStatusFilters = document.querySelectorAll( '.i18nly-filter-quality-status' );
+		var provenanceFilters = document.querySelectorAll( '.i18nly-filter-provenance' );
 		var rowCheckboxes;
 		var selectAllCheckboxes;
 		var bulkActionSelects;
@@ -583,6 +585,7 @@
 			var params;
 			var entryStatuses;
 			var qualityStatuses;
+			var provenances;
 
 			if ( 'function' !== typeof window.URLSearchParams || ! window.history || 'function' !== typeof window.history.replaceState ) {
 				return;
@@ -591,9 +594,11 @@
 			params = new window.URLSearchParams( window.location.search || '' );
 			entryStatuses = getSelectedFilterValues( entryStatusFilters );
 			qualityStatuses = getSelectedFilterValues( qualityStatusFilters );
+			provenances = getSelectedFilterValues( provenanceFilters );
 
 			params.set( FILTER_QUERY_KEY_ENTRY, entryStatuses.length > 0 ? entryStatuses.join( ',' ) : FILTER_NONE_TOKEN );
 			params.set( FILTER_QUERY_KEY_QUALITY, qualityStatuses.length > 0 ? qualityStatuses.join( ',' ) : FILTER_NONE_TOKEN );
+			params.set( FILTER_QUERY_KEY_PROVENANCE, provenances.length > 0 ? provenances.join( ',' ) : FILTER_NONE_TOKEN );
 
 			window.history.replaceState( null, '', String( window.location.pathname || '' ) + '?' + params.toString() + String( window.location.hash || '' ) );
 		}
@@ -612,14 +617,45 @@
 			);
 		}
 
+		function getRowProvenanceTokens(row) {
+			var tokens = [];
+
+			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
+				function (input) {
+					var hasAi = !! getProvenanceBadgeForInput( input, 'ai' );
+					var hasManual = !! getProvenanceBadgeForInput( input, 'manual' );
+
+					if ( hasAi ) {
+						tokens.push( 'ai' );
+					}
+
+					if ( hasManual ) {
+						tokens.push( 'manual' );
+					}
+
+					if ( ! hasAi && ! hasManual ) {
+						tokens.push( 'none' );
+					}
+				}
+			);
+
+			return tokens.filter(
+				function (token, index, list) {
+					return list.indexOf( token ) === index;
+				}
+			);
+		}
+
 		function applyTableFilters() {
 			var selectedEntryStatuses = getSelectedFilterValues( entryStatusFilters );
 			var selectedQualityStatuses = getSelectedFilterValues( qualityStatusFilters );
+			var selectedProvenances = getSelectedFilterValues( provenanceFilters );
 
 			Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) ).forEach(
 				function (row) {
 					var entryStatus = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
 					var rowQualityTokens = getRowQualityTokens( row );
+					var rowProvenanceTokens = getRowProvenanceTokens( row );
 					var checkbox = row.querySelector( '.i18nly-entry-checkbox' );
 					var matchesEntryStatus = selectedEntryStatuses.indexOf( entryStatus ) !== -1;
 					var matchesQualityStatus = rowQualityTokens.some(
@@ -627,7 +663,12 @@
 							return selectedQualityStatuses.indexOf( token ) !== -1;
 						}
 					);
-					var mustHide = ! matchesEntryStatus || ! matchesQualityStatus;
+					var matchesProvenance = rowProvenanceTokens.some(
+						function (token) {
+							return selectedProvenances.indexOf( token ) !== -1;
+						}
+					);
+					var mustHide = ! matchesEntryStatus || ! matchesQualityStatus || ! matchesProvenance;
 
 					row.style.display = mustHide ? 'none' : '';
 					row.setAttribute( 'aria-hidden', mustHide ? 'true' : 'false' );
@@ -1266,8 +1307,21 @@
 			}
 		);
 
+		Array.prototype.slice.call( provenanceFilters ).forEach(
+			function (checkbox) {
+				checkbox.addEventListener(
+					'change',
+					function () {
+						persistFiltersToQueryString();
+						applyTableFilters();
+					}
+				);
+			}
+		);
+
 		restoreFilterSelectionFromQuery( entryStatusFilters, FILTER_QUERY_KEY_ENTRY );
 		restoreFilterSelectionFromQuery( qualityStatusFilters, FILTER_QUERY_KEY_QUALITY );
+		restoreFilterSelectionFromQuery( provenanceFilters, FILTER_QUERY_KEY_PROVENANCE );
 		persistFiltersToQueryString();
 
 		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(

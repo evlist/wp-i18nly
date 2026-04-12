@@ -96,6 +96,21 @@ class TranslationMetaBoxRenderer {
 						<?php echo esc_html__( 'Non translated', 'i18nly' ); ?>
 					</label>
 				</div>
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title"><?php echo esc_html__( 'Provenance', 'i18nly' ); ?></span>
+					<label for="i18nly-filter-provenance-ai">
+						<input type="checkbox" id="i18nly-filter-provenance-ai" class="i18nly-filter-provenance" value="ai" checked="checked" />
+						<?php echo esc_html__( 'AI', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-provenance-manual">
+						<input type="checkbox" id="i18nly-filter-provenance-manual" class="i18nly-filter-provenance" value="manual" checked="checked" />
+						<?php echo esc_html__( 'Manual', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-provenance-none">
+						<input type="checkbox" id="i18nly-filter-provenance-none" class="i18nly-filter-provenance" value="none" checked="checked" />
+						<?php echo esc_html__( 'None', 'i18nly' ); ?>
+					</label>
+				</div>
 			</div>
 			<div id="i18nly-source-entries-table">
 				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>

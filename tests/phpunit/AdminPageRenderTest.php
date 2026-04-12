@@ -294,6 +294,8 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( 'id="i18nly-filter-entry-status-active"', $html );
 		$this->assertStringContainsString( 'id="i18nly-filter-entry-status-obsolete"', $html );
 		$this->assertStringContainsString( 'id="i18nly-filter-quality-status-empty"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-provenance-ai"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-provenance-none"', $html );
 		$this->assertStringContainsString( 'Loading translation entries…', $html );
 	}
 

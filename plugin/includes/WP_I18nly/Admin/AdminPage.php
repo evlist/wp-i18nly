@@ -45,6 +45,11 @@ class AdminPage {
 	private const FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
 
 	/**
+	 * Query key for provenance filters.
+	 */
+	private const FILTER_QUERY_KEY_PROVENANCE = 'i18nly_filter_provenance';
+
+	/**
 	 * Source slug post meta key.
 	 */
 	private const META_SOURCE_SLUG = '_i18nly_source_slug';
@@ -707,6 +712,7 @@ class AdminPage {
 		$values = array(
 			self::FILTER_QUERY_KEY_ENTRY   => '',
 			self::FILTER_QUERY_KEY_QUALITY => '',
+			self::FILTER_QUERY_KEY_PROVENANCE => '',
 		);
 
 		foreach ( array_keys( $values ) as $query_key ) {
