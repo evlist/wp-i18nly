@@ -305,35 +305,34 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 */
 	private function render_status_badge_for_input( $input_id, $status ) {
 		$status_map = array(
-			'draft'              => array(
-				'class' => 'i18nly-entry-status--draft',
-				'label' => __( 'Draft', 'i18nly' ),
-			),
-			'suspect'            => array(
-				'class' => 'i18nly-entry-status--suspect',
-				'label' => __( 'Suspect', 'i18nly' ),
-			),
-			'validated'          => array(
-				'class' => 'i18nly-entry-status--validated',
-				'label' => __( 'Validated', 'i18nly' ),
-			),
+			'draft'     => array( 'class' => 'i18nly-entry-status--draft', 'label' => __( 'Draft', 'i18nly' ) ),
+			'suspect'   => array( 'class' => 'i18nly-entry-status--suspect', 'label' => __( 'Suspect', 'i18nly' ) ),
+			'validated' => array( 'class' => 'i18nly-entry-status--validated', 'label' => __( 'Validated', 'i18nly' ) ),
 		);
 
-		if ( ! isset( $status_map[ $status ] ) ) {
-			return sprintf(
-				'<span class="i18nly-entry-status i18nly-entry-status--quality" data-for="%1$s" data-status-token=""></span>',
-				esc_attr( $input_id )
-			);
-		}
+		$status_token = isset( $status_map[ $status ] ) ? $status : '__empty__';
+		$status_meta  = isset( $status_map[ $status ] ) ? $status_map[ $status ] : array( 'class' => 'i18nly-entry-status--placeholder', 'label' => '&nbsp;' );
 
-		$status_meta = $status_map[ $status ];
+		$toggle_html = sprintf(
+			'<button type="button" class="i18nly-quality-toggle" aria-haspopup="true" aria-expanded="false"%1$s><span class="i18nly-quality-label">%2$s</span><span class="i18nly-quality-caret" aria-hidden="true">&#9662;</span></button>',
+			'__empty__' === $status_token ? ' disabled="disabled"' : '',
+			'__empty__' === $status_token ? '&nbsp;' : esc_html( (string) $status_meta['label'] )
+		);
+
+		$menu_html = sprintf(
+			'<span class="i18nly-quality-menu" role="menu" hidden><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="suspect">%1$s</button><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="draft">%2$s</button><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="validated">%3$s</button></span>',
+			esc_html( (string) $status_map['suspect']['label'] ),
+			esc_html( (string) $status_map['draft']['label'] ),
+			esc_html( (string) $status_map['validated']['label'] )
+		);
 
 		return sprintf(
-			'<span class="i18nly-entry-status i18nly-entry-status--quality %1$s" data-for="%2$s" data-status-token="%3$s">%4$s</span>',
+			'<span class="i18nly-entry-status i18nly-entry-status--quality %1$s" data-for="%2$s" data-status-token="%3$s">%4$s%5$s</span>',
 			esc_attr( (string) $status_meta['class'] ),
 			esc_attr( $input_id ),
-			esc_attr( $status ),
-			esc_html( (string) $status_meta['label'] )
+			esc_attr( $status_token ),
+			$toggle_html,
+			$menu_html
 		);
 	}
 

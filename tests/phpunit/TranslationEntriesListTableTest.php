@@ -412,7 +412,7 @@ class TranslationEntriesListTableTest extends TestCase {
 
 		$this->assertIsString( $html );
 		$this->assertStringContainsString( 'data-for="i18nly-translation-88-0"', $html );
-		$this->assertStringContainsString( 'data-status-token=""', $html );
+		$this->assertStringContainsString( 'data-status-token="__empty__"', $html );
 		$this->assertStringNotContainsString( 'i18nly-entry-status--draft', $html );
 	}
 

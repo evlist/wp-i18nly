@@ -102,6 +102,63 @@
 		return parsed;
 	}
 
+	var QUALITY_STATUS_META = {
+		draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
+		suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' },
+		validated: { className: 'i18nly-entry-status--validated', label: 'Validated' }
+	};
+
+	function normalizeQualityToken(token) {
+		if ('ai_draft_ok' === token || 'draft_ai' === token) {
+			return 'draft';
+		}
+
+		if (
+			'ai_draft_suspect' === token
+			|| 'ai_draft_needs_fix' === token
+			|| 'draft_ai_suspect' === token
+			|| 'draft_ai_needs_fix' === token
+		) {
+			return 'suspect';
+		}
+
+		return token;
+	}
+
+	function applyQualityBadgeState(badge, token) {
+		var normalizedToken = normalizeQualityToken( token || '' );
+		var statusMeta = QUALITY_STATUS_META[normalizedToken] || null;
+		var labelNode;
+		var toggle;
+		var menu;
+
+		if ( ! badge ) {
+			return;
+		}
+
+		labelNode = badge.querySelector( '.i18nly-quality-label' );
+		toggle = badge.querySelector( '.i18nly-quality-toggle' );
+		menu = badge.querySelector( '.i18nly-quality-menu' );
+
+		badge.className = statusMeta
+			? 'i18nly-entry-status i18nly-entry-status--quality ' + statusMeta.className
+			: 'i18nly-entry-status i18nly-entry-status--quality i18nly-entry-status--placeholder';
+		badge.setAttribute( 'data-status-token', statusMeta ? normalizedToken : '__empty__' );
+
+		if ( labelNode ) {
+			labelNode.textContent = statusMeta ? statusMeta.label : '\u00a0';
+		}
+
+		if ( toggle ) {
+			toggle.disabled = ! statusMeta;
+			toggle.setAttribute( 'aria-expanded', 'false' );
+		}
+
+		if ( menu ) {
+			menu.hidden = true;
+		}
+	}
+
 	function getStatusBadgeForInput(input) {
 		var row;
 		var inputId;
@@ -261,18 +318,14 @@
 			}
 
 			if (hasText) {
-				badge.className = 'i18nly-entry-status i18nly-entry-status--quality i18nly-entry-status--draft';
-				badge.textContent = 'Draft';
-				badge.setAttribute( 'data-status-token', 'draft' );
+				applyQualityBadgeState( badge, 'draft' );
 				return;
 			}
 
 			removeProvenanceBadgeForInput( input, 'ai' );
 			removeProvenanceBadgeForInput( input, 'manual' );
 
-			badge.className = 'i18nly-entry-status i18nly-entry-status--quality i18nly-entry-status--placeholder';
-			badge.textContent = '\u00a0';
-			badge.setAttribute( 'data-status-token', '__empty__' );
+			applyQualityBadgeState( badge, '' );
 		}
 
 		function rebuildPayload() {
@@ -355,6 +408,7 @@
 		);
 
 		rebuildPayload();
+		window.i18nlyRebuildEntriesPayload = rebuildPayload;
 
 		form.addEventListener(
 			'submit',
@@ -509,36 +563,7 @@
 
 					var badge = getStatusBadgeForInput( input );
 					var token = payload.data.review_token || '';
-
-					if ('ai_draft_ok' === token) {
-						token = 'draft';
-					} else if ('ai_draft_suspect' === token) {
-						token = 'suspect';
-					} else if ('ai_draft_needs_fix' === token) {
-						token = 'suspect';
-					} else if ('draft_ai' === token) {
-						token = 'draft';
-					} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
-						token = 'suspect';
-					}
-
-					var tokenMap = {
-						draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
-						validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
-						suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
-					};
-
-					if ( badge && tokenMap[token] ) {
-						badge.className = 'i18nly-entry-status i18nly-entry-status--quality ' + tokenMap[token].className;
-						badge.textContent = tokenMap[token].label;
-						badge.setAttribute( 'data-status-token', token );
-					}
-
-					if ( badge && ! tokenMap[token] ) {
-						badge.className = 'i18nly-entry-status i18nly-entry-status--quality';
-						badge.textContent = '';
-						badge.setAttribute( 'data-status-token', '' );
-					}
+					applyQualityBadgeState( badge, token );
 
 					ensureAiProvenanceBadgeForInput( input );
 					removeProvenanceBadgeForInput( input, 'manual' );
@@ -923,36 +948,7 @@
 
 								var badge = getStatusBadgeForInput( matchedItem.input );
 								var token = result.review_token || '';
-
-								if ('ai_draft_ok' === token) {
-									token = 'draft';
-								} else if ('ai_draft_suspect' === token) {
-									token = 'suspect';
-								} else if ('ai_draft_needs_fix' === token) {
-									token = 'suspect';
-								} else if ('draft_ai' === token) {
-									token = 'draft';
-								} else if ('draft_ai_suspect' === token || 'draft_ai_needs_fix' === token) {
-									token = 'suspect';
-								}
-
-								var tokenMap = {
-									draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
-									validated: { className: 'i18nly-entry-status--validated', label: 'Validated' },
-									suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' }
-								};
-
-								if ( badge && tokenMap[token] ) {
-									badge.className = 'i18nly-entry-status i18nly-entry-status--quality ' + tokenMap[token].className;
-									badge.textContent = tokenMap[token].label;
-									badge.setAttribute( 'data-status-token', token );
-								}
-
-								if ( badge && ! tokenMap[token] ) {
-									badge.className = 'i18nly-entry-status i18nly-entry-status--quality';
-									badge.textContent = '';
-									badge.setAttribute( 'data-status-token', '' );
-								}
+								applyQualityBadgeState( badge, token );
 
 								ensureAiProvenanceBadgeForInput( matchedItem.input );
 								removeProvenanceBadgeForInput( matchedItem.input, 'manual' );
@@ -1077,6 +1073,103 @@
 					'click',
 					function () {
 						translateWithAI( button );
+					}
+				);
+			}
+		);
+
+		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-quality-toggle' ) ).forEach(
+			function (toggle) {
+				var badge = toggle.closest( '.i18nly-entry-status--quality' );
+				var menu = badge ? badge.querySelector( '.i18nly-quality-menu' ) : null;
+				var options = menu ? Array.prototype.slice.call( menu.querySelectorAll( '.i18nly-quality-option' ) ) : [];
+				var inputId = badge ? ( badge.getAttribute( 'data-for' ) || '' ) : '';
+				var input = inputId ? document.getElementById( inputId ) : null;
+
+				function closeMenu() {
+					if ( ! menu || ! toggle ) {
+						return;
+					}
+
+					menu.hidden = true;
+					toggle.setAttribute( 'aria-expanded', 'false' );
+				}
+
+				if ( ! badge || ! menu ) {
+					return;
+				}
+
+				toggle.addEventListener(
+					'click',
+					function (event) {
+						event.preventDefault();
+
+						if ( toggle.disabled ) {
+							return;
+						}
+
+						menu.hidden = ! menu.hidden;
+						toggle.setAttribute( 'aria-expanded', menu.hidden ? 'false' : 'true' );
+
+						if ( ! menu.hidden && options.length > 0 ) {
+							options[0].focus();
+						}
+					}
+				);
+
+				toggle.addEventListener(
+					'keydown',
+					function (event) {
+						if ( 'Escape' === event.key ) {
+							closeMenu();
+							return;
+						}
+
+						if ( 'Enter' === event.key || ' ' === event.key ) {
+							event.preventDefault();
+							toggle.click();
+						}
+					}
+				);
+
+				badge.addEventListener(
+					'focusout',
+					function (event) {
+						if ( badge.contains( event.relatedTarget ) ) {
+							return;
+						}
+
+						closeMenu();
+					}
+				);
+
+				options.forEach(
+					function (option) {
+						option.addEventListener(
+							'click',
+							function () {
+								var selectedToken = option.getAttribute( 'data-quality-token' ) || '';
+
+								applyQualityBadgeState( badge, selectedToken );
+								closeMenu();
+								toggle.focus();
+
+								if ( input && input.value && String( input.value ).trim() !== '' && typeof window.i18nlyRebuildEntriesPayload === 'function' ) {
+									window.i18nlyRebuildEntriesPayload();
+								}
+							}
+						);
+
+						option.addEventListener(
+							'keydown',
+							function (event) {
+								if ( 'Escape' === event.key ) {
+									event.preventDefault();
+									closeMenu();
+									toggle.focus();
+								}
+							}
+						);
 					}
 				);
 			}
