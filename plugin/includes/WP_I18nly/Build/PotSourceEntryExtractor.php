@@ -11,6 +11,9 @@
 namespace WP_I18nly\Build;
 
 use FilesystemIterator;
+use Peast\Peast;
+use Peast\Syntax\Node;
+use Peast\Traverser;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -53,6 +56,7 @@ class PotSourceEntryExtractor {
 
 		$plugin_directory = dirname( $main_file );
 		$php_files        = $this->list_source_php_files( $main_file, (string) $source_slug );
+		$js_files         = $this->list_source_js_files( $main_file, (string) $source_slug );
 		$entries_map      = array();
 
 		foreach ( $php_files as $file_path ) {
@@ -123,6 +127,20 @@ class PotSourceEntryExtractor {
 			}
 		}
 
+		foreach ( $js_files as $file_path ) {
+			$code = $this->read_text_file_contents( $file_path );
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$relative_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
+			$entries       = $this->extract_js_entries_from_code( $code, $relative_path );
+
+			foreach ( $entries as $entry ) {
+				$this->merge_entry_into_map( $entries_map, $entry );
+			}
+		}
+
 		return array_values( $entries_map );
 	}
 
@@ -145,12 +163,51 @@ class PotSourceEntryExtractor {
 	}
 
 	/**
+	 * Lists JS-like files to scan for one source slug.
+	 *
+	 * Root-level plugin files such as `hello.php` are treated as single-file
+	 * plugins and do not trigger recursive JS scan on plugins root.
+	 *
+	 * @param string $main_file Resolved main plugin file.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, string>
+	 */
+	private function list_source_js_files( $main_file, $source_slug ) {
+		if ( false === strpos( $source_slug, '/' ) ) {
+			return array();
+		}
+
+		return $this->list_js_files( dirname( $main_file ) );
+	}
+
+	/**
 	 * Reads PHP file content using SPL APIs.
 	 *
 	 * @param string $file_path Absolute file path.
 	 * @return string
 	 */
 	private function read_php_file_contents( $file_path ) {
+		if ( ! is_readable( $file_path ) ) {
+			return '';
+		}
+
+		$file_object = new SplFileObject( $file_path, 'r' );
+		$content     = '';
+
+		while ( ! $file_object->eof() ) {
+			$content .= (string) $file_object->fgets();
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Reads generic text file content using SPL APIs.
+	 *
+	 * @param string $file_path Absolute file path.
+	 * @return string
+	 */
+	private function read_text_file_contents( $file_path ) {
 		if ( ! is_readable( $file_path ) ) {
 			return '';
 		}
@@ -236,6 +293,358 @@ class PotSourceEntryExtractor {
 		sort( $files );
 
 		return $files;
+	}
+
+	/**
+	 * Lists all JS-like files recursively in a directory.
+	 *
+	 * @param string $directory Root directory.
+	 * @return array<int, string>
+	 */
+	private function list_js_files( $directory ) {
+		$files      = array();
+		$extensions = array( 'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs' );
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info instanceof SplFileInfo ) {
+				continue;
+			}
+
+			if ( ! in_array( strtolower( (string) $file_info->getExtension() ), $extensions, true ) ) {
+				continue;
+			}
+
+			$files[] = (string) $file_info->getPathname();
+		}
+
+		sort( $files );
+
+		return $files;
+	}
+
+	/**
+	 * Merges one extracted entry into map with deduplicated references/comments.
+	 *
+	 * @param array<string, array<string, mixed>> $entries_map Existing entries map.
+	 * @param array<string, mixed>                 $entry One extracted entry.
+	 * @return void
+	 */
+	private function merge_entry_into_map( array &$entries_map, array $entry ) {
+		$key = ( isset( $entry['context'] ) ? (string) $entry['context'] : '' )
+			. "\004" . (string) $entry['original']
+			. "\004" . ( isset( $entry['plural'] ) ? (string) $entry['plural'] : '' );
+
+		if ( ! isset( $entries_map[ $key ] ) ) {
+			$entries_map[ $key ] = $entry;
+			return;
+		}
+
+		if ( ! empty( $entry['references'] ) && is_array( $entry['references'] ) ) {
+			$existing_references = isset( $entries_map[ $key ]['references'] ) && is_array( $entries_map[ $key ]['references'] )
+				? $entries_map[ $key ]['references']
+				: array();
+
+			$entries_map[ $key ]['references'] = array_values(
+				array_unique( array_merge( $existing_references, $entry['references'] ), SORT_REGULAR )
+			);
+		}
+
+		if ( ! empty( $entry['comments'] ) && is_array( $entry['comments'] ) ) {
+			$existing_comments = isset( $entries_map[ $key ]['comments'] ) && is_array( $entries_map[ $key ]['comments'] )
+				? $entries_map[ $key ]['comments']
+				: array();
+
+			$entries_map[ $key ]['comments'] = array_values(
+				array_unique( array_merge( $existing_comments, $entry['comments'] ) )
+			);
+		}
+	}
+
+	/**
+	 * Extracts gettext entries from JS/TS code.
+	 *
+	 * @param string $code Source code.
+	 * @param string $relative_path Relative reference file path.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_js_entries_from_code( $code, $relative_path ) {
+		$entries = array();
+
+		try {
+			$ast = Peast::latest(
+				$code,
+				array(
+					'sourceType' => Peast::SOURCE_TYPE_MODULE,
+					'jsx'        => true,
+				)
+			)->parse();
+		} catch ( \Exception $exception ) {
+			return $entries;
+		}
+
+		$traverser = new Traverser();
+
+		$traverser->addFunction(
+			function ( $node ) use ( &$entries, $relative_path ) {
+				if ( ! $node instanceof Node\CallExpression ) {
+					return;
+				}
+
+				$function_name = $this->resolve_js_callee_gettext_name( $node );
+				if ( null === $function_name ) {
+					return;
+				}
+
+				$args = $this->extract_js_call_argument_values( $node );
+				if ( null === $args ) {
+					return;
+				}
+
+				$entry = $this->build_entry_from_js_gettext_call(
+					$function_name,
+					$args,
+					$relative_path,
+					$node->getLocation()->getStart()->getLine()
+				);
+
+				if ( null !== $entry ) {
+					$entries[] = $entry;
+				}
+
+				if ( 'eval' !== $function_name ) {
+					return;
+				}
+
+				$eval_code = $this->extract_js_eval_literal_code( $node );
+				if ( '' === $eval_code ) {
+					return;
+				}
+
+				$nested_entries = $this->extract_js_entries_from_code( $eval_code, $relative_path );
+				foreach ( $nested_entries as $nested_entry ) {
+					$entries[] = $nested_entry;
+				}
+			}
+		);
+
+		$traverser->traverse( $ast );
+
+		return $entries;
+	}
+
+	/**
+	 * Resolves gettext function name from a JS call expression.
+	 *
+	 * Supports direct, member, webpack Object(...) and babel indirect call forms.
+	 *
+	 * @param Node\CallExpression $node Call expression.
+	 * @return string|null
+	 */
+	private function resolve_js_callee_gettext_name( Node\CallExpression $node ) {
+		$callee = $node->getCallee();
+
+		if ( $callee instanceof Node\Identifier ) {
+			$name = (string) $callee->getName();
+			return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+		}
+
+		if ( $callee instanceof Node\MemberExpression ) {
+			$property = $callee->getProperty();
+			if ( $property instanceof Node\Identifier ) {
+				$name = (string) $property->getName();
+				return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+			}
+
+			if ( $property instanceof Node\Literal ) {
+				$value = $property->getValue();
+				$name  = is_string( $value ) ? $value : '';
+				return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+			}
+		}
+
+		if ( $callee instanceof Node\CallExpression ) {
+			$inner_callee = $callee->getCallee();
+
+			if ( $inner_callee instanceof Node\Identifier && 'Object' === $inner_callee->getName() ) {
+				$arguments = $callee->getArguments();
+				if ( empty( $arguments ) || ! $arguments[0] instanceof Node\MemberExpression ) {
+					return null;
+				}
+
+				$property = $arguments[0]->getProperty();
+				if ( $property instanceof Node\Identifier ) {
+					$name = (string) $property->getName();
+					return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+				}
+
+				if ( $property instanceof Node\Literal ) {
+					$value = $property->getValue();
+					$name  = is_string( $value ) ? $value : '';
+					return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+				}
+			}
+		}
+
+		if ( $callee instanceof Node\ParenthesizedExpression ) {
+			$expression = $callee->getExpression();
+			if ( ! $expression instanceof Node\SequenceExpression ) {
+				return null;
+			}
+
+			$expressions = $expression->getExpressions();
+			if ( 2 !== count( $expressions ) ) {
+				return null;
+			}
+
+			if ( ! $expressions[0] instanceof Node\Literal ) {
+				return null;
+			}
+
+			$target = $expressions[1];
+			if ( $target instanceof Node\Identifier ) {
+				$name = (string) $target->getName();
+				return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+			}
+
+			if ( $target instanceof Node\MemberExpression && $target->getProperty() instanceof Node\Identifier ) {
+				$name = (string) $target->getProperty()->getName();
+				return $this->is_supported_js_gettext_function( $name ) ? $name : null;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns whether a JS gettext function name is supported.
+	 *
+	 * @param string $function_name Function name.
+	 * @return bool
+	 */
+	private function is_supported_js_gettext_function( $function_name ) {
+		return in_array( strtolower( (string) $function_name ), array( '__', '_x', '_n', '_nx', 'eval' ), true );
+	}
+
+	/**
+	 * Extracts normalized argument values from one JS call expression.
+	 *
+	 * Returns null when an unsupported argument type is encountered.
+	 *
+	 * @param Node\CallExpression $node Call expression.
+	 * @return array<int, mixed>|null
+	 */
+	private function extract_js_call_argument_values( Node\CallExpression $node ) {
+		$values = array();
+
+		foreach ( $node->getArguments() as $argument ) {
+			if ( $argument instanceof Node\Identifier ) {
+				$values[] = '';
+				continue;
+			}
+
+			if ( $argument instanceof Node\TemplateLiteral ) {
+				if ( 0 !== count( $argument->getExpressions() ) ) {
+					return null;
+				}
+
+				$parts = $argument->getParts();
+				if ( ! empty( $parts ) ) {
+					$values[] = $parts[0]->getValue();
+					continue;
+				}
+
+				$values[] = '';
+				continue;
+			}
+
+			if ( $argument instanceof Node\Literal ) {
+				$values[] = $argument->getValue();
+				continue;
+			}
+
+			if ( substr( $argument->getType(), -strlen( 'Expression' ) ) === 'Expression' ) {
+				$values[] = '';
+				continue;
+			}
+
+			return null;
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Builds one normalized entry from one JS gettext function call.
+	 *
+	 * @param string           $function_name Function name.
+	 * @param array<int, mixed> $args Parsed args.
+	 * @param string           $relative_path Relative reference file path.
+	 * @param int              $line Source line.
+	 * @return array<string, mixed>|null
+	 */
+	private function build_entry_from_js_gettext_call( $function_name, array $args, $relative_path, $line ) {
+		if ( 'eval' === $function_name ) {
+			return null;
+		}
+
+		$original = isset( $args[0] ) && is_string( $args[0] ) ? (string) $args[0] : null;
+		if ( null === $original || '' === $original ) {
+			return null;
+		}
+
+		$entry = array(
+			'original'   => $original,
+			'references' => array(
+				array(
+					'file' => $relative_path,
+					'line' => (int) $line,
+				),
+			),
+		);
+
+		if ( '_x' === $function_name ) {
+			$context = isset( $args[1] ) && is_string( $args[1] ) ? (string) $args[1] : '';
+			if ( '' !== $context ) {
+				$entry['context'] = $context;
+			}
+		}
+
+		if ( '_n' === $function_name || '_nx' === $function_name ) {
+			$plural = isset( $args[1] ) && is_string( $args[1] ) ? (string) $args[1] : '';
+			if ( '' !== $plural ) {
+				$entry['plural'] = $plural;
+			}
+
+			if ( '_nx' === $function_name ) {
+				$context = isset( $args[3] ) && is_string( $args[3] ) ? (string) $args[3] : '';
+				if ( '' !== $context ) {
+					$entry['context'] = $context;
+				}
+			}
+		}
+
+		return $entry;
+	}
+
+	/**
+	 * Extracts JS source code passed to eval() when literal.
+	 *
+	 * @param Node\CallExpression $node Call expression.
+	 * @return string
+	 */
+	private function extract_js_eval_literal_code( Node\CallExpression $node ) {
+		$arguments = $node->getArguments();
+		if ( empty( $arguments ) || ! $arguments[0] instanceof Node\Literal ) {
+			return '';
+		}
+
+		$value = $arguments[0]->getValue();
+
+		return is_string( $value ) ? $value : '';
 	}
 
 	/**
