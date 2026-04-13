@@ -126,7 +126,7 @@ class TranslationMetaBoxRenderer {
 					</label>
 					<label for="i18nly-filter-search-translated">
 						<input type="checkbox" id="i18nly-filter-search-translated" class="i18nly-filter-search-field" value="translated" checked="checked" />
-						<?php echo esc_html__( 'Translated', 'i18nly' ); ?>
+						<?php echo esc_html__( 'Translation', 'i18nly' ); ?>
 					</label>
 				</div>
 			</div>
