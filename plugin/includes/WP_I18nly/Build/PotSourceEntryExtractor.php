@@ -57,6 +57,8 @@ class PotSourceEntryExtractor {
 		$plugin_directory = dirname( $main_file );
 		$php_files        = $this->list_source_php_files( $main_file, (string) $source_slug );
 		$js_files         = $this->list_source_js_files( $main_file, (string) $source_slug );
+		$js_map_files     = $this->list_source_js_map_files( $main_file, (string) $source_slug );
+		$json_files       = $this->list_source_json_files( $main_file, (string) $source_slug );
 		$entries_map      = array();
 
 		foreach ( $php_files as $file_path ) {
@@ -141,6 +143,34 @@ class PotSourceEntryExtractor {
 			}
 		}
 
+		foreach ( $js_map_files as $file_path ) {
+			$map_contents = $this->read_text_file_contents( $file_path );
+			if ( '' === $map_contents ) {
+				continue;
+			}
+
+			$relative_map_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
+			$entries           = $this->extract_js_entries_from_sourcemap( $map_contents, $relative_map_path );
+
+			foreach ( $entries as $entry ) {
+				$this->merge_entry_into_map( $entries_map, $entry );
+			}
+		}
+
+		foreach ( $json_files as $file_path ) {
+			$json_contents = $this->read_text_file_contents( $file_path );
+			if ( '' === $json_contents ) {
+				continue;
+			}
+
+			$relative_json_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
+			$entries            = $this->extract_json_entries_from_file( $json_contents, $relative_json_path );
+
+			foreach ( $entries as $entry ) {
+				$this->merge_entry_into_map( $entries_map, $entry );
+			}
+		}
+
 		return array_values( $entries_map );
 	}
 
@@ -178,6 +208,36 @@ class PotSourceEntryExtractor {
 		}
 
 		return $this->list_js_files( dirname( $main_file ) );
+	}
+
+	/**
+	 * Lists JS sourcemap files to scan for one source slug.
+	 *
+	 * @param string $main_file Resolved main plugin file.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, string>
+	 */
+	private function list_source_js_map_files( $main_file, $source_slug ) {
+		if ( false === strpos( $source_slug, '/' ) ) {
+			return array();
+		}
+
+		return $this->list_js_map_files( dirname( $main_file ) );
+	}
+
+	/**
+	 * Lists translatable JSON metadata files for one source slug.
+	 *
+	 * @param string $main_file Resolved main plugin file.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, string>
+	 */
+	private function list_source_json_files( $main_file, $source_slug ) {
+		if ( false === strpos( $source_slug, '/' ) ) {
+			return array();
+		}
+
+		return $this->list_json_files( dirname( $main_file ) );
 	}
 
 	/**
@@ -327,6 +387,72 @@ class PotSourceEntryExtractor {
 	}
 
 	/**
+	 * Lists all JS sourcemap files recursively in a directory.
+	 *
+	 * @param string $directory Root directory.
+	 * @return array<int, string>
+	 */
+	private function list_js_map_files( $directory ) {
+		$files = array();
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info instanceof SplFileInfo ) {
+				continue;
+			}
+
+			$filename = strtolower( (string) $file_info->getFilename() );
+			if ( '.js.map' !== substr( $filename, -7 ) ) {
+				continue;
+			}
+
+			$files[] = (string) $file_info->getPathname();
+		}
+
+		sort( $files );
+
+		return $files;
+	}
+
+	/**
+	 * Lists translatable JSON metadata files recursively in a directory.
+	 *
+	 * @param string $directory Root directory.
+	 * @return array<int, string>
+	 */
+	private function list_json_files( $directory ) {
+		$files = array();
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info instanceof SplFileInfo ) {
+				continue;
+			}
+
+			if ( 'json' !== strtolower( (string) $file_info->getExtension() ) ) {
+				continue;
+			}
+
+			$filename      = strtolower( (string) $file_info->getFilename() );
+			$relative_path = str_replace( '\\', '/', (string) $file_info->getPathname() );
+
+			if ( 'block.json' === $filename || 'theme.json' === $filename || false !== strpos( $relative_path, '/styles/' ) ) {
+				$files[] = (string) $file_info->getPathname();
+			}
+		}
+
+		sort( $files );
+
+		return $files;
+	}
+
+	/**
 	 * Merges one extracted entry into map with deduplicated references/comments.
 	 *
 	 * @param array<string, array<string, mixed>> $entries_map Existing entries map.
@@ -362,6 +488,16 @@ class PotSourceEntryExtractor {
 				array_unique( array_merge( $existing_comments, $entry['comments'] ) )
 			);
 		}
+
+		if ( ! empty( $entry['flags'] ) && is_array( $entry['flags'] ) ) {
+			$existing_flags = isset( $entries_map[ $key ]['flags'] ) && is_array( $entries_map[ $key ]['flags'] )
+				? $entries_map[ $key ]['flags']
+				: array();
+
+			$entries_map[ $key ]['flags'] = array_values(
+				array_unique( array_merge( $existing_flags, $entry['flags'] ) )
+			);
+		}
 	}
 
 	/**
@@ -373,12 +509,18 @@ class PotSourceEntryExtractor {
 	 */
 	private function extract_js_entries_from_code( $code, $relative_path ) {
 		$entries = array();
+		$lines   = preg_split( '/\r\n|\r|\n/', $code );
+
+		if ( false === $lines ) {
+			$lines = array();
+		}
 
 		try {
 			$ast = Peast::latest(
 				$code,
 				array(
 					'sourceType' => Peast::SOURCE_TYPE_MODULE,
+					'comments'   => true,
 					'jsx'        => true,
 				)
 			)->parse();
@@ -389,7 +531,7 @@ class PotSourceEntryExtractor {
 		$traverser = new Traverser();
 
 		$traverser->addFunction(
-			function ( $node ) use ( &$entries, $relative_path ) {
+			function ( $node ) use ( &$entries, $relative_path, $lines ) {
 				if ( ! $node instanceof Node\CallExpression ) {
 					return;
 				}
@@ -404,11 +546,22 @@ class PotSourceEntryExtractor {
 					return;
 				}
 
+				$line = $node->getLocation()->getStart()->getLine();
+				$translator_comments = array_values(
+					array_unique(
+						array_merge(
+							$this->extract_js_translator_comments_for_node( $node ),
+							$this->extract_js_translator_comments_near_line( $lines, $line )
+						)
+					)
+				);
+
 				$entry = $this->build_entry_from_js_gettext_call(
 					$function_name,
 					$args,
 					$relative_path,
-					$node->getLocation()->getStart()->getLine()
+					$line,
+					$translator_comments
 				);
 
 				if ( null !== $entry ) {
@@ -434,6 +587,156 @@ class PotSourceEntryExtractor {
 		$traverser->traverse( $ast );
 
 		return $entries;
+	}
+
+	/**
+	 * Extracts gettext entries from JS code embedded in a .js.map file.
+	 *
+	 * @param string $map_contents Sourcemap JSON content.
+	 * @param string $relative_map_path Relative sourcemap path.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_js_entries_from_sourcemap( $map_contents, $relative_map_path ) {
+		$map_data = json_decode( $map_contents, true );
+		if ( ! is_array( $map_data ) || ! isset( $map_data['sourcesContent'] ) || ! is_array( $map_data['sourcesContent'] ) ) {
+			return array();
+		}
+
+		$concatenated_sources = implode( "\n", array_map( 'strval', $map_data['sourcesContent'] ) );
+		if ( '' === $concatenated_sources ) {
+			return array();
+		}
+
+		$reference_file = '.js.map' === substr( strtolower( $relative_map_path ), -7 )
+			? substr( $relative_map_path, 0, -4 )
+			: $relative_map_path;
+
+		return $this->extract_js_entries_from_code( $concatenated_sources, $reference_file );
+	}
+
+	/**
+	 * Extracts entries from translatable JSON metadata files.
+	 *
+	 * @param string $json_contents JSON content.
+	 * @param string $relative_json_path Relative JSON path.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_json_entries_from_file( $json_contents, $relative_json_path ) {
+		$decoded = json_decode( $json_contents, true );
+		if ( ! is_array( $decoded ) ) {
+			return array();
+		}
+
+		$basename = strtolower( (string) basename( $relative_json_path ) );
+		$entries  = array();
+
+		if ( 'block.json' === $basename ) {
+			$this->collect_block_json_entries( $decoded, $relative_json_path, $entries );
+		}
+
+		if ( 'theme.json' === $basename || 0 === strpos( str_replace( '\\', '/', strtolower( $relative_json_path ) ), 'styles/' ) ) {
+			$this->collect_theme_json_entries( $decoded, $relative_json_path, $entries );
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * Collects common block.json translatable fields.
+	 *
+	 * @param array<string, mixed>              $data JSON object.
+	 * @param string                            $relative_path Relative file path.
+	 * @param array<int, array<string, mixed>> &$entries Accumulator.
+	 * @return void
+	 */
+	private function collect_block_json_entries( array $data, $relative_path, array &$entries ) {
+		$this->add_json_string_entry( $entries, isset( $data['title'] ) ? $data['title'] : null, 'block title', $relative_path );
+		$this->add_json_string_entry( $entries, isset( $data['description'] ) ? $data['description'] : null, 'block description', $relative_path );
+
+		if ( isset( $data['keywords'] ) && is_array( $data['keywords'] ) ) {
+			foreach ( $data['keywords'] as $keyword ) {
+				$this->add_json_string_entry( $entries, $keyword, 'block keyword', $relative_path );
+			}
+		}
+
+		if ( isset( $data['styles'] ) && is_array( $data['styles'] ) ) {
+			foreach ( $data['styles'] as $style ) {
+				if ( is_array( $style ) ) {
+					$this->add_json_string_entry( $entries, isset( $style['label'] ) ? $style['label'] : null, 'block style label', $relative_path );
+				}
+			}
+		}
+
+		if ( isset( $data['variations'] ) && is_array( $data['variations'] ) ) {
+			foreach ( $data['variations'] as $variation ) {
+				if ( ! is_array( $variation ) ) {
+					continue;
+				}
+
+				$this->add_json_string_entry( $entries, isset( $variation['title'] ) ? $variation['title'] : null, 'block variation title', $relative_path );
+				$this->add_json_string_entry( $entries, isset( $variation['description'] ) ? $variation['description'] : null, 'block variation description', $relative_path );
+			}
+		}
+	}
+
+	/**
+	 * Collects common theme.json translatable fields.
+	 *
+	 * @param array<string, mixed>              $data JSON object.
+	 * @param string                            $relative_path Relative file path.
+	 * @param array<int, array<string, mixed>> &$entries Accumulator.
+	 * @return void
+	 */
+	private function collect_theme_json_entries( array $data, $relative_path, array &$entries ) {
+		if ( isset( $data['settings']['color']['palette'] ) && is_array( $data['settings']['color']['palette'] ) ) {
+			foreach ( $data['settings']['color']['palette'] as $palette_entry ) {
+				if ( is_array( $palette_entry ) ) {
+					$this->add_json_string_entry( $entries, isset( $palette_entry['name'] ) ? $palette_entry['name'] : null, 'color name', $relative_path );
+				}
+			}
+		}
+
+		if ( isset( $data['settings']['color']['gradients'] ) && is_array( $data['settings']['color']['gradients'] ) ) {
+			foreach ( $data['settings']['color']['gradients'] as $gradient_entry ) {
+				if ( is_array( $gradient_entry ) ) {
+					$this->add_json_string_entry( $entries, isset( $gradient_entry['name'] ) ? $gradient_entry['name'] : null, 'gradient name', $relative_path );
+				}
+			}
+		}
+
+		if ( isset( $data['settings']['typography']['fontFamilies'] ) && is_array( $data['settings']['typography']['fontFamilies'] ) ) {
+			foreach ( $data['settings']['typography']['fontFamilies'] as $font_family ) {
+				if ( is_array( $font_family ) ) {
+					$this->add_json_string_entry( $entries, isset( $font_family['name'] ) ? $font_family['name'] : null, 'font family name', $relative_path );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Adds one JSON string entry to an accumulator.
+	 *
+	 * @param array<int, array<string, mixed>> &$entries Accumulator.
+	 * @param mixed                            $value Candidate value.
+	 * @param string                           $context Translation context.
+	 * @param string                           $relative_path Relative file path.
+	 * @return void
+	 */
+	private function add_json_string_entry( array &$entries, $value, $context, $relative_path ) {
+		if ( ! is_string( $value ) || '' === trim( $value ) ) {
+			return;
+		}
+
+		$entries[] = array(
+			'original'   => $value,
+			'context'    => (string) $context,
+			'references' => array(
+				array(
+					'file' => $relative_path,
+					'line' => 1,
+				),
+			),
+		);
 	}
 
 	/**
@@ -586,7 +889,7 @@ class PotSourceEntryExtractor {
 	 * @param int              $line Source line.
 	 * @return array<string, mixed>|null
 	 */
-	private function build_entry_from_js_gettext_call( $function_name, array $args, $relative_path, $line ) {
+	private function build_entry_from_js_gettext_call( $function_name, array $args, $relative_path, $line, array $translator_comments = array() ) {
 		if ( 'eval' === $function_name ) {
 			return null;
 		}
@@ -605,6 +908,14 @@ class PotSourceEntryExtractor {
 				),
 			),
 		);
+
+		if ( ! empty( $translator_comments ) ) {
+			$entry['comments'] = $translator_comments;
+		}
+
+		if ( $this->contains_sprintf_placeholder( $original ) ) {
+			$entry['flags'] = array( 'js-format' );
+		}
 
 		if ( '_x' === $function_name ) {
 			$context = isset( $args[1] ) && is_string( $args[1] ) ? (string) $args[1] : '';
@@ -631,6 +942,116 @@ class PotSourceEntryExtractor {
 	}
 
 	/**
+	 * Extracts translator comments associated with one JS call expression.
+	 *
+	 * @param Node\CallExpression $node Call expression.
+	 * @return array<int, string>
+	 */
+	private function extract_js_translator_comments_for_node( Node\CallExpression $node ) {
+		$comments = array();
+
+		foreach ( $node->getLeadingComments() as $comment ) {
+			$comments[] = $comment;
+		}
+
+		$callee = $node->getCallee();
+		if ( method_exists( $callee, 'getLeadingComments' ) ) {
+			foreach ( $callee->getLeadingComments() as $comment ) {
+				$comments[] = $comment;
+			}
+		}
+
+		$normalized = array();
+		foreach ( $comments as $comment ) {
+			$raw = method_exists( $comment, 'getRawText' ) ? (string) $comment->getRawText() : '';
+			if ( '' === $raw && method_exists( $comment, 'getText' ) ) {
+				$raw = (string) $comment->getText();
+			}
+
+			if ( '' === $raw ) {
+				continue;
+			}
+
+			$lines = preg_split( '/\r\n|\r|\n/', $raw );
+			if ( false === $lines ) {
+				continue;
+			}
+
+			foreach ( $lines as $line ) {
+				$text = trim( (string) $line );
+				$text = ltrim( $text, "/*# \t" );
+				$text = preg_replace( '/\*\/$/', '', $text );
+
+				if ( null === $text ) {
+					continue;
+				}
+
+				$text = trim( $text );
+				if ( ! preg_match( '/^translators\s*:/i', $text ) ) {
+					continue;
+				}
+
+				$text = preg_replace( '/^translators\s*:\s*/i', '', $text );
+				if ( null === $text || '' === trim( $text ) ) {
+					continue;
+				}
+
+				$normalized[] = trim( $text );
+			}
+		}
+
+		return array_values( array_unique( $normalized ) );
+	}
+
+	/**
+	 * Extracts translator comments from source lines preceding one JS call.
+	 *
+	 * @param array<int, string> $lines Source code lines (0-based array).
+	 * @param int                $line 1-based target line.
+	 * @return array<int, string>
+	 */
+	private function extract_js_translator_comments_near_line( array $lines, $line ) {
+		$comments = array();
+		$index    = max( 0, (int) $line - 2 );
+		$start    = max( 0, $index - 6 );
+
+		for ( $cursor = $index; $cursor >= $start; $cursor-- ) {
+			if ( ! isset( $lines[ $cursor ] ) ) {
+				continue;
+			}
+
+			$text = trim( (string) $lines[ $cursor ] );
+			if ( '' === $text ) {
+				continue;
+			}
+
+			if ( false === strpos( $text, '//' ) && false === strpos( $text, '/*' ) && false === strpos( $text, '*' ) ) {
+				break;
+			}
+
+			$text = ltrim( $text, "/*# \t" );
+			$text = preg_replace( '/\*\/$/', '', $text );
+			if ( null === $text ) {
+				continue;
+			}
+
+			$text = trim( $text );
+			if ( ! preg_match( '/^translators\s*:/i', $text ) ) {
+				continue;
+			}
+
+			$text = preg_replace( '/^translators\s*:\s*/i', '', $text );
+			if ( null === $text || '' === trim( $text ) ) {
+				continue;
+			}
+
+			$comments[] = trim( $text );
+		}
+
+		return array_values( array_unique( $comments ) );
+	}
+
+	/**
 	 * Extracts JS source code passed to eval() when literal.
 	 *
 	 * @param Node\CallExpression $node Call expression.
@@ -648,6 +1069,19 @@ class PotSourceEntryExtractor {
 	}
 
 	/**
+	 * Returns whether a message contains sprintf placeholders.
+	 *
+	 * @param string $message Message text.
+	 * @return bool
+	 */
+	private function contains_sprintf_placeholder( $message ) {
+		$message = (string) $message;
+
+		return 1 === preg_match( '/(?<!%)%(?:[0-9]+\$)?[+-]?(?:0|\'.)?-?[0-9]*(?:\.(?:[ 0]|\'.)?[0-9]+)?[bcdeEfFgGosuxX]/', $message )
+			|| 1 === preg_match( '/(?<!%)%(?:[0-9]+\$)?[+-]?(?:0|\'.)?-?[0-9]*(?:\.(?:[ 0]|\'.)?[0-9]+)?[%bcdeEfFgGosuxX]/', $message );
+	}
+
+	/**
 	 * Returns whether a function name is supported.
 	 *
 	 * @param string $function_name Function name.
@@ -657,18 +1091,28 @@ class PotSourceEntryExtractor {
 		return in_array(
 			$function_name,
 			array(
+				'_',
 				'__',
 				'_e',
 				'esc_html__',
 				'esc_attr__',
+				'esc_xml__',
 				'esc_html_e',
 				'esc_attr_e',
+				'esc_xml_e',
+				'_c',
 				'_x',
 				'_ex',
 				'esc_html_x',
 				'esc_attr_x',
+				'esc_xml_x',
 				'_n',
+				'_nc',
 				'_nx',
+				'_n_noop',
+				'_nx_noop',
+				'__ngettext',
+				'__ngettext_noop',
 			),
 			true
 		);
@@ -782,14 +1226,18 @@ class PotSourceEntryExtractor {
 			$entry['comments'] = $translator_comments;
 		}
 
-		if ( in_array( $function_name, array( '_x', '_ex', 'esc_html_x', 'esc_attr_x' ), true ) ) {
+		if ( $this->contains_sprintf_placeholder( $original ) ) {
+			$entry['flags'] = array( 'php-format' );
+		}
+
+		if ( in_array( $function_name, array( '_x', '_ex', 'esc_html_x', 'esc_attr_x', 'esc_xml_x' ), true ) ) {
 			$context = $this->token_argument_to_literal_string( $args, 1 );
 			if ( null !== $context && '' !== $context ) {
 				$entry['context'] = $context;
 			}
 		}
 
-		if ( in_array( $function_name, array( '_n', '_nx' ), true ) ) {
+		if ( in_array( $function_name, array( '_n', '_nc', '_nx', '_n_noop', '_nx_noop', '__ngettext', '__ngettext_noop' ), true ) ) {
 			$plural = $this->token_argument_to_literal_string( $args, 1 );
 			if ( null !== $plural && '' !== $plural ) {
 				$entry['plural'] = $plural;
@@ -797,6 +1245,13 @@ class PotSourceEntryExtractor {
 
 			if ( '_nx' === $function_name ) {
 				$context = $this->token_argument_to_literal_string( $args, 3 );
+				if ( null !== $context && '' !== $context ) {
+					$entry['context'] = $context;
+				}
+			}
+
+			if ( '_nx_noop' === $function_name ) {
+				$context = $this->token_argument_to_literal_string( $args, 2 );
 				if ( null !== $context && '' !== $context ) {
 					$entry['context'] = $context;
 				}

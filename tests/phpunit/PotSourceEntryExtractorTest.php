@@ -184,6 +184,221 @@ class PotSourceEntryExtractorTest extends TestCase {
 		rmdir( $plugin_dir );
 		rmdir( $plugins_root );
 	}
+
+	/**
+	 * Extracts extended PHP gettext signatures and format flags.
+	 *
+	 * @return void
+	 */
+	public function test_extract_from_source_slug_collects_extended_php_signatures_and_flags() {
+		$plugins_root = sys_get_temp_dir() . '/i18nly-extractor-php-extended-' . uniqid( '', true );
+		$plugin_dir   = $plugins_root . '/sample-plugin';
+		$main_file    = $plugin_dir . '/sample-plugin.php';
+
+		mkdir( $plugin_dir, 0755, true );
+
+		file_put_contents(
+			$main_file,
+			"<?php\n"
+			. "/* translators: Placeholder-rich message. */\n"
+			. "esc_xml__( 'XML escaped value %s', 'sample-plugin' );\n"
+			. "_n_noop( '%s noop singular', '%s noop plural', 'sample-plugin' );\n"
+			. "_nx_noop( '%s noop ctx singular', '%s noop ctx plural', 'noop context', 'sample-plugin' );\n"
+			. "_( 'Compat gettext call', 'sample-plugin' );\n"
+			. "_c( 'Deprecated singular', 'sample-plugin' );\n"
+			. "_nc( '%s deprecated singular', '%s deprecated plural', 2, 'sample-plugin' );\n"
+			. "__ngettext( '%s old singular', '%s old plural', 2, 'sample-plugin' );\n"
+			. "__ngettext_noop( '%s old noop singular', '%s old noop plural', 'sample-plugin' );\n"
+		);
+
+		$extractor = new \WP_I18nly\Build\PotSourceEntryExtractor( $plugins_root );
+		$entries   = $extractor->extract_from_source_slug( 'sample-plugin/sample-plugin.php' );
+
+		$entries_by_original = array();
+		foreach ( $entries as $entry ) {
+			if ( isset( $entry['original'] ) && is_string( $entry['original'] ) ) {
+				$entries_by_original[ $entry['original'] ] = $entry;
+			}
+		}
+
+		$this->assertArrayHasKey( 'XML escaped value %s', $entries_by_original );
+		$this->assertArrayHasKey( '%s noop singular', $entries_by_original );
+		$this->assertArrayHasKey( '%s noop ctx singular', $entries_by_original );
+		$this->assertArrayHasKey( 'Compat gettext call', $entries_by_original );
+		$this->assertArrayHasKey( 'Deprecated singular', $entries_by_original );
+		$this->assertArrayHasKey( '%s deprecated singular', $entries_by_original );
+		$this->assertArrayHasKey( '%s old singular', $entries_by_original );
+		$this->assertArrayHasKey( '%s old noop singular', $entries_by_original );
+
+		$xml_entry = $entries_by_original['XML escaped value %s'];
+		$this->assertArrayHasKey( 'flags', $xml_entry );
+		$this->assertContains( 'php-format', $xml_entry['flags'] );
+		$this->assertArrayHasKey( 'comments', $xml_entry );
+		$this->assertContains( 'translators: Placeholder-rich message.', $xml_entry['comments'] );
+
+		$noop_ctx_entry = $entries_by_original['%s noop ctx singular'];
+		$this->assertSame( '%s noop ctx plural', $noop_ctx_entry['plural'] );
+		$this->assertSame( 'noop context', $noop_ctx_entry['context'] );
+
+		unlink( $main_file );
+		rmdir( $plugin_dir );
+		rmdir( $plugins_root );
+	}
+
+	/**
+	 * Extracts JS translator comments, format flags and sourcemap content.
+	 *
+	 * @return void
+	 */
+	public function test_extract_from_source_slug_collects_js_comments_flags_and_map_sources() {
+		$plugins_root = sys_get_temp_dir() . '/i18nly-extractor-js-map-' . uniqid( '', true );
+		$plugin_dir   = $plugins_root . '/sample-plugin';
+		$main_file    = $plugin_dir . '/sample-plugin.php';
+		$assets_dir   = $plugin_dir . '/assets/js';
+		$script_file  = $assets_dir . '/bundle.js';
+		$map_file     = $assets_dir . '/bundle.js.map';
+
+		mkdir( $assets_dir, 0755, true );
+
+		file_put_contents( $main_file, "<?php\n/*\nPlugin Name: Sample Plugin\n*/\n" );
+
+		file_put_contents(
+			$script_file,
+			"/* translators: Primary JS message. */\n"
+			. "const msg = __( 'JS string with %d placeholder', 'sample-plugin' );\n"
+		);
+
+		$map_payload = array(
+			'version'        => 3,
+			'file'           => 'bundle.js',
+			'sources'        => array( 'source-a.js' ),
+			'names'          => array(),
+			'mappings'       => '',
+			'sourcesContent' => array( "__( 'From sourcemap source', 'sample-plugin' );" ),
+		);
+
+		file_put_contents( $map_file, wp_json_encode( $map_payload ) );
+
+		$extractor = new \WP_I18nly\Build\PotSourceEntryExtractor( $plugins_root );
+		$entries   = $extractor->extract_from_source_slug( 'sample-plugin/sample-plugin.php' );
+
+		$entries_by_original = array();
+		foreach ( $entries as $entry ) {
+			if ( isset( $entry['original'] ) && is_string( $entry['original'] ) ) {
+				$entries_by_original[ $entry['original'] ] = $entry;
+			}
+		}
+
+		$this->assertArrayHasKey( 'JS string with %d placeholder', $entries_by_original );
+		$this->assertArrayHasKey( 'From sourcemap source', $entries_by_original );
+
+		$js_entry = $entries_by_original['JS string with %d placeholder'];
+		$this->assertArrayHasKey( 'comments', $js_entry );
+		$this->assertContains( 'Primary JS message.', $js_entry['comments'] );
+		$this->assertArrayHasKey( 'flags', $js_entry );
+		$this->assertContains( 'js-format', $js_entry['flags'] );
+
+		$map_entry  = $entries_by_original['From sourcemap source'];
+		$references = isset( $map_entry['references'] ) && is_array( $map_entry['references'] ) ? $map_entry['references'] : array();
+		$this->assertNotEmpty( $references );
+		$this->assertSame( 'assets/js/bundle.js', $references[0]['file'] );
+
+		unlink( $map_file );
+		unlink( $script_file );
+		unlink( $main_file );
+		rmdir( $assets_dir );
+		rmdir( $plugin_dir . '/assets' );
+		rmdir( $plugin_dir );
+		rmdir( $plugins_root );
+	}
+
+	/**
+	 * Extracts common translatable fields from block.json and theme.json metadata.
+	 *
+	 * @return void
+	 */
+	public function test_extract_from_source_slug_collects_json_metadata_entries() {
+		$plugins_root = sys_get_temp_dir() . '/i18nly-extractor-json-' . uniqid( '', true );
+		$plugin_dir   = $plugins_root . '/sample-plugin';
+		$main_file    = $plugin_dir . '/sample-plugin.php';
+		$styles_dir   = $plugin_dir . '/styles';
+
+		mkdir( $styles_dir, 0755, true );
+
+		file_put_contents( $main_file, "<?php\n/*\nPlugin Name: Sample Plugin\n*/\n" );
+
+		$block_json = array(
+			'title'       => 'Sample block title',
+			'description' => 'Sample block description',
+			'keywords'    => array( 'alpha keyword', 'beta keyword' ),
+			'styles'      => array(
+				array( 'name' => 'outline', 'label' => 'Outline style' ),
+			),
+			'variations'  => array(
+				array( 'name' => 'compact', 'title' => 'Compact variation', 'description' => 'Compact variation description' ),
+			),
+		);
+
+		$theme_json = array(
+			'settings' => array(
+				'color'      => array(
+					'palette'   => array( array( 'name' => 'Palette name', 'slug' => 'palette' ) ),
+					'gradients' => array( array( 'name' => 'Gradient name', 'slug' => 'gradient' ) ),
+				),
+				'typography' => array(
+					'fontFamilies' => array( array( 'name' => 'Theme font family', 'slug' => 'theme-font' ) ),
+				),
+			),
+		);
+
+		$style_variation_json = array(
+			'settings' => array(
+				'color' => array(
+					'palette' => array( array( 'name' => 'Style variation palette', 'slug' => 'style-palette' ) ),
+				),
+			),
+		);
+
+		file_put_contents( $plugin_dir . '/block.json', wp_json_encode( $block_json ) );
+		file_put_contents( $plugin_dir . '/theme.json', wp_json_encode( $theme_json ) );
+		file_put_contents( $styles_dir . '/sunrise.json', wp_json_encode( $style_variation_json ) );
+
+		$extractor = new \WP_I18nly\Build\PotSourceEntryExtractor( $plugins_root );
+		$entries   = $extractor->extract_from_source_slug( 'sample-plugin/sample-plugin.php' );
+
+		$entries_by_original = array();
+		foreach ( $entries as $entry ) {
+			if ( isset( $entry['original'] ) && is_string( $entry['original'] ) ) {
+				$entries_by_original[ $entry['original'] ] = $entry;
+			}
+		}
+
+		$this->assertArrayHasKey( 'Sample block title', $entries_by_original );
+		$this->assertArrayHasKey( 'Sample block description', $entries_by_original );
+		$this->assertArrayHasKey( 'alpha keyword', $entries_by_original );
+		$this->assertArrayHasKey( 'Outline style', $entries_by_original );
+		$this->assertArrayHasKey( 'Compact variation', $entries_by_original );
+		$this->assertArrayHasKey( 'Compact variation description', $entries_by_original );
+		$this->assertArrayHasKey( 'Palette name', $entries_by_original );
+		$this->assertArrayHasKey( 'Gradient name', $entries_by_original );
+		$this->assertArrayHasKey( 'Theme font family', $entries_by_original );
+		$this->assertArrayHasKey( 'Style variation palette', $entries_by_original );
+
+		$this->assertSame( 'block title', $entries_by_original['Sample block title']['context'] );
+		$this->assertSame( 'color name', $entries_by_original['Palette name']['context'] );
+
+		$style_refs = isset( $entries_by_original['Style variation palette']['references'] ) ? $entries_by_original['Style variation palette']['references'] : array();
+		$this->assertNotEmpty( $style_refs );
+		$this->assertSame( 'styles/sunrise.json', $style_refs[0]['file'] );
+
+		unlink( $styles_dir . '/sunrise.json' );
+		unlink( $plugin_dir . '/theme.json' );
+		unlink( $plugin_dir . '/block.json' );
+		unlink( $main_file );
+		rmdir( $styles_dir );
+		rmdir( $plugin_dir );
+		rmdir( $plugins_root );
+	}
 }
 
 // phpcs:enable
