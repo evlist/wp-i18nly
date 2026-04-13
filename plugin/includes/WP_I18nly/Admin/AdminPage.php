@@ -50,6 +50,16 @@ class AdminPage {
 	private const FILTER_QUERY_KEY_PROVENANCE = 'i18nly_filter_provenance';
 
 	/**
+	 * Query key for search text filter.
+	 */
+	private const FILTER_QUERY_KEY_SEARCH = 'i18nly_filter_search';
+
+	/**
+	 * Query key for search scope filters.
+	 */
+	private const FILTER_QUERY_KEY_SEARCH_FIELDS = 'i18nly_filter_search_fields';
+
+	/**
 	 * Source slug post meta key.
 	 */
 	private const META_SOURCE_SLUG = '_i18nly_source_slug';
@@ -713,10 +723,12 @@ class AdminPage {
 			self::FILTER_QUERY_KEY_ENTRY   => '',
 			self::FILTER_QUERY_KEY_QUALITY => '',
 			self::FILTER_QUERY_KEY_PROVENANCE => '',
+			self::FILTER_QUERY_KEY_SEARCH => '',
+			self::FILTER_QUERY_KEY_SEARCH_FIELDS => '',
 		);
 
 		foreach ( array_keys( $values ) as $query_key ) {
-			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( $this->get_request_query_or_post_parameter( $query_key ) );
+			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( $this->get_request_query_or_post_parameter( $query_key ), $query_key );
 		}
 
 		$referer = $this->get_request_query_or_post_parameter( '_wp_http_referer' );
@@ -745,7 +757,7 @@ class AdminPage {
 				continue;
 			}
 
-			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( (string) $referer_args[ $query_key ] );
+			$values[ $query_key ] = $this->sanitize_translation_filter_query_value( (string) $referer_args[ $query_key ], $query_key );
 		}
 
 		return $values;
@@ -777,7 +789,13 @@ class AdminPage {
 	 * @param string $value Raw filter query value.
 	 * @return string
 	 */
-	private function sanitize_translation_filter_query_value( $value ) {
+	private function sanitize_translation_filter_query_value( $value, $query_key = '' ) {
+		if ( self::FILTER_QUERY_KEY_SEARCH === $query_key ) {
+			$normalized = sanitize_text_field( (string) $value );
+
+			return trim( $normalized );
+		}
+
 		$normalized = strtolower( trim( (string) $value ) );
 		$normalized = preg_replace( '/[^a-z_,]/', '', $normalized );
 

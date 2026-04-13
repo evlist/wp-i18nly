@@ -296,7 +296,25 @@ class AdminPageRenderTest extends TestCase {
 		$this->assertStringContainsString( 'id="i18nly-filter-quality-status-empty"', $html );
 		$this->assertStringContainsString( 'id="i18nly-filter-provenance-ai"', $html );
 		$this->assertStringContainsString( 'id="i18nly-filter-provenance-none"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-search-text"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-search-source"', $html );
+		$this->assertStringContainsString( 'id="i18nly-filter-search-translated"', $html );
 		$this->assertStringContainsString( 'Loading translation entries…', $html );
+	}
+
+	/**
+	 * Sanitizes search filter query values without stripping spaces and punctuation.
+	 *
+	 * @return void
+	 */
+	public function test_sanitize_translation_filter_query_value_keeps_search_text_content() {
+		$page = new \WP_I18nly\Admin\AdminPage();
+		$method = new \ReflectionMethod( \WP_I18nly\Admin\AdminPage::class, 'sanitize_translation_filter_query_value' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $page, '  Error #42: Missing key?  ', 'i18nly_filter_search' );
+
+		$this->assertSame( 'Error #42: Missing key?', $result );
 	}
 
 	/**

@@ -67,7 +67,7 @@
 .i18nly-entry-filters {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: flex-start;
+	align-items: center;
 	gap: 12px 20px;
 	margin: 0 0 10px;
 	padding: 8px 10px;
@@ -84,6 +84,9 @@
 }
 
 .i18nly-entry-filter-title {
+	display: inline-flex;
+	align-items: center;
+	min-height: 30px;
 	font-weight: 600;
 	color: #1d2327;
 	margin-right: 2px;
@@ -92,7 +95,29 @@
 .i18nly-entry-filter-group label {
 	display: inline-flex;
 	align-items: center;
+	min-height: 30px;
 	gap: 4px;
+}
+
+.i18nly-entry-filter-group--search {
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 8px 12px;
+}
+
+.i18nly-filter-search-text {
+	min-width: 220px;
+	max-width: 320px;
+}
+
+.i18nly-entry-filter-group--search label {
+	white-space: nowrap;
+}
+
+@media ( max-width: 782px ) {
+	.i18nly-entry-filter-group--search {
+		flex-wrap: wrap;
+	}
 }
 
 .i18nly-filter-feedback {

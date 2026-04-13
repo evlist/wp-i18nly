@@ -111,6 +111,24 @@ class TranslationMetaBoxRenderer {
 						<?php echo esc_html__( 'None', 'i18nly' ); ?>
 					</label>
 				</div>
+				<div class="i18nly-entry-filter-group i18nly-entry-filter-group--search">
+					<span class="i18nly-entry-filter-title"><?php echo esc_html__( 'Search', 'i18nly' ); ?></span>
+					<label for="i18nly-filter-search-text" class="screen-reader-text"><?php echo esc_html__( 'Search text', 'i18nly' ); ?></label>
+					<input
+						type="text"
+						id="i18nly-filter-search-text"
+						class="i18nly-filter-search-text"
+						placeholder="<?php echo esc_attr__( 'Contains text…', 'i18nly' ); ?>"
+					/>
+					<label for="i18nly-filter-search-source">
+						<input type="checkbox" id="i18nly-filter-search-source" class="i18nly-filter-search-field" value="source" checked="checked" />
+						<?php echo esc_html__( 'Source', 'i18nly' ); ?>
+					</label>
+					<label for="i18nly-filter-search-translated">
+						<input type="checkbox" id="i18nly-filter-search-translated" class="i18nly-filter-search-field" value="translated" checked="checked" />
+						<?php echo esc_html__( 'Translated', 'i18nly' ); ?>
+					</label>
+				</div>
 			</div>
 			<div id="i18nly-source-entries-table">
 				<p><?php echo esc_html__( 'Loading translation entries…', 'i18nly' ); ?></p>

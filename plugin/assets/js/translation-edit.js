@@ -110,6 +110,8 @@
 	var FILTER_QUERY_KEY_ENTRY = 'i18nly_filter_entries';
 	var FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
 	var FILTER_QUERY_KEY_PROVENANCE = 'i18nly_filter_provenance';
+	var FILTER_QUERY_KEY_SEARCH_TEXT = 'i18nly_filter_search';
+	var FILTER_QUERY_KEY_SEARCH_FIELDS = 'i18nly_filter_search_fields';
 	var FILTER_NONE_TOKEN = '__none__';
 	var I18N_TEXT = config && config.i18n ? config.i18n : {};
 	var wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
@@ -467,6 +469,8 @@
 		var entryStatusFilters = document.querySelectorAll( '.i18nly-filter-entry-status' );
 		var qualityStatusFilters = document.querySelectorAll( '.i18nly-filter-quality-status' );
 		var provenanceFilters = document.querySelectorAll( '.i18nly-filter-provenance' );
+		var searchInput = document.getElementById( 'i18nly-filter-search-text' );
+		var searchFieldFilters = document.querySelectorAll( '.i18nly-filter-search-field' );
 		var filtersContainer = document.querySelector( '.i18nly-entry-filters' );
 		var rowCheckboxes;
 		var selectAllCheckboxes;
@@ -646,7 +650,9 @@
 			return {
 				entryStatuses: getSelectedFilterValues( entryStatusFilters ),
 				qualityStatuses: getSelectedFilterValues( qualityStatusFilters ),
-				provenances: getSelectedFilterValues( provenanceFilters )
+				provenances: getSelectedFilterValues( provenanceFilters ),
+				searchText: String( searchInput && searchInput.value ? searchInput.value : '' ).toLowerCase().trim(),
+				searchFields: getSelectedFilterValues( searchFieldFilters )
 			};
 		}
 
@@ -770,6 +776,8 @@
 			var entryStatuses;
 			var qualityStatuses;
 			var provenances;
+			var searchText;
+			var searchFields;
 
 			if ( 'function' !== typeof window.URLSearchParams || ! window.history || 'function' !== typeof window.history.replaceState ) {
 				return;
@@ -779,12 +787,82 @@
 			entryStatuses = getSelectedFilterValues( entryStatusFilters );
 			qualityStatuses = getSelectedFilterValues( qualityStatusFilters );
 			provenances = getSelectedFilterValues( provenanceFilters );
+			searchText = String( searchInput && searchInput.value ? searchInput.value : '' ).trim();
+			searchFields = getSelectedFilterValues( searchFieldFilters );
 
 			params.set( FILTER_QUERY_KEY_ENTRY, entryStatuses.length > 0 ? entryStatuses.join( ',' ) : FILTER_NONE_TOKEN );
 			params.set( FILTER_QUERY_KEY_QUALITY, qualityStatuses.length > 0 ? qualityStatuses.join( ',' ) : FILTER_NONE_TOKEN );
 			params.set( FILTER_QUERY_KEY_PROVENANCE, provenances.length > 0 ? provenances.join( ',' ) : FILTER_NONE_TOKEN );
 
+			if ( '' === searchText ) {
+				params.delete( FILTER_QUERY_KEY_SEARCH_TEXT );
+			} else {
+				params.set( FILTER_QUERY_KEY_SEARCH_TEXT, searchText );
+			}
+
+			params.set( FILTER_QUERY_KEY_SEARCH_FIELDS, searchFields.length > 0 ? searchFields.join( ',' ) : FILTER_NONE_TOKEN );
+
 			window.history.replaceState( null, '', String( window.location.pathname || '' ) + '?' + params.toString() + String( window.location.hash || '' ) );
+		}
+
+		function restoreSearchFromQuery() {
+			var params;
+			var rawSearchText;
+
+			if ( ! searchInput || 'function' !== typeof window.URLSearchParams ) {
+				return;
+			}
+
+			params = new window.URLSearchParams( window.location.search || '' );
+			rawSearchText = params.get( FILTER_QUERY_KEY_SEARCH_TEXT );
+
+			if ( null !== rawSearchText ) {
+				searchInput.value = String( rawSearchText );
+			}
+
+			restoreFilterSelectionFromQuery( searchFieldFilters, FILTER_QUERY_KEY_SEARCH_FIELDS );
+		}
+
+		function rowMatchesSearchFilters(row, selection) {
+			var searchText = selection.searchText || '';
+			var fields = selection.searchFields || [];
+			var searchInSource = fields.indexOf( 'source' ) !== -1;
+			var searchInTranslated = fields.indexOf( 'translated' ) !== -1;
+			var sourceTexts = [];
+			var translatedTexts = [];
+
+			if ( '' === searchText ) {
+				return true;
+			}
+
+			if ( ! searchInSource && ! searchInTranslated ) {
+				return false;
+			}
+
+			Array.prototype.slice.call( row.querySelectorAll( '.i18nly-translation-input' ) ).forEach(
+				function (input) {
+					var source = String( input.getAttribute( 'data-i18nly-source-text' ) || '' ).toLowerCase();
+					var translated = String( input.value || '' ).toLowerCase();
+
+					if ( '' !== source ) {
+						sourceTexts.push( source );
+					}
+
+					if ( '' !== translated ) {
+						translatedTexts.push( translated );
+					}
+				}
+			);
+
+			if ( searchInSource && sourceTexts.some( function (text) { return text.indexOf( searchText ) !== -1; } ) ) {
+				return true;
+			}
+
+			if ( searchInTranslated && translatedTexts.some( function (text) { return text.indexOf( searchText ) !== -1; } ) ) {
+				return true;
+			}
+
+			return false;
 		}
 
 		function getRowQualityTokens(row) {
@@ -846,7 +924,10 @@
 				}
 			);
 
-			return matchesEntryStatus && matchesQualityStatus && matchesProvenance;
+			return matchesEntryStatus
+				&& matchesQualityStatus
+				&& matchesProvenance
+				&& rowMatchesSearchFilters( row, selection );
 		}
 
 		function refreshModifiedRowsOutOfFilter(selection) {
@@ -1578,9 +1659,32 @@
 			}
 		);
 
+		Array.prototype.slice.call( searchFieldFilters ).forEach(
+			function (checkbox) {
+				checkbox.addEventListener(
+					'change',
+					function () {
+						persistFiltersToQueryString();
+						applyTableFilters();
+					}
+				);
+			}
+		);
+
+		if ( searchInput ) {
+			searchInput.addEventListener(
+				'input',
+				function () {
+					persistFiltersToQueryString();
+					applyTableFilters();
+				}
+			);
+		}
+
 		restoreFilterSelectionFromQuery( entryStatusFilters, FILTER_QUERY_KEY_ENTRY );
 		restoreFilterSelectionFromQuery( qualityStatusFilters, FILTER_QUERY_KEY_QUALITY );
 		restoreFilterSelectionFromQuery( provenanceFilters, FILTER_QUERY_KEY_PROVENANCE );
+		restoreSearchFromQuery();
 		persistFiltersToQueryString();
 
 		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-translate-btn' ) ).forEach(
