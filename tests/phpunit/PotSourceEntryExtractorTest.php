@@ -347,6 +347,16 @@ class PotSourceEntryExtractorTest extends TestCase {
 				),
 				'typography' => array(
 					'fontFamilies' => array( array( 'name' => 'Theme font family', 'slug' => 'theme-font' ) ),
+					'fontSizes'    => array( array( 'name' => 'Theme font size', 'slug' => 'theme-size' ) ),
+				),
+			),
+			'styles'   => array(
+				'elements' => array(
+					'heading' => array(
+						'typography' => array(
+							'fontFamily' => 'Heading font family value',
+						),
+					),
 				),
 			),
 		);
@@ -382,10 +392,14 @@ class PotSourceEntryExtractorTest extends TestCase {
 		$this->assertArrayHasKey( 'Palette name', $entries_by_original );
 		$this->assertArrayHasKey( 'Gradient name', $entries_by_original );
 		$this->assertArrayHasKey( 'Theme font family', $entries_by_original );
+		$this->assertArrayHasKey( 'Theme font size', $entries_by_original );
+		$this->assertArrayHasKey( 'Heading font family value', $entries_by_original );
 		$this->assertArrayHasKey( 'Style variation palette', $entries_by_original );
 
 		$this->assertSame( 'block title', $entries_by_original['Sample block title']['context'] );
 		$this->assertSame( 'color name', $entries_by_original['Palette name']['context'] );
+		$this->assertSame( 'font size name', $entries_by_original['Theme font size']['context'] );
+		$this->assertSame( 'font family value', $entries_by_original['Heading font family value']['context'] );
 
 		$style_refs = isset( $entries_by_original['Style variation palette']['references'] ) ? $entries_by_original['Style variation palette']['references'] : array();
 		$this->assertNotEmpty( $style_refs );
@@ -396,6 +410,58 @@ class PotSourceEntryExtractorTest extends TestCase {
 		unlink( $plugin_dir . '/block.json' );
 		unlink( $main_file );
 		rmdir( $styles_dir );
+		rmdir( $plugin_dir );
+		rmdir( $plugins_root );
+	}
+
+	/**
+	 * Extracts gettext calls from Blade template expressions and component bindings.
+	 *
+	 * @return void
+	 */
+	public function test_extract_from_source_slug_collects_blade_template_gettext_entries() {
+		$plugins_root = sys_get_temp_dir() . '/i18nly-extractor-blade-' . uniqid( '', true );
+		$plugin_dir   = $plugins_root . '/sample-plugin';
+		$views_dir    = $plugin_dir . '/resources/views';
+		$main_file    = $plugin_dir . '/sample-plugin.php';
+		$blade_file   = $views_dir . '/dashboard.blade.php';
+
+		mkdir( $views_dir, 0755, true );
+
+		file_put_contents( $main_file, "<?php\n/*\nPlugin Name: Sample Plugin\n*/\n" );
+
+		file_put_contents(
+			$blade_file,
+			"<h1>{{ __( 'Blade heading', 'sample-plugin' ) }}</h1>\n"
+			. "<x-alert :label=\"__( 'Blade component label', 'sample-plugin' )\" />\n"
+			. "@php\n"
+			. "echo _n( '%d blade item', '%d blade items', 2, 'sample-plugin' );\n"
+			. "@endphp\n"
+		);
+
+		$extractor = new \WP_I18nly\Build\PotSourceEntryExtractor( $plugins_root );
+		$entries   = $extractor->extract_from_source_slug( 'sample-plugin/sample-plugin.php' );
+
+		$entries_by_original = array();
+		foreach ( $entries as $entry ) {
+			if ( isset( $entry['original'] ) && is_string( $entry['original'] ) ) {
+				$entries_by_original[ $entry['original'] ] = $entry;
+			}
+		}
+
+		$this->assertArrayHasKey( 'Blade heading', $entries_by_original );
+		$this->assertArrayHasKey( 'Blade component label', $entries_by_original );
+		$this->assertArrayHasKey( '%d blade item', $entries_by_original );
+		$this->assertSame( '%d blade items', $entries_by_original['%d blade item']['plural'] );
+
+		$heading_refs = isset( $entries_by_original['Blade heading']['references'] ) ? $entries_by_original['Blade heading']['references'] : array();
+		$this->assertNotEmpty( $heading_refs );
+		$this->assertSame( 'resources/views/dashboard.blade.php', $heading_refs[0]['file'] );
+
+		unlink( $blade_file );
+		unlink( $main_file );
+		rmdir( $views_dir );
+		rmdir( $plugin_dir . '/resources' );
 		rmdir( $plugin_dir );
 		rmdir( $plugins_root );
 	}

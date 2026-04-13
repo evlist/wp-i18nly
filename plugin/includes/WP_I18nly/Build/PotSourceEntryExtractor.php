@@ -56,6 +56,7 @@ class PotSourceEntryExtractor {
 
 		$plugin_directory = dirname( $main_file );
 		$php_files        = $this->list_source_php_files( $main_file, (string) $source_slug );
+		$blade_files      = $this->list_source_blade_files( $main_file, (string) $source_slug );
 		$js_files         = $this->list_source_js_files( $main_file, (string) $source_slug );
 		$js_map_files     = $this->list_source_js_map_files( $main_file, (string) $source_slug );
 		$json_files       = $this->list_source_json_files( $main_file, (string) $source_slug );
@@ -68,64 +69,29 @@ class PotSourceEntryExtractor {
 			}
 
 			$relative_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
-			$tokens        = token_get_all( $code );
-			$token_count   = count( $tokens );
+			$entries = $this->extract_php_entries_from_code( $code, $relative_path );
 
-			for ( $index = 0; $index < $token_count; $index++ ) {
-				if ( ! is_array( $tokens[ $index ] ) || T_STRING !== $tokens[ $index ][0] ) {
-					continue;
-				}
+			foreach ( $entries as $entry ) {
+				$this->merge_entry_into_map( $entries_map, $entry );
+			}
+		}
 
-				$function_name = strtolower( (string) $tokens[ $index ][1] );
-				if ( ! $this->is_supported_gettext_function( $function_name ) ) {
-					continue;
-				}
+		foreach ( $blade_files as $file_path ) {
+			$blade_template = $this->read_text_file_contents( $file_path );
+			if ( '' === $blade_template ) {
+				continue;
+			}
 
-				$open_parenthesis_index = $this->find_next_non_whitespace_token_index( $tokens, $index + 1 );
-				if ( null === $open_parenthesis_index || '(' !== $tokens[ $open_parenthesis_index ] ) {
-					continue;
-				}
+			$compiled_blade = $this->compile_blade_template_to_php( $blade_template );
+			if ( '' === $compiled_blade ) {
+				continue;
+			}
 
-				$parsed = $this->parse_function_call_arguments( $tokens, $open_parenthesis_index );
-				if ( null === $parsed ) {
-					continue;
-				}
+			$relative_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
+			$entries       = $this->extract_php_entries_from_code( $compiled_blade, $relative_path );
 
-				$entry = $this->build_entry_from_function_call(
-					$function_name,
-					$parsed['args'],
-					$relative_path,
-					(int) $tokens[ $index ][2],
-					$this->extract_translator_comments_before_index( $tokens, $index )
-				);
-
-				if ( null === $entry ) {
-					continue;
-				}
-
-				$key = ( isset( $entry['context'] ) ? (string) $entry['context'] : '' )
-					. "\004" . (string) $entry['original']
-					. "\004" . ( isset( $entry['plural'] ) ? (string) $entry['plural'] : '' );
-
-				if ( ! isset( $entries_map[ $key ] ) ) {
-					$entries_map[ $key ] = $entry;
-					continue;
-				}
-
-				$entries_map[ $key ]['references'][] = array(
-					'file' => $relative_path,
-					'line' => (int) $tokens[ $index ][2],
-				);
-
-				if ( ! empty( $entry['comments'] ) ) {
-					$existing_comments = isset( $entries_map[ $key ]['comments'] ) && is_array( $entries_map[ $key ]['comments'] )
-						? $entries_map[ $key ]['comments']
-						: array();
-
-					$entries_map[ $key ]['comments'] = array_values(
-						array_unique( array_merge( $existing_comments, $entry['comments'] ) )
-					);
-				}
+			foreach ( $entries as $entry ) {
+				$this->merge_entry_into_map( $entries_map, $entry );
 			}
 		}
 
@@ -190,6 +156,21 @@ class PotSourceEntryExtractor {
 		}
 
 		return $this->list_php_files( dirname( $main_file ) );
+	}
+
+	/**
+	 * Lists Blade templates to scan for one source slug.
+	 *
+	 * @param string $main_file Resolved main plugin file.
+	 * @param string $source_slug Source slug.
+	 * @return array<int, string>
+	 */
+	private function list_source_blade_files( $main_file, $source_slug ) {
+		if ( false === strpos( $source_slug, '/' ) ) {
+			return array();
+		}
+
+		return $this->list_blade_files( dirname( $main_file ) );
 	}
 
 	/**
@@ -353,6 +334,135 @@ class PotSourceEntryExtractor {
 		sort( $files );
 
 		return $files;
+	}
+
+	/**
+	 * Lists Blade template files recursively in a directory.
+	 *
+	 * @param string $directory Root directory.
+	 * @return array<int, string>
+	 */
+	private function list_blade_files( $directory ) {
+		$files = array();
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $directory, FilesystemIterator::SKIP_DOTS )
+		);
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info instanceof SplFileInfo ) {
+				continue;
+			}
+
+			$filename = strtolower( (string) $file_info->getFilename() );
+			if ( '.blade.php' !== substr( $filename, -10 ) ) {
+				continue;
+			}
+
+			$files[] = (string) $file_info->getPathname();
+		}
+
+		sort( $files );
+
+		return $files;
+	}
+
+	/**
+	 * Extracts gettext entries from PHP code.
+	 *
+	 * @param string $code PHP source code.
+	 * @param string $relative_path Relative reference file path.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_php_entries_from_code( $code, $relative_path ) {
+		$entries     = array();
+		$tokens      = token_get_all( $code );
+		$token_count = count( $tokens );
+
+		for ( $index = 0; $index < $token_count; $index++ ) {
+			if ( ! is_array( $tokens[ $index ] ) || T_STRING !== $tokens[ $index ][0] ) {
+				continue;
+			}
+
+			$function_name = strtolower( (string) $tokens[ $index ][1] );
+			if ( ! $this->is_supported_gettext_function( $function_name ) ) {
+				continue;
+			}
+
+			$open_parenthesis_index = $this->find_next_non_whitespace_token_index( $tokens, $index + 1 );
+			if ( null === $open_parenthesis_index || '(' !== $tokens[ $open_parenthesis_index ] ) {
+				continue;
+			}
+
+			$parsed = $this->parse_function_call_arguments( $tokens, $open_parenthesis_index );
+			if ( null === $parsed ) {
+				continue;
+			}
+
+			$entry = $this->build_entry_from_function_call(
+				$function_name,
+				$parsed['args'],
+				$relative_path,
+				(int) $tokens[ $index ][2],
+				$this->extract_translator_comments_before_index( $tokens, $index )
+			);
+
+			if ( null !== $entry ) {
+				$entries[] = $entry;
+			}
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * Extracts gettext-relevant PHP snippets from a Blade template.
+	 *
+	 * @param string $template Blade template source.
+	 * @return string
+	 */
+	private function compile_blade_template_to_php( $template ) {
+		$chunks = array();
+
+		if ( preg_match_all( '/\{\{\s*(.*?)\s*\}\}|\{!!\s*(.*?)\s*!!\}/s', $template, $matches ) ) {
+			$expressions = array_merge( $matches[1], $matches[2] );
+			foreach ( $expressions as $expression ) {
+				$expression = trim( (string) $expression );
+				if ( '' === $expression ) {
+					continue;
+				}
+
+				$chunks[] = '<?php ' . rtrim( $expression, ';' ) . '; ?>';
+			}
+		}
+
+		if ( preg_match_all( '/@php\s*(.*?)\s*@endphp/s', $template, $php_blocks ) ) {
+			foreach ( $php_blocks[1] as $php_block ) {
+				$php_block = trim( (string) $php_block );
+				if ( '' === $php_block ) {
+					continue;
+				}
+
+				$chunks[] = "<?php\n" . $php_block . "\n?>";
+			}
+		}
+
+		if ( preg_match_all( '/<x[-:\\w]+\\s+((?:[^>"\']*(?:"[^"]*"|\'[^\']*\'))*[^>"]*)\\/?/s', $template, $tag_matches ) ) {
+			foreach ( $tag_matches[1] as $attributes ) {
+				if ( preg_match_all( '/(?<!\\w):[\\w.-]+=(["\'])(.*?)\\1/s', $attributes, $attr_matches ) ) {
+					foreach ( $attr_matches[2] as $expression ) {
+						$expression = trim( (string) $expression );
+						if ( '' === $expression ) {
+							continue;
+						}
+
+						$chunks[] = '<?php ' . rtrim( $expression, ';' ) . '; ?>';
+					}
+				}
+			}
+		}
+
+		return implode( "\n", $chunks );
 	}
 
 	/**
@@ -631,112 +741,114 @@ class PotSourceEntryExtractor {
 		$entries  = array();
 
 		if ( 'block.json' === $basename ) {
-			$this->collect_block_json_entries( $decoded, $relative_json_path, $entries );
+			$this->extract_json_entries_using_schema( $entries, $relative_json_path, $this->get_block_json_i18n_schema(), $decoded );
 		}
 
 		if ( 'theme.json' === $basename || 0 === strpos( str_replace( '\\', '/', strtolower( $relative_json_path ) ), 'styles/' ) ) {
-			$this->collect_theme_json_entries( $decoded, $relative_json_path, $entries );
+			$this->extract_json_entries_using_schema( $entries, $relative_json_path, $this->get_theme_json_i18n_schema(), $decoded );
 		}
 
 		return $entries;
 	}
 
 	/**
-	 * Collects common block.json translatable fields.
+	 * Returns local block.json i18n schema.
 	 *
-	 * @param array<string, mixed>              $data JSON object.
-	 * @param string                            $relative_path Relative file path.
-	 * @param array<int, array<string, mixed>> &$entries Accumulator.
-	 * @return void
+	 * @return array<string, mixed>
 	 */
-	private function collect_block_json_entries( array $data, $relative_path, array &$entries ) {
-		$this->add_json_string_entry( $entries, isset( $data['title'] ) ? $data['title'] : null, 'block title', $relative_path );
-		$this->add_json_string_entry( $entries, isset( $data['description'] ) ? $data['description'] : null, 'block description', $relative_path );
-
-		if ( isset( $data['keywords'] ) && is_array( $data['keywords'] ) ) {
-			foreach ( $data['keywords'] as $keyword ) {
-				$this->add_json_string_entry( $entries, $keyword, 'block keyword', $relative_path );
-			}
-		}
-
-		if ( isset( $data['styles'] ) && is_array( $data['styles'] ) ) {
-			foreach ( $data['styles'] as $style ) {
-				if ( is_array( $style ) ) {
-					$this->add_json_string_entry( $entries, isset( $style['label'] ) ? $style['label'] : null, 'block style label', $relative_path );
-				}
-			}
-		}
-
-		if ( isset( $data['variations'] ) && is_array( $data['variations'] ) ) {
-			foreach ( $data['variations'] as $variation ) {
-				if ( ! is_array( $variation ) ) {
-					continue;
-				}
-
-				$this->add_json_string_entry( $entries, isset( $variation['title'] ) ? $variation['title'] : null, 'block variation title', $relative_path );
-				$this->add_json_string_entry( $entries, isset( $variation['description'] ) ? $variation['description'] : null, 'block variation description', $relative_path );
-			}
-		}
-	}
-
-	/**
-	 * Collects common theme.json translatable fields.
-	 *
-	 * @param array<string, mixed>              $data JSON object.
-	 * @param string                            $relative_path Relative file path.
-	 * @param array<int, array<string, mixed>> &$entries Accumulator.
-	 * @return void
-	 */
-	private function collect_theme_json_entries( array $data, $relative_path, array &$entries ) {
-		if ( isset( $data['settings']['color']['palette'] ) && is_array( $data['settings']['color']['palette'] ) ) {
-			foreach ( $data['settings']['color']['palette'] as $palette_entry ) {
-				if ( is_array( $palette_entry ) ) {
-					$this->add_json_string_entry( $entries, isset( $palette_entry['name'] ) ? $palette_entry['name'] : null, 'color name', $relative_path );
-				}
-			}
-		}
-
-		if ( isset( $data['settings']['color']['gradients'] ) && is_array( $data['settings']['color']['gradients'] ) ) {
-			foreach ( $data['settings']['color']['gradients'] as $gradient_entry ) {
-				if ( is_array( $gradient_entry ) ) {
-					$this->add_json_string_entry( $entries, isset( $gradient_entry['name'] ) ? $gradient_entry['name'] : null, 'gradient name', $relative_path );
-				}
-			}
-		}
-
-		if ( isset( $data['settings']['typography']['fontFamilies'] ) && is_array( $data['settings']['typography']['fontFamilies'] ) ) {
-			foreach ( $data['settings']['typography']['fontFamilies'] as $font_family ) {
-				if ( is_array( $font_family ) ) {
-					$this->add_json_string_entry( $entries, isset( $font_family['name'] ) ? $font_family['name'] : null, 'font family name', $relative_path );
-				}
-			}
-		}
-	}
-
-	/**
-	 * Adds one JSON string entry to an accumulator.
-	 *
-	 * @param array<int, array<string, mixed>> &$entries Accumulator.
-	 * @param mixed                            $value Candidate value.
-	 * @param string                           $context Translation context.
-	 * @param string                           $relative_path Relative file path.
-	 * @return void
-	 */
-	private function add_json_string_entry( array &$entries, $value, $context, $relative_path ) {
-		if ( ! is_string( $value ) || '' === trim( $value ) ) {
-			return;
-		}
-
-		$entries[] = array(
-			'original'   => $value,
-			'context'    => (string) $context,
-			'references' => array(
+	private function get_block_json_i18n_schema() {
+		return array(
+			'title'       => 'block title',
+			'description' => 'block description',
+			'keywords'    => array( 'block keyword' ),
+			'styles'      => array(
 				array(
-					'file' => $relative_path,
-					'line' => 1,
+					'label' => 'block style label',
+				),
+			),
+			'variations'  => array(
+				array(
+					'title'       => 'block variation title',
+					'description' => 'block variation description',
 				),
 			),
 		);
+	}
+
+	/**
+	 * Returns local theme.json i18n schema.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function get_theme_json_i18n_schema() {
+		return array(
+			'settings' => array(
+				'color'      => array(
+					'palette'   => array( array( 'name' => 'color name' ) ),
+					'gradients' => array( array( 'name' => 'gradient name' ) ),
+				),
+				'typography' => array(
+					'fontFamilies' => array( array( 'name' => 'font family name' ) ),
+					'fontSizes'    => array( array( 'name' => 'font size name' ) ),
+				),
+			),
+			'styles'   => array(
+				'elements' => array(
+					'*' => array(
+						'typography' => array(
+							'fontFamily' => 'font family value',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Recursively extracts JSON translation entries using an i18n schema.
+	 *
+	 * @param array<int, array<string, mixed>> &$entries Accumulator.
+	 * @param string                           $relative_path Relative file path.
+	 * @param mixed                            $schema Schema node.
+	 * @param mixed                            $settings Settings node.
+	 * @return void
+	 */
+	private function extract_json_entries_using_schema( array &$entries, $relative_path, $schema, $settings ) {
+		if ( is_string( $schema ) && is_string( $settings ) && '' !== trim( $settings ) ) {
+			$entries[] = array(
+				'original'   => $settings,
+				'context'    => $schema,
+				'references' => array(
+					array(
+						'file' => $relative_path,
+						'line' => 1,
+					),
+				),
+			);
+
+			return;
+		}
+
+		if ( is_array( $schema ) && ! empty( $schema ) && array_is_list( $schema ) && is_array( $settings ) ) {
+			foreach ( $settings as $entry ) {
+				$this->extract_json_entries_using_schema( $entries, $relative_path, $schema[0], $entry );
+			}
+
+			return;
+		}
+
+		if ( is_array( $schema ) && is_array( $settings ) ) {
+			foreach ( $settings as $key => $value ) {
+				if ( isset( $schema[ $key ] ) ) {
+					$this->extract_json_entries_using_schema( $entries, $relative_path, $schema[ $key ], $value );
+					continue;
+				}
+
+				if ( isset( $schema['*'] ) ) {
+					$this->extract_json_entries_using_schema( $entries, $relative_path, $schema['*'], $value );
+				}
+			}
+		}
 	}
 
 	/**
