@@ -259,6 +259,130 @@ Psalm is used for static analysis and dead code detection. Recent versions (Psal
 
 To avoid conflicts, install Psalm in a dedicated directory (outside Composer global):
 
+## 12) Translation Revision Strategy (Architecture Note)
+
+### Problem statement
+
+The project currently uses a WordPress custom post type (`i18nly_translation`) as the native admin container for a translation, while the actual translation content is stored in custom tables (`source_entries` and `translated_entries`).
+
+This model is strong for querying, filtering, plural-form handling, provenance tracking, and incremental updates, but it does not automatically benefit from the native WordPress revision workflow because the translated content does not live in `wp_posts.post_content`.
+
+The main design question is therefore how to support translation history and revision browsing while preserving the current data model.
+
+### Option A: Make `post_content` the canonical translation storage
+
+Possible serialized formats:
+
+- JSON snapshot of the full translation.
+- `.po`-like textual serialization.
+
+Advantages:
+
+- maximal reuse of native WordPress revisions, autosaves, and post lifecycle;
+- old revisions are naturally stored and browsable through WordPress mechanisms;
+- one canonical payload can be serialized/deserialized with a well-understood format;
+- `.po` is a meaningful candidate because the product already needs `.po` parsing and serialization support.
+
+Disadvantages:
+
+- weak fit for the current domain model (entry-level status, provenance, comments, plural-form indexing, partial updates);
+- harder and slower querying/filtering compared to normalized tables;
+- larger and more fragile save payloads for big catalogs;
+- higher coupling between editor behavior and one serialized document format.
+
+Assessment:
+
+- technically viable;
+- attractive if strict reuse of WordPress post/revision behavior becomes the primary goal;
+- less attractive if translation editing remains a structured, query-heavy workflow.
+
+### Option B: Keep current business tables and mirror full snapshots into WordPress revisions
+
+In this model, business tables remain canonical, but each save also stores a full snapshot into the translation post (for example JSON or `.po`) so that WordPress revisions can be created and reused.
+
+Advantages:
+
+- preserves the current normalized storage model;
+- allows native WordPress revision IDs to represent global translation versions;
+- makes `.po` snapshots possible without abandoning the business schema.
+
+Disadvantages:
+
+- browsing a historical version still requires reconstructing a view model from the snapshot rather than reading the live tables directly;
+- the snapshot and the tables must stay consistent;
+- multi-user editing remains more complex because the canonical state is still outside the post revision model.
+
+Assessment:
+
+- good hybrid approach if the project wants revision integration quickly;
+- still introduces duplication and synchronization concerns.
+
+### Option C: Keep business tables canonical and implement dedicated translation revisions
+
+In this model, translation history is stored in dedicated immutable business tables. The WordPress post remains the admin anchor, but translation history is modeled explicitly at the domain level.
+
+Advantages:
+
+- best fit for structured translation data;
+- supports efficient querying and filtering on the current state;
+- allows reliable historical browsing without destructive rehydration;
+- naturally supports optimistic concurrency checks for multi-user editing.
+
+Disadvantages:
+
+- requires a dedicated revision design rather than relying only on core WordPress behavior;
+- more implementation work than simply serializing into `post_content`.
+
+Assessment:
+
+- strongest architectural fit if translation editing becomes collaborative and history-aware.
+
+### Refined recommendation discussed in session
+
+The current preferred direction is a hybrid centered on native WordPress revision IDs as the global revision anchor, while keeping translation data in business tables.
+
+Important constraint:
+
+- a simple association between a WordPress revision ID and the current mutable rows in `translated_entries` is not sufficient, because those rows are updated in place and would no longer represent the historical state later.
+
+Recommended structure:
+
+- keep `translated_entries` as the current working state;
+- when WordPress creates a revision on global translation save (`Save draft` / update), capture the corresponding WordPress revision ID;
+- create immutable snapshots of translated entry rows for that revision;
+- store those immutable snapshots in a dedicated revision-oriented table;
+- optionally add a separate mapping table only if version deduplication is later needed.
+
+Practical recommendation for the first implementation:
+
+- use the WordPress revision post ID as the global translation revision identifier;
+- keep one current-state table for editing and querying;
+- add one immutable table for translated entry versions keyed by `wp_revision_id`;
+- do not start with a many-to-many mapping table unless deduplication becomes necessary.
+
+### Why this is currently preferred
+
+- It preserves the existing structured storage model.
+- It makes historical browsing possible without mutating live data.
+- It keeps the WordPress revision workflow relevant and visible to users.
+- It leaves room for later `.po` snapshot export/import if needed.
+- It provides a clean foundation for future conflict detection in collaborative editing.
+
+### Notes about `.po` as a serialized format
+
+During the discussion, `.pot` was mentioned first, but the intended format was `.po`.
+
+That correction matters:
+
+- `.pot` is a source template format and is not the right format for storing translated content;
+- `.po` is semantically valid for translated data and is already aligned with required parsing/serialization capabilities of the project.
+
+Current conclusion:
+
+- `.po` remains a valid snapshot/export format candidate;
+- it is not currently the preferred canonical storage format for live editing data;
+- it may still be useful as a revision snapshot format or interchange format later.
+
 ```bash
 mkdir -p /home/vscode/.local/psalm5
 cd /home/vscode/.local/psalm5
