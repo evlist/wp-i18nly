@@ -111,6 +111,28 @@
 	var FILTER_QUERY_KEY_QUALITY = 'i18nly_filter_statuses';
 	var FILTER_QUERY_KEY_PROVENANCE = 'i18nly_filter_provenance';
 	var FILTER_NONE_TOKEN = '__none__';
+	var I18N_TEXT = config && config.i18n ? config.i18n : {};
+	var wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+	var _n = wpI18n && 'function' === typeof wpI18n._n
+		? wpI18n._n
+		: function (singular, plural, count) {
+			return 1 === count ? singular : plural;
+		};
+	var sprintf = wpI18n && 'function' === typeof wpI18n.sprintf
+		? wpI18n.sprintf
+		: function (message, count) {
+			return String( message ).replace( '%d', String( count ) );
+		};
+
+	function getUiText(key, fallback) {
+		var value = I18N_TEXT[key];
+
+		if ( 'string' === typeof value && '' !== value ) {
+			return value;
+		}
+
+		return fallback;
+	}
 
 	function normalizeQualityToken(token) {
 		if ('ai_draft_ok' === token || 'draft_ai' === token) {
@@ -445,10 +467,16 @@
 		var entryStatusFilters = document.querySelectorAll( '.i18nly-filter-entry-status' );
 		var qualityStatusFilters = document.querySelectorAll( '.i18nly-filter-quality-status' );
 		var provenanceFilters = document.querySelectorAll( '.i18nly-filter-provenance' );
+		var filtersContainer = document.querySelector( '.i18nly-entry-filters' );
 		var rowCheckboxes;
 		var selectAllCheckboxes;
 		var bulkActionSelects;
 		var bulkApplyButtons;
+		var modifiedRowsNotice = null;
+		var modifiedRowsTracked = [];
+		var modifiedRowsOutOfFilter = [];
+		var showOnlyModifiedOutOfFilter = false;
+		var suppressModifiedRowsNotice = false;
 
 		function getSelectedRows() {
 			return Array.prototype.slice.call( rowCheckboxes ).filter(
@@ -464,6 +492,162 @@
 					return null !== row;
 				}
 			);
+		}
+
+		function uniqueRows(rows) {
+			return ( rows || [] ).filter(
+				function (row) {
+					return !! row;
+				}
+			).filter(
+				function (row, index, list) {
+					return list.indexOf( row ) === index;
+				}
+			);
+		}
+
+		function getOrCreateModifiedRowsNotice() {
+			var existingNotices;
+			var textNode;
+			var toggleLabel;
+			var toggleInput;
+			var applyButton;
+
+			function bindNoticeEvents(noticeNode) {
+				var noticeToggle = noticeNode ? noticeNode.querySelector( '.i18nly-filter-feedback-only-modified' ) : null;
+				var noticeApplyButton = noticeNode ? noticeNode.querySelector( '.i18nly-filter-feedback-apply' ) : null;
+
+				if ( noticeToggle ) {
+					noticeToggle.onchange = function () {
+						showOnlyModifiedOutOfFilter = !! noticeToggle.checked;
+						applyTableFilters();
+					};
+				}
+
+				if ( noticeApplyButton ) {
+					noticeApplyButton.onclick = function (event) {
+						if ( event ) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+
+						showOnlyModifiedOutOfFilter = false;
+						modifiedRowsTracked = [];
+						modifiedRowsOutOfFilter = [];
+						suppressModifiedRowsNotice = true;
+						hideModifiedRowsNotice();
+						applyTableFilters( { strict: true } );
+					};
+				}
+			}
+
+			if ( modifiedRowsNotice ) {
+				bindNoticeEvents( modifiedRowsNotice );
+				return modifiedRowsNotice;
+			}
+
+			if ( ! filtersContainer || ! filtersContainer.parentNode ) {
+				return null;
+			}
+
+			existingNotices = Array.prototype.slice.call( filtersContainer.parentNode.querySelectorAll( '.i18nly-filter-feedback' ) );
+			if ( existingNotices.length > 0 ) {
+				modifiedRowsNotice = existingNotices[0];
+
+				existingNotices.slice( 1 ).forEach(
+					function (node) {
+						if ( node.parentNode ) {
+							node.parentNode.removeChild( node );
+						}
+					}
+				);
+
+				bindNoticeEvents( modifiedRowsNotice );
+
+				return modifiedRowsNotice;
+			}
+
+			modifiedRowsNotice = document.createElement( 'div' );
+			modifiedRowsNotice.className = 'i18nly-filter-feedback';
+			modifiedRowsNotice.hidden = true;
+
+			textNode = document.createElement( 'span' );
+			textNode.className = 'i18nly-filter-feedback-text';
+			modifiedRowsNotice.appendChild( textNode );
+
+			toggleLabel = document.createElement( 'label' );
+			toggleLabel.className = 'i18nly-filter-feedback-toggle';
+			toggleInput = document.createElement( 'input' );
+			toggleInput.type = 'checkbox';
+			toggleInput.className = 'i18nly-filter-feedback-only-modified';
+			toggleLabel.appendChild( toggleInput );
+			toggleLabel.appendChild( document.createTextNode( ' ' + getUiText( 'showOnlyModifiedRowsLabel', 'Show only these modified rows' ) ) );
+			modifiedRowsNotice.appendChild( toggleLabel );
+
+			applyButton = document.createElement( 'button' );
+			applyButton.type = 'button';
+			applyButton.className = 'button button-small i18nly-filter-feedback-apply';
+			applyButton.textContent = getUiText( 'applyFiltersAndCloseLabel', 'Apply filters and close' );
+			modifiedRowsNotice.appendChild( applyButton );
+
+			bindNoticeEvents( modifiedRowsNotice );
+
+			filtersContainer.parentNode.insertBefore( modifiedRowsNotice, filtersContainer.nextSibling );
+			return modifiedRowsNotice;
+		}
+
+		function hideModifiedRowsNotice() {
+			var notices = Array.prototype.slice.call( document.querySelectorAll( '.i18nly-filter-feedback' ) );
+
+			notices.forEach(
+				function (notice) {
+					notice.hidden = true;
+					if ( notice.parentNode ) {
+						notice.parentNode.removeChild( notice );
+					}
+				}
+			);
+
+			modifiedRowsNotice = null;
+		}
+
+		function showModifiedRowsNotice(hiddenRowsCount) {
+			var notice = getOrCreateModifiedRowsNotice();
+			var textNode;
+			var toggle;
+
+			if ( ! notice ) {
+				return;
+			}
+
+			textNode = notice.querySelector( '.i18nly-filter-feedback-text' );
+			toggle = notice.querySelector( '.i18nly-filter-feedback-only-modified' );
+
+			if ( textNode ) {
+				textNode.textContent = sprintf(
+					_n(
+						'%d modified row no longer matches active filters.',
+						'%d modified rows no longer match active filters.',
+						hiddenRowsCount,
+						'i18nly'
+					),
+					hiddenRowsCount
+				);
+			}
+
+			if ( toggle ) {
+				toggle.checked = showOnlyModifiedOutOfFilter;
+			}
+
+			notice.hidden = false;
+		}
+
+		function getCurrentFilterSelection() {
+			return {
+				entryStatuses: getSelectedFilterValues( entryStatusFilters ),
+				qualityStatuses: getSelectedFilterValues( qualityStatusFilters ),
+				provenances: getSelectedFilterValues( provenanceFilters )
+			};
 		}
 
 		function updateBulkActionState() {
@@ -646,29 +830,75 @@
 			);
 		}
 
-		function applyTableFilters() {
-			var selectedEntryStatuses = getSelectedFilterValues( entryStatusFilters );
-			var selectedQualityStatuses = getSelectedFilterValues( qualityStatusFilters );
-			var selectedProvenances = getSelectedFilterValues( provenanceFilters );
+		function rowMatchesCurrentFilters(row, selection) {
+			var entryStatus = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
+			var rowQualityTokens = getRowQualityTokens( row );
+			var rowProvenanceTokens = getRowProvenanceTokens( row );
+			var matchesEntryStatus = selection.entryStatuses.indexOf( entryStatus ) !== -1;
+			var matchesQualityStatus = rowQualityTokens.some(
+				function (token) {
+					return selection.qualityStatuses.indexOf( token ) !== -1;
+				}
+			);
+			var matchesProvenance = rowProvenanceTokens.some(
+				function (token) {
+					return selection.provenances.indexOf( token ) !== -1;
+				}
+			);
+
+			return matchesEntryStatus && matchesQualityStatus && matchesProvenance;
+		}
+
+		function refreshModifiedRowsOutOfFilter(selection) {
+			var currentRows = Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) );
+
+			if ( suppressModifiedRowsNotice ) {
+				hideModifiedRowsNotice();
+				return;
+			}
+
+			modifiedRowsTracked = uniqueRows( modifiedRowsTracked ).filter(
+				function (row) {
+					return currentRows.indexOf( row ) !== -1;
+				}
+			);
+
+			modifiedRowsOutOfFilter = modifiedRowsTracked.filter(
+				function (row) {
+					return ! rowMatchesCurrentFilters( row, selection );
+				}
+			);
+
+			if ( 0 === modifiedRowsOutOfFilter.length ) {
+				showOnlyModifiedOutOfFilter = false;
+				hideModifiedRowsNotice();
+				return;
+			}
+
+			showModifiedRowsNotice( modifiedRowsOutOfFilter.length );
+		}
+
+		function applyTableFilters(options) {
+			var behavior = options || {};
+			var strict = !! behavior.strict;
+			var selection = getCurrentFilterSelection();
+
+			refreshModifiedRowsOutOfFilter( selection );
 
 			Array.prototype.slice.call( container.querySelectorAll( 'tr.i18nly-translation-entry' ) ).forEach(
 				function (row) {
-					var entryStatus = ( row.getAttribute( 'data-entry-status' ) || '' ).toLowerCase().trim();
-					var rowQualityTokens = getRowQualityTokens( row );
-					var rowProvenanceTokens = getRowProvenanceTokens( row );
 					var checkbox = row.querySelector( '.i18nly-entry-checkbox' );
-					var matchesEntryStatus = selectedEntryStatuses.indexOf( entryStatus ) !== -1;
-					var matchesQualityStatus = rowQualityTokens.some(
-						function (token) {
-							return selectedQualityStatuses.indexOf( token ) !== -1;
-						}
-					);
-					var matchesProvenance = rowProvenanceTokens.some(
-						function (token) {
-							return selectedProvenances.indexOf( token ) !== -1;
-						}
-					);
-					var mustHide = ! matchesEntryStatus || ! matchesQualityStatus || ! matchesProvenance;
+					var matches = rowMatchesCurrentFilters( row, selection );
+					var isOutOfFilterModifiedRow = modifiedRowsOutOfFilter.indexOf( row ) !== -1;
+					var mustHide = ! matches;
+
+					if ( ! strict && isOutOfFilterModifiedRow ) {
+						mustHide = false;
+					}
+
+					if ( showOnlyModifiedOutOfFilter ) {
+						mustHide = ! isOutOfFilterModifiedRow;
+					}
 
 					row.style.display = mustHide ? 'none' : '';
 					row.setAttribute( 'aria-hidden', mustHide ? 'true' : 'false' );
@@ -680,6 +910,18 @@
 			);
 
 			syncSelectAllState();
+		}
+
+		function handleRowsUpdated(rows) {
+			var changedRows = uniqueRows( rows );
+
+			if ( 0 === changedRows.length ) {
+				return;
+			}
+
+			suppressModifiedRowsNotice = false;
+			modifiedRowsTracked = uniqueRows( modifiedRowsTracked.concat( changedRows ) );
+			applyTableFilters();
 		}
 
 		function copySourceToTranslation(row) {
@@ -727,6 +969,8 @@
 					applyQualityBadgeState( badge, '' );
 				}
 			);
+
+			handleRowsUpdated( [ row ] );
 		}
 
 		function translateWithAI(button) {
@@ -776,6 +1020,7 @@
 
 					ensureAiProvenanceBadgeForInput( input );
 					removeProvenanceBadgeForInput( input, 'manual' );
+					handleRowsUpdated( [ input.closest( 'tr' ) ] );
 				}
 			).catch(
 				function () {
@@ -1161,6 +1406,7 @@
 
 								ensureAiProvenanceBadgeForInput( matchedItem.input );
 								removeProvenanceBadgeForInput( matchedItem.input, 'manual' );
+								handleRowsUpdated( [ matchedItem.input.closest( 'tr' ) ] );
 							}
 						);
 
@@ -1259,6 +1505,19 @@
 			}
 		);
 
+		container.addEventListener(
+			'input',
+			function (event) {
+				var target = event && event.target ? event.target : null;
+
+				if ( ! target || ! target.classList || ! target.classList.contains( 'i18nly-translation-input' ) ) {
+					return;
+				}
+
+				handleRowsUpdated( [ target.closest( 'tr' ) ] );
+			}
+		);
+
 		bulkActionSelects.forEach(
 			function (select) {
 				select.addEventListener( 'change', updateBulkActionState );
@@ -1343,6 +1602,7 @@
 		Array.prototype.slice.call( container.querySelectorAll( '.i18nly-quality-toggle' ) ).forEach(
 			function (toggle) {
 				var badge = toggle.closest( '.i18nly-entry-status--quality' );
+				var row = toggle.closest( 'tr' );
 				var menu = badge ? badge.querySelector( '.i18nly-quality-menu' ) : null;
 				var options = menu ? Array.prototype.slice.call( menu.querySelectorAll( '.i18nly-quality-option' ) ) : [];
 				var inputId = badge ? ( badge.getAttribute( 'data-for' ) || '' ) : '';
@@ -1419,6 +1679,8 @@
 								if ( input && input.value && String( input.value ).trim() !== '' && typeof window.i18nlyRebuildEntriesPayload === 'function' ) {
 									window.i18nlyRebuildEntriesPayload();
 								}
+
+								handleRowsUpdated( [ row ] );
 							}
 						);
 

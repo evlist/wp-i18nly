@@ -209,7 +209,7 @@ class TranslationEditController {
 		wp_enqueue_script(
 			$script_handle,
 			(string) call_user_func( $this->script_url_provider ),
-			array(),
+			array( 'wp-i18n' ),
 			(string) $asset_version,
 			true
 		);

@@ -58,6 +58,10 @@ class EditScreenAssets {
 			'refreshNonce'      => wp_create_nonce( 'i18nly_get_translation_entries_table_' . (int) $translation_id ),
 			'tableContainerId'  => 'i18nly-source-entries-table',
 			'contentTypeHeader' => 'application/x-www-form-urlencoded; charset=UTF-8',
+			'i18n'              => array(
+				'showOnlyModifiedRowsLabel' => __( 'Show only these modified rows', 'i18nly' ),
+				'applyFiltersAndCloseLabel' => __( 'Apply filters and close', 'i18nly' ),
+			),
 		);
 	}
 }
