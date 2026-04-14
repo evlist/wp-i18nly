@@ -245,20 +245,6 @@ This slice is now implemented end-to-end in backend, payload handling, and UI re
 - A non-semantic placeholder quality badge is kept in the emptied line only for layout stability.
 - The placeholder token is converted back to empty status in the payload before persistence.
 
-### Asset cache-busting note
-
-- Plugin asset version was bumped to `0.1.1` to force admin JS/CSS refresh and avoid stale badge behavior from browser cache.
-
-## 11) Psalm Compatibility & Usage
-
-### Compatibility Issues
-
-Psalm is used for static analysis and dead code detection. Recent versions (Psalm 6.x) require PHP >=8.3.16, which may not match the devcontainer or CI environment. Additionally, global Composer installs can conflict with other tools (e.g., PHPUnit 11), making it impractical to install Psalm globally alongside other dependencies.
-
-### Installation in Temporary Directory
-
-To avoid conflicts, install Psalm in a dedicated directory (outside Composer global):
-
 ## 12) Translation Revision Strategy (Architecture Note)
 
 ### Problem statement
@@ -382,6 +368,18 @@ Current conclusion:
 - `.po` remains a valid snapshot/export format candidate;
 - it is not currently the preferred canonical storage format for live editing data;
 - it may still be useful as a revision snapshot format or interchange format later.
+
+
+## 11) Psalm Compatibility & Usage
+
+### Compatibility Issues
+
+Psalm is used for static analysis and dead code detection. Recent versions (Psalm 6.x) require PHP >=8.3.16, which may not match the devcontainer or CI environment. Additionally, global Composer installs can conflict with other tools (e.g., PHPUnit 11), making it impractical to install Psalm globally alongside other dependencies.
+
+### Installation in Temporary Directory
+
+To avoid conflicts, install Psalm in a dedicated directory (outside Composer global):
+
 
 ```bash
 mkdir -p /home/vscode/.local/psalm5
