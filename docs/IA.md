@@ -16,8 +16,8 @@ The long-term product goal is to hide low-level translation file complexity from
 - Plugin index guard: `plugin/index.php`
 - License text: `LICENSES/GPL-3.0-or-later.txt`
 - Setup/overview doc: `README.md`
-- Last commit: `bbc0ca2` — refactor statuses: persist provenance on save draft and fix quality/provenance badges
-- Test suite: **117 tests, 455 assertions**, all green (PHPUnit 11.5)
+- Last commit: `6f84f61` — Fixing structure incoherence in IA.md
+- Test suite: **124 tests, 531 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
 
 ### Namespace / file structure (current)
 
@@ -186,15 +186,13 @@ Items 1–4 from the previous list are now done or superseded. Current open item
    Add `get_translate_max_retry_attempts()` in `AiTranslationManager`, include it in `extend_script_config()`,
    add assertion in `AdminPageRenderTest`.
 
-2. **Plural forms data source strategy** (see section 17): implement generator script and runtime artifact.
+2. **Continue Slice 3 admin decomposition** until `WP_I18nly\Admin\AdminPage` is a thin facade.
 
-3. **Continue Slice 3 admin decomposition** until `WP_I18nly\Admin\AdminPage` is a thin facade.
-
-4. **Optional observability slice (recommended)**:
+3. **Optional observability slice (recommended)**:
 	Add lightweight telemetry counters for AI translation runtime (`429` count, current adaptive throttle delay,
 	average batch size, and average request duration) to make production behavior visible over time.
 
-5. Repeat with the same loop: implement → validate → commit.
+4. Repeat with the same loop: implement → validate → commit.
 
 ## 10) Implemented Slice: Quality/Provenance Decoupling (Current Behavior)
 
@@ -245,7 +243,7 @@ This slice is now implemented end-to-end in backend, payload handling, and UI re
 - A non-semantic placeholder quality badge is kept in the emptied line only for layout stability.
 - The placeholder token is converted back to empty status in the payload before persistence.
 
-## 12) Translation Revision Strategy (Architecture Note)
+## 11) Translation Revision Strategy (Architecture Note)
 
 ### Problem statement
 
@@ -370,7 +368,7 @@ Current conclusion:
 - it may still be useful as a revision snapshot format or interchange format later.
 
 
-## 11) Psalm Compatibility & Usage
+## 12) Psalm Compatibility & Usage
 
 ### Compatibility Issues
 
@@ -405,7 +403,7 @@ php /home/vscode/.local/psalm5/vendor/bin/psalm --config=.vscode/psalm-plugin.xm
 
 The config and stubs are located in `.vscode/`. Stubs are enriched to reduce false positives from WordPress dynamic hooks.
 
-## 12) POT Import Strategy Notes
+## 13) POT Import Strategy Notes
 
 Planned import logic must eventually reconcile three potential inputs:
 
@@ -427,7 +425,7 @@ Current MVP slice scope is intentionally narrower:
 	(for example `Language-Team`, `Last-Translator`, contact values),
 	while keeping template-specific placeholders when appropriate.
 
-## 12) Third-Party Dependency Governance Note
+## 14) Third-Party Dependency Governance Note
 
 Current project constraints include vendored third-party sources under `plugin/third-party/`
 that may be overwritten by update scripts.
@@ -441,7 +439,7 @@ For security/compliance fixes affecting vendored upstream code, prefer this dura
 
 Avoid relying on ad-hoc local edits in vendored code as a permanent strategy.
 
-## 13) Potential TODOs
+## 15) Potential TODOs
 
 ### Evaluate `wp_mock` for unit tests
 
@@ -459,7 +457,7 @@ Suggested spike scope:
 2. compare readability/maintenance cost vs current bootstrap stubs,
 3. decide whether to generalize progressively.
 
-## 14) PSR-4 Autoload Management
+## 16) PSR-4 Autoload Management
 
 The plugin runtime now uses a single Composer PSR-4 autoloader.
 
@@ -511,7 +509,7 @@ phpcs --standard=.vscode/phpcs.xml plugin/includes/WP_I18nly/<ClassName>.php
 - avoid reintroducing legacy `I18nly_*` class names for runtime code,
 - keep tests updated to require or reference the namespaced classes.
 
-## AI Translation Integration (API Key, DeepL-first)
+## 17) AI Translation Integration (API Key, DeepL-first)
 
 ### Product Decision
 
@@ -735,7 +733,7 @@ After DeepL V1 is stable, generalize by extracting a provider-agnostic
 interface from real usage points (not from speculation), then add a second
 provider to validate abstraction quality.
 
-## 15) Slice 3 Decomposition Direction (Admin)
+## 18) Slice 3 Decomposition Direction (Admin)
 
 Primary architectural concern identified after PSR-4 migration: current `AdminPage` and `AdminPageHelper` remain too broad and mix UI orchestration with technical utilities.
 
@@ -783,7 +781,7 @@ Still pending:
 
 This direction is intended to reduce static coupling, improve readability, and prepare upcoming admin features (including future settings pages).
 
-## 16) Build Namespace Direction (POT Pipeline)
+## 19) Build Namespace Direction (POT Pipeline)
 
 To avoid a catch-all `Utils` namespace, POT pipeline classes have been moved toward an explicit build-oriented namespace.
 
@@ -808,7 +806,19 @@ Migration pattern used successfully (small XP slices):
 4. commit,
 5. repeat.
 
-## 17) Plural Forms Data Source Strategy (Source Of Truth)
+## 20) Plural Forms Data Source Strategy (Source Of Truth)
+
+This strategy is now implemented end-to-end in the repository.
+
+### Current Implementation Status
+
+- canonical baseline snapshot lives in `scripts/plurals/upstream/glotpress-locales.php`,
+- project overrides and validation live in `scripts/plurals/`,
+- generator CLI is implemented in `scripts/generate-plural-specs.php`,
+- runtime artifacts are generated as PSR-4 PHP classes under `plugin/includes/WP_I18nly/Plurals/Languages/`,
+- generated supported locales are exposed through `WP_I18nly\Support\GeneratedTargetLocales`,
+- runtime resolution is handled by `LanguageSpecResolver` and consumed by `PluralFormsRegistry`,
+- PHPUnit coverage exists for plural registry behavior.
 
 ### Problem Statement
 
@@ -830,7 +840,7 @@ Reference direction agreed in session:
 - keep I18nly-specific UI choices (markers/tooltips/overrides) explicit,
 - document provenance and generation steps.
 
-### Preferred Architecture
+### Implemented Architecture
 
 Use a two-layer source model plus a build step:
 
@@ -927,22 +937,23 @@ This gives a deterministic review surface and prevents silent regressions from a
 - Current pinned snapshot in repository: `scripts/plurals/upstream/glotpress-locales.php`.
 - License for imported source data: **GPL-2.0-or-later**.
 
-## 18) Current Codebase Status (March 2026)
+## 21) Current Codebase Status (April 2026)
 
 ### Git state
 
 - Branch: `main`
-- Last commit: `401f9bf` — refactor ai batch/throttle: unify single+batch flow with adaptive shared delay
+- Last commit: `6f84f61` — Fixing structure incoherence in IA.md
 - Working tree: clean (no uncommitted changes)
 
 ### Test suite
 
-- **117 tests, 451 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
+- **124 tests, 531 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
 
 ### Recent commit history (most relevant)
 
 | Hash | Message |
 |------|---------|
+| `6f84f61` | Fixing structure incoherence in IA.md |
 | `401f9bf` | refactor ai batch/throttle: unify single+batch flow with adaptive shared delay |
 | `cb24671` | AI bulk translation: keep adaptive inter-batch throttle across retries |
 | `161f253` | AI bulk translation: DeepL policy defaults and robust 429 backoff |
@@ -951,14 +962,13 @@ This gives a deterministic review surface and prevents silent regressions from a
 | `a417f53` | Per-form status badges for plural translations |
 | `0c0813f` | Plural witnesses: prefer singular when examples include 1 |
 
-### Open items (not yet started)
+### Open items
 
 - **Expose `translateMaxRetryAttempts` via PHP filter** — add `get_translate_max_retry_attempts()` in `AiTranslationManager`, propagate to JS config, add test.
 - **AdminPage thin-facade remaining work** — `Slice 3` still technically open.
-- **Plural forms generator script** — strategy defined in section 17 but not yet implemented.
 - **Optional telemetry slice** — counters for `429`, adaptive throttle delay, request duration, and effective batch size.
 
-## 10) Session Safety Checklist for Future Runs
+## 22) Session Safety Checklist for Future Runs
 
 Before editing:
 
