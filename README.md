@@ -6,12 +6,12 @@
 
 # ⚠️ I18nly (Work In Progress)
 
-**I18nly** is a workflow management tool for WordPress internationalization (i18n). It centralizes and automates the detection, extraction, synchronization, and compilation of translation strings.
+**I18nly** is a WordPress plugin focused on translation workflow management. It aims to let users work with translations as first-class content objects while keeping compatibility with WordPress i18n tooling and file formats.
 
 ### 🎯 Objective
-The primary goal of **I18nly** is to abstract the technical complexity of the standard WordPress translation pipeline. 
+The primary goal of **I18nly** is to abstract the technical complexity of the standard WordPress translation pipeline.
 
-The traditional workflow—moving from **Source Code** to **.pot**, then **.po**, and finally to compiled **.mo** and **.json** files—is handled automatically. From a user or translator's perspective, the focus remains on the content. The management of specific file formats and naming conventions (such as MD5 hashes for JavaScript translations) is managed entirely by the plugin's internal logic.
+The traditional workflow moving from source code to `.pot`, then to translated entries and finally to compiled `.mo` and WordPress JSON artifacts, is intended to stay behind the scenes. From a user or translator perspective, the focus should remain on the translation itself rather than on gettext internals, file naming conventions, or build steps.
 
 ### 🧬 Origins
 This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp-i18n-404-tools)**.
@@ -20,29 +20,41 @@ This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp
 > **On the name:** The "404" in the previous project referred to the "missing tools" in the WordPress ecosystem's i18n dashboard (the missing link), rather than missing files or server errors. **I18nly** builds upon that foundation, shifting from a diagnostic utility to a comprehensive workflow agent.
 
 ### 🛠️ Technical Features
-* **System Independence:** Leverages `wp-cli/i18n-command` PHP classes natively. It does not require `shell_exec` or a global WP-CLI installation.
-* **State Auditing:** Provides an immediate overview of the synchronization state between source code and localized files.
-* **Automated Compilation:** Handles the generation of binary (`.mo`) and JavaScript-ready (`.json`) files seamlessly.
-* **AI Integration:** Optional support for LLM APIs to provide context-aware translation suggestions.
+* **WordPress-native admin workflow:** translations are managed in the admin as dedicated entities, with list, add, and edit screens.
+* **POT import pipeline:** source strings can be extracted and persisted for editing inside the plugin.
+* **Plural-aware editing:** plural form metadata is resolved from generated locale specs derived from GlotPress data.
+* **DeepL integration:** optional API key based AI translation is available for single items and batch translation.
+* **Adaptive throttling:** HTTP 429 handling includes shared backoff and `Retry-After` support for sequential batch execution.
+* **No shell dependency in product logic:** runtime behavior relies on PHP integrations rather than `shell_exec`.
 
 ### 📂 Repository Structure
 * `plugin/`: The distributable WordPress plugin folder.
-* `src/`: PSR-4 compliant business logic.
-* **Dual Composer Setup:**
-    * **Root:** Development tools (PHPCS, static analysis).
-    * **Plugin-level:** Production dependencies (WP-CLI i18n components).
+* `plugin/includes/WP_I18nly/`: PSR-4 runtime code.
+* `tests/phpunit/`: PHPUnit coverage for the current implementation.
+* `scripts/`: build and generation scripts, including plural spec generation.
+* `docs/`: project notes and implementation context.
 
 ### 🚀 Current Implementation Status
 The project is in active development.
 
-Core plugin foundations are available, and the internal architecture is being built incrementally to support the complete i18n workflow.
+Current implemented slices include:
 
-At this stage, interfaces, internal services, and workflows may evolve between iterations.
+* translation admin pages and list table,
+* source entry import and storage,
+* plural form registry backed by generated locale classes,
+* DeepL settings and connection testing,
+* single-item and batch AI translation flows,
+* quality and provenance tracking for translated entries.
+
+The architecture is still evolving, especially around admin decomposition and later build/revision flows.
 
 ### 🔧 Local Activation (Development)
 1. Copy or symlink the `plugin/` directory into your WordPress `wp-content/plugins/` directory.
 2. Activate **I18nly** in the WordPress admin Plugins screen.
-3. Open the plugin entries from the WordPress admin sidebar to explore the currently available screens.
+3. Open the top-level `Translations` menu to access the translation list, creation flow, and edit screen, then use `Settings > Translations` for the DeepL settings page.
+
+### ✅ Validation Status
+The current PHPUnit suite is green: 124 tests, 531 assertions.
 
 ---
 *I18nly — Because translating a plugin in WordPress should be as simple as writing a blog post.*

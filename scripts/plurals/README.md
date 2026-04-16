@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
-# Plural Specs Generation (Scaffold)
+# Plural Specs Generation
 
-This folder contains the future data pipeline for plural specs.
+This folder contains the source pipeline for plural specs used by the plugin runtime.
 
 ## Goals
 
@@ -15,19 +15,24 @@ This folder contains the future data pipeline for plural specs.
 
 ## Current Scope
 
-This is an initial scaffold only:
+Current repository inputs and generation steps:
 
 - upstream pinned source snapshot: `upstream/glotpress-locales.php`
 - override interface: `class-plural-spec-overrides.php`
 - default override implementation: `class-project-plural-spec-overrides.php`
 - contract validator: `class-spec-contract-validator.php`
 - generator CLI: `../generate-plural-specs.php`
+- generated runtime locale classes: `plugin/includes/WP_I18nly/Plurals/Languages/`
+- generated supported locale list: `plugin/includes/WP_I18nly/Support/GeneratedTargetLocales.php`
 
 Default input is the pinned GlotPress source snapshot:
 
 - `scripts/plurals/upstream/glotpress-locales.php`
 
-No runtime plugin file is modified in this slice.
+The generated artifacts are consumed at runtime by the plural resolution layer:
+
+- `WP_I18nly\Plurals\LanguageSpecResolver`
+- `WP_I18nly\Plurals\PluralFormsRegistry`
 
 ## Why GlotPress, Not CLDR?
 
@@ -79,7 +84,7 @@ Top-level object:
 - values: objects with:
   - `nplurals` (int >= 1)
   - `plural_expression` (string)
-  - `forms` (map<string, string>)
+  - `forms` (list of form descriptors)
 
 Example:
 
@@ -88,13 +93,24 @@ Example:
   "en_US": {
     "nplurals": 2,
     "plural_expression": "(n != 1)",
-    "forms": {
-      "1": "One",
-      "n": "Other than one"
-    }
+    "forms": [
+      {
+        "label": "a",
+        "tooltip": "One",
+        "examples": [1]
+      },
+      {
+        "label": "b",
+        "tooltip": "Other than one",
+        "examples": [0, 2]
+      }
+    ]
   }
 }
 ```
+
+The runtime registry normalizes these generated specs to UI-oriented form metadata
+including markers, labels, tooltips, and representative examples.
 
 ## Generator Usage
 
@@ -174,7 +190,6 @@ Therefore, this pipeline uses GlotPress locale definitions as baseline source an
 
 ## Notes
 
-- `ProjectPluralSpecOverrides` is intentionally conservative in this scaffold.
+- `ProjectPluralSpecOverrides` is intentionally conservative.
 - Override matching receives canonical locales (example: `en_US`, `pt_BR`, `ja`).
-- Add project rules there as the next step.
 - Keep overrides deterministic and side-effect free.
