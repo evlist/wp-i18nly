@@ -77,6 +77,13 @@ class TranslationAiAjaxHandler {
 	private $post_batch_success_callback;
 
 	/**
+	 * Optional callback deciding whether translation requests are allowed.
+	 *
+	 * @var callable|null
+	 */
+	private $can_translate_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param callable      $get_translation_callback Callback returning translation row for one ID.
@@ -87,6 +94,7 @@ class TranslationAiAjaxHandler {
 	 * @param callable|null $translate_batch_callable Optional batch translation callable override.
 	 * @param callable|null $rate_limit_callback Optional callback adjusting shared delay after 429.
 	 * @param callable|null $post_batch_success_callback Optional callback triggered after a successful batch.
+	 * @param callable|null $can_translate_callback Optional callback deciding whether new translations can be sent.
 	 */
 	public function __construct(
 		callable $get_translation_callback,
@@ -96,7 +104,8 @@ class TranslationAiAjaxHandler {
 		$throttle_wait_callback = null,
 		$translate_batch_callable = null,
 		$rate_limit_callback = null,
-		$post_batch_success_callback = null
+		$post_batch_success_callback = null,
+		$can_translate_callback = null
 	) {
 		$single_translate_callable = $translate_callable;
 
@@ -153,6 +162,7 @@ class TranslationAiAjaxHandler {
 		$this->throttle_wait_callback   = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
 		$this->rate_limit_callback      = is_callable( $rate_limit_callback ) ? $rate_limit_callback : null;
 		$this->post_batch_success_callback = is_callable( $post_batch_success_callback ) ? $post_batch_success_callback : null;
+		$this->can_translate_callback   = is_callable( $can_translate_callback ) ? $can_translate_callback : null;
 	}
 
 	/**
@@ -215,6 +225,28 @@ class TranslationAiAjaxHandler {
 
 		if ( '' === $api_key ) {
 			wp_send_json_error( array( 'message' => 'No DeepL API key configured.' ), 400 );
+			return;
+		}
+
+		$guard_result = $this->guard_translation_allowed();
+
+		if ( ! empty( $guard_result['blocked'] ) ) {
+			$error_data = array(
+				'message' => isset( $guard_result['message'] ) ? (string) $guard_result['message'] : 'Translation is currently blocked.',
+			);
+
+			if ( isset( $guard_result['settings_url'] ) ) {
+				$error_data['settings_url'] = (string) $guard_result['settings_url'];
+			}
+
+			if ( isset( $guard_result['settings_label'] ) ) {
+				$error_data['settings_label'] = (string) $guard_result['settings_label'];
+			}
+
+			wp_send_json_error(
+				$error_data,
+				isset( $guard_result['status'] ) ? (int) $guard_result['status'] : 403
+			);
 			return;
 		}
 
@@ -334,6 +366,28 @@ class TranslationAiAjaxHandler {
 			return;
 		}
 
+		$guard_result = $this->guard_translation_allowed();
+
+		if ( ! empty( $guard_result['blocked'] ) ) {
+			$error_data = array(
+				'message' => isset( $guard_result['message'] ) ? (string) $guard_result['message'] : 'Translation is currently blocked.',
+			);
+
+			if ( isset( $guard_result['settings_url'] ) ) {
+				$error_data['settings_url'] = (string) $guard_result['settings_url'];
+			}
+
+			if ( isset( $guard_result['settings_label'] ) ) {
+				$error_data['settings_label'] = (string) $guard_result['settings_label'];
+			}
+
+			wp_send_json_error(
+				$error_data,
+				isset( $guard_result['status'] ) ? (int) $guard_result['status'] : 403
+			);
+			return;
+		}
+
 		$target_locale = (string) $translation['target_language'];
 		$batch_result  = $this->translate_items_batch( $translation_id, $target_locale, $items );
 
@@ -383,6 +437,45 @@ class TranslationAiAjaxHandler {
 		}
 
 		wp_send_json_success( $response_data );
+	}
+
+	/**
+	 * Evaluates whether new translation requests can be sent.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function guard_translation_allowed() {
+		$guard_callback = $this->can_translate_callback;
+
+		if ( ! is_callable( $guard_callback ) ) {
+			return array(
+				'blocked' => false,
+			);
+		}
+
+		try {
+			$result = call_user_func( $guard_callback );
+		} catch ( \Throwable $throwable ) {
+			unset( $throwable );
+
+			return array(
+				'blocked' => false,
+			);
+		}
+
+		if ( ! is_array( $result ) ) {
+			return array(
+				'blocked' => false,
+			);
+		}
+
+		return array(
+			'blocked' => ! empty( $result['blocked'] ),
+			'message' => isset( $result['message'] ) ? (string) $result['message'] : '',
+			'status'  => isset( $result['status'] ) ? (int) $result['status'] : 403,
+			'settings_url' => isset( $result['settings_url'] ) ? (string) $result['settings_url'] : '',
+			'settings_label' => isset( $result['settings_label'] ) ? (string) $result['settings_label'] : '',
+		);
 	}
 
 	/**

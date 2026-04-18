@@ -92,6 +92,35 @@ class AiTranslationManager {
 					'usage_status' => is_array( $status ) ? $status : array(),
 					'usage_html'   => $this->render_deepl_usage_gauge_html( is_array( $status ) ? $status : array() ),
 				);
+			},
+			function () {
+				$usage_provider = $this->get_deepl_usage_status_provider();
+				$status         = $usage_provider->get_status();
+				$percent_used   = isset( $status['percent_used'] ) ? (int) $status['percent_used'] : 0;
+				$reserved_chars = isset( $status['reserved_characters'] ) ? (int) $status['reserved_characters'] : 0;
+				$settings_url   = admin_url( 'options-general.php?page=i18nly-translations-settings' );
+
+				if ( $percent_used > 100 ) {
+					$message = __( 'DeepL monthly usage is above 100%. Please wait for quota reset before sending new translations.', 'i18nly' );
+					$response = array(
+						'blocked' => true,
+						'status'  => 403,
+						'message' => $message,
+					);
+
+					if ( $reserved_chars > 0 ) {
+						$message .= ' ' . __( 'You can also reduce the reserved monthly characters in Settings > Translations.', 'i18nly' );
+						$response['message'] = $message;
+						$response['settings_url'] = $settings_url;
+						$response['settings_label'] = __( 'Settings > Translations', 'i18nly' );
+					}
+
+					return $response;
+				}
+
+				return array(
+					'blocked' => false,
+				);
 			}
 		);
 	}

@@ -84,6 +84,153 @@
 		);
 	}
 
+	function getAjaxErrorMessage(payload, fallbackMessage) {
+		var fallback = String( fallbackMessage || '' ).trim();
+
+		if ( ! payload || 'object' !== typeof payload ) {
+			return fallback;
+		}
+
+		if ( payload.data && 'string' === typeof payload.data.message && '' !== payload.data.message.trim() ) {
+			return payload.data.message.trim();
+		}
+
+		if ( 'string' === typeof payload.message && '' !== payload.message.trim() ) {
+			return payload.message.trim();
+		}
+
+		return fallback;
+	}
+
+	function getAjaxSettingsLinkMeta(payload) {
+		var data = payload && payload.data ? payload.data : null;
+		var url = data && 'string' === typeof data.settings_url ? data.settings_url.trim() : '';
+		var label = data && 'string' === typeof data.settings_label ? data.settings_label.trim() : '';
+
+		if ( '' === url ) {
+			return null;
+		}
+
+		return {
+			url: url,
+			label: '' !== label ? label : 'Settings > Translations'
+		};
+	}
+
+	function appendSettingsLink(container, linkMeta) {
+		var paragraph;
+		var anchor;
+
+		if ( ! container || ! linkMeta || ! linkMeta.url ) {
+			return;
+		}
+
+		paragraph = document.createElement( 'p' );
+		paragraph.className = 'i18nly-ai-error-help';
+
+		anchor = document.createElement( 'a' );
+		anchor.href = linkMeta.url;
+		anchor.textContent = String( linkMeta.label || 'Settings > Translations' );
+		paragraph.appendChild( anchor );
+
+		container.appendChild( paragraph );
+	}
+
+	function showAiTranslationErrorDialog(message, settingsLinkMeta) {
+		var normalizedMessage = String( message || '' ).trim();
+		var modal = document.getElementById( 'i18nly-ai-error-modal' );
+		var overlay;
+		var content;
+		var title;
+		var messageNode;
+		var help;
+		var actions;
+		var closeButton;
+
+		if ( '' === normalizedMessage ) {
+			return false;
+		}
+
+		if ( ! modal ) {
+			modal = document.createElement( 'div' );
+			modal.id = 'i18nly-ai-error-modal';
+			modal.setAttribute( 'role', 'dialog' );
+			modal.setAttribute( 'aria-modal', 'true' );
+			modal.setAttribute( 'aria-labelledby', 'i18nly-ai-error-title' );
+
+			overlay = document.createElement( 'div' );
+			overlay.className = 'i18nly-progress-overlay';
+
+			content = document.createElement( 'div' );
+			content.className = 'i18nly-progress-content';
+
+			title = document.createElement( 'h2' );
+			title.id = 'i18nly-ai-error-title';
+			title.className = 'i18nly-progress-title';
+			title.textContent = 'AI Translation Error';
+
+			messageNode = document.createElement( 'p' );
+			messageNode.id = 'i18nly-ai-error-message';
+			messageNode.className = 'i18nly-progress-text';
+
+			help = document.createElement( 'div' );
+			help.id = 'i18nly-ai-error-help';
+			help.className = 'i18nly-progress-help';
+
+			actions = document.createElement( 'div' );
+			actions.className = 'i18nly-progress-actions';
+
+			closeButton = document.createElement( 'button' );
+			closeButton.type = 'button';
+			closeButton.className = 'button button-primary';
+			closeButton.textContent = 'Close';
+			closeButton.addEventListener(
+				'click',
+				function () {
+					modal.remove();
+				}
+			);
+
+			actions.appendChild( closeButton );
+			content.appendChild( title );
+			content.appendChild( messageNode );
+			content.appendChild( help );
+			content.appendChild( actions );
+			overlay.appendChild( content );
+			modal.appendChild( overlay );
+			document.body.appendChild( modal );
+		}
+
+		messageNode = document.getElementById( 'i18nly-ai-error-message' );
+		help = document.getElementById( 'i18nly-ai-error-help' );
+
+		if ( messageNode ) {
+			messageNode.textContent = normalizedMessage;
+		}
+
+		if ( help ) {
+			help.innerHTML = '';
+			appendSettingsLink( help, settingsLinkMeta );
+		}
+
+		return true;
+	}
+
+	function notifyAiTranslationError(message, settingsLinkMeta) {
+		var normalizedMessage = String( message || '' ).trim();
+		var dialogShown;
+
+		if ( '' === normalizedMessage ) {
+			return;
+		}
+
+		dialogShown = showAiTranslationErrorDialog( normalizedMessage, settingsLinkMeta );
+
+		if ( ! dialogShown ) {
+			window.alert( normalizedMessage );
+		}
+	}
+
 	function wait(delayMs) {
 		return new Promise(
 			function (resolve) {
@@ -1120,6 +1267,10 @@
 					button.removeAttribute( 'aria-busy' );
 
 					if ( ! payload || ! payload.success || ! payload.data ) {
+						notifyAiTranslationError(
+							getAjaxErrorMessage( payload, 'Translation failed.' ),
+							getAjaxSettingsLinkMeta( payload )
+						);
 						return;
 					}
 
@@ -1138,6 +1289,7 @@
 				function () {
 					button.disabled = false;
 					button.removeAttribute( 'aria-busy' );
+					notifyAiTranslationError( 'Translation failed because the request could not be completed.' );
 				}
 			);
 		}
@@ -1189,8 +1341,8 @@
 				var content = document.createElement( 'div' );
 				var title = document.createElement( 'h2' );
 				var progressText = document.createElement( 'p' );
-				var progressBar = document.createElement( 'div' );
-				var progressFill = document.createElement( 'div' );
+					var progressBar = document.createElement( 'div' );
+					var progressFill = document.createElement( 'div' );
 				var actions = document.createElement( 'div' );
 				var cancelButton = document.createElement( 'button' );
 				var closeButton = document.createElement( 'button' );
@@ -1298,28 +1450,14 @@
 				window.setTimeout( closeModal, 150 );
 			}
 
-			function showCloseAction() {
-				if ( ! progressElements ) {
-					return;
-				}
-
-				if ( progressElements.cancelButton ) {
-					progressElements.cancelButton.style.display = 'none';
-				}
-
-				if ( progressElements.closeButton ) {
-					progressElements.closeButton.style.display = 'inline-flex';
-				}
-			}
-
 			function finishProgress() {
 				updateProgress( batches.length, batches.length, 'Translation completed.' );
 				window.setTimeout( closeModal, 600 );
 			}
 
-			function failProgress(message) {
-				updateProgress( completedBatches, batches.length, message );
-				showCloseAction();
+			function failProgress(message, settingsLinkMeta) {
+				closeModal();
+				notifyAiTranslationError( message, settingsLinkMeta );
 			}
 
 			function createRequestController() {
@@ -1488,7 +1626,10 @@
 						}
 
 						if ( ! payload || ! payload.success || ! payload.data || ! Array.isArray( payload.data.results ) ) {
-							failProgress( 'Translation stopped because the batch response was invalid.' );
+							failProgress(
+								getAjaxErrorMessage( payload, 'Translation stopped because the batch response was invalid.' ),
+								getAjaxSettingsLinkMeta( payload )
+							);
 							return;
 						}
 

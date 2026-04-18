@@ -115,6 +115,51 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Translation is blocked before provider call when guard denies new requests.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entry_blocks_request_when_guard_denies_translation() {
+		$_POST = $this->valid_post( 7 );
+
+		$translate_calls = 0;
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () use ( &$translate_calls ) {
+				++$translate_calls;
+
+				return array(
+					'success'      => true,
+					'translation'  => 'Bonjour monde',
+					'review_token' => 'draft_ai',
+				);
+			},
+			null,
+			null,
+			null,
+			null,
+			null,
+			function () {
+				return array(
+					'blocked' => true,
+					'status'  => 403,
+					'message' => 'DeepL monthly usage is above 100%.',
+				);
+			}
+		);
+
+		$handler->handle_translate_entry();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 403, $response['status'] );
+		$this->assertSame( 0, $translate_calls );
+		$this->assertStringContainsString( 'above 100%', strtolower( (string) $response['data']['message'] ) );
+	}
+
+	/**
 	 * Successful translation returns translation text and review token.
 	 *
 	 * @return void
@@ -580,6 +625,68 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Batch translation is blocked before provider call when guard denies new requests.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_blocks_request_when_guard_denies_translation() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$translate_calls = 0;
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			null,
+			null,
+			null,
+			function () use ( &$translate_calls ) {
+				++$translate_calls;
+
+				return array(
+					'success' => true,
+					'items'   => array(
+						array(
+							'success'      => true,
+							'translation'  => 'Bonjour',
+							'review_token' => 'ai_draft_ok',
+						),
+					),
+				);
+			},
+			null,
+			null,
+			function () {
+				return array(
+					'blocked' => true,
+					'status'  => 403,
+					'message' => 'DeepL monthly usage is above 100%.',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 403, $response['status'] );
+		$this->assertSame( 0, $translate_calls );
+		$this->assertStringContainsString( 'above 100%', strtolower( (string) $response['data']['message'] ) );
+	}
+
+	/**
 	 * Invokes optional post-batch callback after successful provider batch.
 	 *
 	 * @return void
@@ -679,9 +786,10 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	 * @param callable|null $translate_batch Override for batch translate callable.
 	 * @param callable|null $rate_limit Override for rate-limit callback.
 	 * @param callable|null $post_batch_success Override for post-batch success callback.
+	 * @param callable|null $can_translate Override for translation guard callback.
 	 * @return \WP_I18nly\AI\TranslationAiAjaxHandler
 	 */
-	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null, $translate_batch = null, $rate_limit = null, $post_batch_success = null ) {
+	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null, $translate_batch = null, $rate_limit = null, $post_batch_success = null, $can_translate = null ) {
 		$get_translation = $get_translation ?? function () {
 			return array(
 				'source_slug'     => 'myplugin/myplugin.php',
@@ -701,6 +809,6 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 			);
 		};
 
-		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait, $translate_batch, $rate_limit, $post_batch_success );
+		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait, $translate_batch, $rate_limit, $post_batch_success, $can_translate );
 	}
 }
