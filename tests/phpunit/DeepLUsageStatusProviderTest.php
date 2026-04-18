@@ -57,6 +57,38 @@ class DeepLUsageStatusProviderTest extends TestCase {
 	}
 
 	/**
+	 * Deducts reserved monthly quota from DeepL character limit.
+	 *
+	 * @return void
+	 */
+	public function test_get_status_deducts_reserved_characters_from_limit() {
+		$provider = new DeepLUsageStatusProvider(
+			function () {
+				return 'pro-key';
+			},
+			function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"character_count":700,"character_limit":1000}',
+				);
+			},
+			function () {
+				return 250;
+			}
+		);
+
+		$status = $provider->get_status( true );
+
+		$this->assertTrue( $status['success'] );
+		$this->assertSame( 700, $status['used_characters'] );
+		$this->assertSame( 1000, $status['raw_character_limit'] );
+		$this->assertSame( 250, $status['reserved_characters'] );
+		$this->assertSame( 750, $status['character_limit'] );
+		$this->assertSame( 93, $status['percent_used'] );
+		$this->assertSame( 'critical', $status['state'] );
+	}
+
+	/**
 	 * Falls back to stale cached values when refresh fails.
 	 *
 	 * @return void

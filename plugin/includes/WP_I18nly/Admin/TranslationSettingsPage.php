@@ -59,6 +59,14 @@ class TranslationSettingsPage {
 			self::PAGE_SLUG,
 			'i18nly_deepl_section'
 		);
+
+		add_settings_field(
+			'i18nly_deepl_reserved_characters',
+			esc_html__( 'Reserved monthly quota', 'i18nly' ),
+			array( $this, 'render_deepl_reserved_characters_field' ),
+			self::PAGE_SLUG,
+			'i18nly_deepl_section'
+		);
 	}
 
 	/**
@@ -81,10 +89,12 @@ class TranslationSettingsPage {
 	 * Sanitizes settings before persistence.
 	 *
 	 * @param array<string, mixed> $raw Raw submitted settings.
-	 * @return array<string, string>
+	 * @return array<string, mixed>
 	 */
 	public function sanitize_settings( $raw ) {
 		$raw = is_array( $raw ) ? $raw : array();
+		$previous_api_key = $this->get_saved_api_key();
+		$previous_reserved = $this->get_saved_reserved_characters();
 
 		$api_key = isset( $raw['deepl_api_key'] )
 			? sanitize_text_field( (string) $raw['deepl_api_key'] )
@@ -94,8 +104,17 @@ class TranslationSettingsPage {
 			$api_key = $this->get_saved_api_key();
 		}
 
+		$reserved_characters = isset( $raw['deepl_reserved_characters'] )
+			? max( 0, (int) $raw['deepl_reserved_characters'] )
+			: $this->get_saved_reserved_characters();
+
+		if ( $api_key !== $previous_api_key || $reserved_characters !== $previous_reserved ) {
+			update_option( 'i18nly_deepl_usage_status_cache', array() );
+		}
+
 		return array(
-			'deepl_api_key' => $api_key,
+			'deepl_api_key'            => $api_key,
+			'deepl_reserved_characters' => $reserved_characters,
 		);
 	}
 
@@ -276,9 +295,24 @@ class TranslationSettingsPage {
 	}
 
 	/**
+	 * Renders reserved monthly quota input.
+	 *
+	 * @return void
+	 */
+	public function render_deepl_reserved_characters_field() {
+		$settings = $this->get_settings();
+		$value    = isset( $settings['deepl_reserved_characters'] )
+			? max( 0, (int) $settings['deepl_reserved_characters'] )
+			: 0;
+
+		echo '<input type="number" id="i18nly-deepl-reserved-characters" name="' . esc_attr( self::OPTION_NAME ) . '[deepl_reserved_characters]" value="' . esc_attr( (string) $value ) . '" data-initial-value="' . esc_attr( (string) $value ) . '" min="0" step="1" class="regular-text" style="max-width:180px;" />';
+		echo '<p class="description">' . esc_html__( 'Characters reserved for other DeepL usages. This value is deducted from the monthly limit used by I18nly.', 'i18nly' ) . '</p>';
+	}
+
+	/**
 	 * Returns settings array from WordPress options.
 	 *
-	 * @return array<string, string>
+	 * @return array<string, mixed>
 	 */
 	private function get_settings() {
 		$settings = get_option( self::OPTION_NAME, array() );
@@ -306,6 +340,21 @@ class TranslationSettingsPage {
 	}
 
 	/**
+	 * Returns saved reserved monthly characters.
+	 *
+	 * @return int
+	 */
+	public function get_saved_reserved_characters() {
+		$settings = get_option( self::OPTION_NAME, array() );
+
+		if ( ! is_array( $settings ) || ! isset( $settings['deepl_reserved_characters'] ) ) {
+			return 0;
+		}
+
+		return max( 0, (int) $settings['deepl_reserved_characters'] );
+	}
+
+	/**
 	 * Disables save button when a key exists and field is unchanged.
 	 *
 	 * @return void
@@ -314,17 +363,21 @@ class TranslationSettingsPage {
 		echo '<script>';
 		echo '( function() {';
 		echo 'var apiKeyInput = document.getElementById( "i18nly-deepl-api-key" );';
+		echo 'var reservedInput = document.getElementById( "i18nly-deepl-reserved-characters" );';
 		echo 'var saveButton = document.getElementById( "i18nly_save_changes" );';
 		echo 'if ( ! apiKeyInput || ! saveButton ) { return; }';
 		echo 'var hasSavedKey = apiKeyInput.getAttribute( "data-has-saved-key" ) === "1";';
+		echo 'var initialReservedValue = reservedInput ? String( reservedInput.getAttribute( "data-initial-value" ) || "0" ).trim() : "0";';
 		echo 'var toggleState = function() {';
+		echo 'var currentReservedValue = reservedInput ? String( reservedInput.value || "" ).trim() : initialReservedValue;';
+		echo 'var hasReservedChange = currentReservedValue !== initialReservedValue;';
 		echo 'if ( ! hasSavedKey ) {';
 		echo 'saveButton.disabled = false;';
 		echo 'saveButton.removeAttribute( "aria-disabled" );';
 		echo 'return;';
 		echo '}';
 		echo 'var hasNewValue = apiKeyInput.value.trim() !== "";';
-		echo 'saveButton.disabled = ! hasNewValue;';
+		echo 'saveButton.disabled = ! hasNewValue && ! hasReservedChange;';
 		echo 'if ( saveButton.disabled ) {';
 		echo 'saveButton.setAttribute( "aria-disabled", "true" );';
 		echo '} else {';
@@ -332,6 +385,10 @@ class TranslationSettingsPage {
 		echo '}';
 		echo '};';
 		echo 'apiKeyInput.addEventListener( "input", toggleState );';
+		echo 'if ( reservedInput ) {';
+		echo 'reservedInput.addEventListener( "input", toggleState );';
+		echo 'reservedInput.addEventListener( "change", toggleState );';
+		echo '}';
 		echo 'toggleState();';
 		echo '}() );';
 		echo '</script>';
@@ -380,6 +437,10 @@ class TranslationSettingsPage {
 		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
 			function () {
 				return $this->get_saved_api_key();
+			},
+			null,
+			function () {
+				return $this->get_saved_reserved_characters();
 			}
 		);
 	}

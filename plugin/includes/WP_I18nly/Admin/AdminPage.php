@@ -662,10 +662,15 @@ class AdminPage {
 	 * @return \WP_I18nly\AI\DeepLUsageStatusProvider
 	 */
 	protected function get_deepl_usage_status_provider() {
+		$settings_page = new TranslationSettingsPage();
+
 		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
-			function () {
-				$settings_page = new TranslationSettingsPage();
+			function () use ( $settings_page ) {
 				return $settings_page->get_saved_api_key();
+			},
+			null,
+			function () use ( $settings_page ) {
+				return $settings_page->get_saved_reserved_characters();
 			}
 		);
 	}

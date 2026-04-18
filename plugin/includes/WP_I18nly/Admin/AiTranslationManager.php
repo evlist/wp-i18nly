@@ -118,9 +118,15 @@ class AiTranslationManager {
 	 * @return \WP_I18nly\AI\DeepLUsageStatusProvider
 	 */
 	private function get_deepl_usage_status_provider() {
+		$settings = new TranslationSettingsPage();
+
 		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
 			function () {
 				return $this->get_api_key();
+			},
+			null,
+			function () use ( $settings ) {
+				return $settings->get_saved_reserved_characters();
 			}
 		);
 	}
