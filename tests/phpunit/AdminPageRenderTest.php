@@ -303,6 +303,48 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
+	 * Renders DeepL usage gauge in translation edit meta box.
+	 *
+	 * @return void
+	 */
+	public function test_render_deepl_usage_meta_box_outputs_usage_gauge() {
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
+			/**
+			 * Returns deterministic status for usage gauge rendering.
+			 *
+			 * @return object
+			 */
+			protected function get_deepl_usage_status_provider() {
+				return new class() {
+					/**
+					 * @return array<string, mixed>
+					 */
+					public function get_status() {
+						return array(
+							'success'         => true,
+							'used_characters' => 250,
+							'character_limit' => 1000,
+							'percent_used'    => 25,
+							'state'           => 'ok',
+							'fetched_at'      => 1713412800,
+							'is_stale'        => false,
+							'message'         => '',
+						);
+					}
+				};
+			}
+		};
+
+		ob_start();
+		$page->render_deepl_usage_meta_box();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'DeepL monthly usage', $html );
+		$this->assertStringContainsString( 'role="progressbar"', $html );
+		$this->assertStringContainsString( 'width:25%', $html );
+	}
+
+	/**
 	 * Sanitizes search filter query values without stripping spaces and punctuation.
 	 *
 	 * @return void

@@ -82,6 +82,45 @@ class AiTranslationManager {
 				);
 
 				return $throttle->increase_adaptive_delay( (int) $retry_after_ms );
+			},
+			function () {
+				$usage_provider = $this->get_deepl_usage_status_provider();
+				$usage_provider->invalidate_cache();
+				$status = $usage_provider->refresh_status();
+
+				return array(
+					'usage_status' => is_array( $status ) ? $status : array(),
+					'usage_html'   => $this->render_deepl_usage_gauge_html( is_array( $status ) ? $status : array() ),
+				);
+			}
+		);
+	}
+
+	/**
+	 * Renders DeepL usage gauge HTML.
+	 *
+	 * @param array<string, mixed> $status Usage status payload.
+	 * @return string
+	 */
+	private function render_deepl_usage_gauge_html( array $status ) {
+		$renderer = new \WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer();
+
+		ob_start();
+		$renderer->render( $status, esc_html__( 'DeepL monthly usage', 'i18nly' ) );
+		$html = ob_get_clean();
+
+		return is_string( $html ) ? $html : '';
+	}
+
+	/**
+	 * Returns DeepL usage status provider.
+	 *
+	 * @return \WP_I18nly\AI\DeepLUsageStatusProvider
+	 */
+	private function get_deepl_usage_status_provider() {
+		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
+			function () {
+				return $this->get_api_key();
 			}
 		);
 	}

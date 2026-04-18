@@ -70,6 +70,13 @@ class TranslationAiAjaxHandler {
 	private $rate_limit_callback;
 
 	/**
+	 * Optional callback invoked after a successful provider batch.
+	 *
+	 * @var callable|null
+	 */
+	private $post_batch_success_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param callable      $get_translation_callback Callback returning translation row for one ID.
@@ -79,6 +86,7 @@ class TranslationAiAjaxHandler {
 	 * @param callable|null $throttle_wait_callback Optional callback enforcing throttling.
 	 * @param callable|null $translate_batch_callable Optional batch translation callable override.
 	 * @param callable|null $rate_limit_callback Optional callback adjusting shared delay after 429.
+	 * @param callable|null $post_batch_success_callback Optional callback triggered after a successful batch.
 	 */
 	public function __construct(
 		callable $get_translation_callback,
@@ -87,7 +95,8 @@ class TranslationAiAjaxHandler {
 		$persist_status_callback = null,
 		$throttle_wait_callback = null,
 		$translate_batch_callable = null,
-		$rate_limit_callback = null
+		$rate_limit_callback = null,
+		$post_batch_success_callback = null
 	) {
 		$single_translate_callable = $translate_callable;
 
@@ -143,6 +152,7 @@ class TranslationAiAjaxHandler {
 		$this->persist_status_callback  = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
 		$this->throttle_wait_callback   = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
 		$this->rate_limit_callback      = is_callable( $rate_limit_callback ) ? $rate_limit_callback : null;
+		$this->post_batch_success_callback = is_callable( $post_batch_success_callback ) ? $post_batch_success_callback : null;
 	}
 
 	/**
@@ -351,14 +361,28 @@ class TranslationAiAjaxHandler {
 		}
 
 		$results = isset( $batch_result['results'] ) && is_array( $batch_result['results'] ) ? $batch_result['results'] : array();
+		$usage_status = isset( $batch_result['usage_status'] ) && is_array( $batch_result['usage_status'] )
+			? $batch_result['usage_status']
+			: null;
+		$usage_html = isset( $batch_result['usage_html'] ) && is_string( $batch_result['usage_html'] )
+			? $batch_result['usage_html']
+			: '';
 
-		wp_send_json_success(
-			array(
-				'results'       => $results,
-				'batch_index'   => $batch_index,
-				'total_batches' => $total_batches,
-			)
+		$response_data = array(
+			'results'       => $results,
+			'batch_index'   => $batch_index,
+			'total_batches' => $total_batches,
 		);
+
+		if ( is_array( $usage_status ) ) {
+			$response_data['usage_status'] = $usage_status;
+		}
+
+		if ( '' !== trim( $usage_html ) ) {
+			$response_data['usage_html'] = $usage_html;
+		}
+
+		wp_send_json_success( $response_data );
 	}
 
 	/**
@@ -539,10 +563,51 @@ class TranslationAiAjaxHandler {
 			);
 		}
 
-		return array(
+		$post_batch_callback = $this->post_batch_success_callback;
+		$post_batch_meta     = array();
+
+		if ( is_callable( $post_batch_callback ) ) {
+			$success_count = 0;
+
+			foreach ( $results as $result_row ) {
+				if ( is_array( $result_row ) && ! empty( $result_row['success'] ) ) {
+					++$success_count;
+				}
+			}
+
+			try {
+				$callback_result = call_user_func(
+					$post_batch_callback,
+					array(
+						'translation_id' => (int) $translation_id,
+						'target_locale'  => (string) $target_locale,
+						'items_count'    => count( $prepared_items ),
+						'success_count'  => $success_count,
+					)
+				);
+
+				if ( is_array( $callback_result ) ) {
+					$post_batch_meta = $callback_result;
+				}
+			} catch ( \Throwable $throwable ) {
+				unset( $throwable );
+			}
+		}
+
+		$response = array(
 			'success' => true,
 			'results' => $results,
 		);
+
+		if ( isset( $post_batch_meta['usage_status'] ) && is_array( $post_batch_meta['usage_status'] ) ) {
+			$response['usage_status'] = $post_batch_meta['usage_status'];
+		}
+
+		if ( isset( $post_batch_meta['usage_html'] ) && is_string( $post_batch_meta['usage_html'] ) ) {
+			$response['usage_html'] = $post_batch_meta['usage_html'];
+		}
+
+		return $response;
 	}
 
 	/**

@@ -580,6 +580,79 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Invokes optional post-batch callback after successful provider batch.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_calls_post_batch_success_callback() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index'      => 0,
+						'source_text'     => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+		);
+
+		$post_batch_calls = array();
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			null,
+			null,
+			null,
+			function () {
+				return array(
+					'success' => true,
+					'items'   => array(
+						array(
+							'success'      => true,
+							'translation'  => 'Bonjour',
+							'review_token' => 'ai_draft_ok',
+						),
+					),
+				);
+			},
+			null,
+			function ( array $payload ) use ( &$post_batch_calls ) {
+				$post_batch_calls[] = $payload;
+
+				return array(
+					'usage_status' => array(
+						'success'         => true,
+						'used_characters' => 25,
+						'character_limit' => 100,
+						'percent_used'    => 25,
+						'state'           => 'ok',
+						'fetched_at'      => 1713412800,
+						'is_stale'        => false,
+						'message'         => '',
+					),
+					'usage_html'   => '<div class="i18nly-deepl-usage-box"></div>',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertCount( 1, $post_batch_calls );
+		$this->assertSame( 7, $post_batch_calls[0]['translation_id'] );
+		$this->assertSame( 1, $post_batch_calls[0]['items_count'] );
+		$this->assertSame( 1, $post_batch_calls[0]['success_count'] );
+		$this->assertTrue( $response['success'] );
+		$this->assertArrayHasKey( 'usage_html', $response['data'] );
+		$this->assertArrayHasKey( 'usage_status', $response['data'] );
+		$this->assertStringContainsString( 'i18nly-deepl-usage-box', $response['data']['usage_html'] );
+	}
+
+	/**
 	 * Builds a valid POST payload for translation_id.
 	 *
 	 * @param int $translation_id Translation ID.
@@ -605,9 +678,10 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	 * @param callable|null $throttle_wait Override for throttle callback.
 	 * @param callable|null $translate_batch Override for batch translate callable.
 	 * @param callable|null $rate_limit Override for rate-limit callback.
+	 * @param callable|null $post_batch_success Override for post-batch success callback.
 	 * @return \WP_I18nly\AI\TranslationAiAjaxHandler
 	 */
-	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null, $translate_batch = null, $rate_limit = null ) {
+	private function make_handler( $get_translation = null, $get_api_key = null, $translate = null, $persist = null, $throttle_wait = null, $translate_batch = null, $rate_limit = null, $post_batch_success = null ) {
 		$get_translation = $get_translation ?? function () {
 			return array(
 				'source_slug'     => 'myplugin/myplugin.php',
@@ -627,6 +701,6 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 			);
 		};
 
-		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait, $translate_batch, $rate_limit );
+		return new TranslationAiAjaxHandler( $get_translation, $get_api_key, $translate, $persist, $throttle_wait, $translate_batch, $rate_limit, $post_batch_success );
 	}
 }

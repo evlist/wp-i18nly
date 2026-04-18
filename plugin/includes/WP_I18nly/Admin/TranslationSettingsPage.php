@@ -156,7 +156,27 @@ class TranslationSettingsPage {
 		}
 
 		echo '</form>';
+
+		echo '<hr />';
+		echo '<h2>' . esc_html__( 'DeepL monthly usage', 'i18nly' ) . '</h2>';
+		$this->render_usage_gauge_box();
 		echo '</div>';
+	}
+
+	/**
+	 * Renders DeepL monthly usage gauge.
+	 *
+	 * @return void
+	 */
+	private function render_usage_gauge_box() {
+		$provider = $this->get_usage_status_provider();
+		$renderer = $this->get_usage_gauge_renderer();
+		$status   = $provider->get_status();
+
+		$renderer->render(
+			is_array( $status ) ? $status : array(),
+			esc_html__( 'DeepL monthly usage', 'i18nly' )
+		);
 	}
 
 	/**
@@ -349,5 +369,27 @@ class TranslationSettingsPage {
 	 */
 	protected function get_credentials_validator() {
 		return new DeepLCredentialsValidator();
+	}
+
+	/**
+	 * Returns the DeepL usage status provider.
+	 *
+	 * @return \WP_I18nly\AI\DeepLUsageStatusProvider
+	 */
+	protected function get_usage_status_provider() {
+		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
+			function () {
+				return $this->get_saved_api_key();
+			}
+		);
+	}
+
+	/**
+	 * Returns the DeepL usage gauge renderer.
+	 *
+	 * @return \WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer
+	 */
+	protected function get_usage_gauge_renderer() {
+		return new \WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer();
 	}
 }

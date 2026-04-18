@@ -92,6 +92,37 @@
 		);
 	}
 
+	function updateDeepLUsageGaugeFromHtml(usageHtml) {
+		var html = String( usageHtml || '' ).trim();
+		var wrapper;
+		var replacementBox;
+		var replacementHtml;
+		var currentBoxes;
+
+		if ( '' === html ) {
+			return;
+		}
+
+		wrapper = document.createElement( 'div' );
+		wrapper.innerHTML = html;
+		replacementBox = wrapper.querySelector( '.i18nly-deepl-usage-box' );
+
+		if ( ! replacementBox ) {
+			return;
+		}
+
+		replacementHtml = replacementBox.outerHTML;
+		currentBoxes = Array.prototype.slice.call( document.querySelectorAll( '.i18nly-deepl-usage-box' ) );
+
+		currentBoxes.forEach(
+			function (box) {
+				if ( box && box.parentNode ) {
+					box.outerHTML = replacementHtml;
+				}
+			}
+		);
+	}
+
 	function parsePositiveInteger(value, fallback) {
 		var parsed = parseInt( value, 10 );
 
@@ -1490,6 +1521,10 @@
 								handleRowsUpdated( [ matchedItem.input.closest( 'tr' ) ] );
 							}
 						);
+
+						if ( payload.data.usage_html ) {
+							updateDeepLUsageGaugeFromHtml( payload.data.usage_html );
+						}
 
 						completedBatches = currentBatchNum;
 

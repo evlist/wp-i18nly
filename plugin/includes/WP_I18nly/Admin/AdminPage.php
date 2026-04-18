@@ -113,11 +113,13 @@ class AdminPage {
 	public function register() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'wp_dashboard_setup', array( $this, 'register_deepl_usage_dashboard_widget' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'render_translation_edit_pot_generation_script' ) );
 		add_action( 'wp_ajax_i18nly_generate_translation_pot', array( $this, 'ajax_generate_translation_pot' ) );
 		add_action( 'wp_ajax_i18nly_get_translation_entries_table', array( $this, 'ajax_get_translation_entries_table' ) );
 		add_action( 'wp_ajax_i18nly_ai_translate_entry', array( $this, 'ajax_ai_translate_entry' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_translation_meta_box' ) );
+		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_deepl_usage_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_translation_meta_box' ), 10, 3 );
 		add_filter( 'redirect_post_location', array( $this, 'filter_translation_edit_redirect_location' ), 10, 2 );
 		add_filter( 'post_updated_messages', array( $this, 'filter_translation_post_updated_messages' ) );
@@ -173,6 +175,77 @@ class AdminPage {
 			$post,
 			self::META_SOURCE_SLUG,
 			self::META_TARGET_LANGUAGE
+		);
+	}
+
+	/**
+	 * Registers DeepL usage widget on dashboard.
+	 *
+	 * @return void
+	 */
+	public function register_deepl_usage_dashboard_widget() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
+			return;
+		}
+
+		wp_add_dashboard_widget(
+			'i18nly_deepl_monthly_usage',
+			esc_html__( 'DeepL monthly usage', 'i18nly' ),
+			array( $this, 'render_deepl_usage_dashboard_widget' )
+		);
+	}
+
+	/**
+	 * Renders DeepL usage widget content for dashboard.
+	 *
+	 * @return void
+	 */
+	public function render_deepl_usage_dashboard_widget() {
+		$this->render_deepl_usage_gauge();
+	}
+
+	/**
+	 * Registers DeepL usage meta box on translation edit screen.
+	 *
+	 * @return void
+	 */
+	public function register_deepl_usage_meta_box() {
+		add_meta_box(
+			'i18nly-deepl-monthly-usage',
+			esc_html__( 'DeepL monthly usage', 'i18nly' ),
+			array( $this, 'render_deepl_usage_meta_box' ),
+			self::POST_TYPE,
+			'side',
+			'high'
+		);
+	}
+
+	/**
+	 * Renders DeepL usage meta box content.
+	 *
+	 * @return void
+	 */
+	public function render_deepl_usage_meta_box() {
+		$this->render_deepl_usage_gauge();
+	}
+
+	/**
+	 * Renders reusable DeepL usage gauge.
+	 *
+	 * @return void
+	 */
+	private function render_deepl_usage_gauge() {
+		$provider = $this->get_deepl_usage_status_provider();
+		$renderer = $this->get_deepl_usage_gauge_renderer();
+		$status   = $provider->get_status();
+
+		$renderer->render(
+			is_array( $status ) ? $status : array(),
+			esc_html__( 'DeepL monthly usage', 'i18nly' )
 		);
 	}
 
@@ -581,6 +654,29 @@ class AdminPage {
 	 */
 	protected function get_edit_screen_assets() {
 		return new EditScreenAssets();
+	}
+
+	/**
+	 * Returns DeepL usage status provider.
+	 *
+	 * @return \WP_I18nly\AI\DeepLUsageStatusProvider
+	 */
+	protected function get_deepl_usage_status_provider() {
+		return new \WP_I18nly\AI\DeepLUsageStatusProvider(
+			function () {
+				$settings_page = new TranslationSettingsPage();
+				return $settings_page->get_saved_api_key();
+			}
+		);
+	}
+
+	/**
+	 * Returns DeepL usage gauge renderer.
+	 *
+	 * @return \WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer
+	 */
+	protected function get_deepl_usage_gauge_renderer() {
+		return new \WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer();
 	}
 
 	/**
