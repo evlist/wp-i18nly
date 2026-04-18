@@ -71,4 +71,33 @@ class DeepLUsageGaugeRendererTest extends TestCase {
 		$this->assertStringContainsString( 'Usage limit is unavailable for this key.', $html );
 		$this->assertStringContainsString( 'No DeepL API key configured.', $html );
 	}
+
+	/**
+	 * Renders over-limit state with capped progress bar width.
+	 *
+	 * @return void
+	 */
+	public function test_render_caps_bar_width_but_keeps_percent_label_above_100() {
+		$renderer = new DeepLUsageGaugeRenderer();
+
+		ob_start();
+		$renderer->render(
+			array(
+				'success'         => true,
+				'used_characters' => 1050,
+				'character_limit' => 1000,
+				'percent_used'    => 105,
+				'state'           => 'over_limit',
+				'fetched_at'      => 1713412800,
+				'is_stale'        => false,
+				'message'         => '',
+			),
+			'DeepL monthly usage'
+		);
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'i18nly-deepl-usage-box--over_limit', $html );
+		$this->assertStringContainsString( 'width:100%', $html );
+		$this->assertStringContainsString( '>105%</p>', $html );
+	}
 }

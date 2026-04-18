@@ -174,7 +174,7 @@ class DeepLUsageStatusProvider {
 		$reserved_limit = max( 0, (int) call_user_func( $get_reserved ) );
 		$limit          = max( 0, $raw_limit - $reserved_limit );
 		$percent        = $limit > 0
-			? (int) min( 100, max( 0, round( ( $used * 100 ) / $limit ) ) )
+			? (int) max( 0, round( ( $used * 100 ) / $limit ) )
 			: 0;
 
 		return array(
@@ -213,13 +213,17 @@ class DeepLUsageStatusProvider {
 	 * @return string
 	 */
 	private function resolve_state_from_percent( $percent_used ) {
-		$percent_used = max( 0, min( 100, (int) $percent_used ) );
+		$percent_used = max( 0, (int) $percent_used );
+
+		if ( $percent_used >= 100 ) {
+			return 'over_limit';
+		}
 
 		if ( $percent_used >= 90 ) {
 			return 'critical';
 		}
 
-		if ( $percent_used >= 70 ) {
+		if ( $percent_used >= 75 ) {
 			return 'warning';
 		}
 
@@ -329,7 +333,7 @@ class DeepLUsageStatusProvider {
 
 		$state = isset( $status['state'] ) ? (string) $status['state'] : 'unavailable';
 
-		if ( ! in_array( $state, array( 'ok', 'warning', 'critical', 'unavailable' ), true ) ) {
+		if ( ! in_array( $state, array( 'ok', 'warning', 'critical', 'over_limit', 'unavailable' ), true ) ) {
 			$state = 'unavailable';
 		}
 
@@ -339,7 +343,7 @@ class DeepLUsageStatusProvider {
 			'character_limit' => isset( $status['character_limit'] ) ? max( 0, (int) $status['character_limit'] ) : 0,
 			'raw_character_limit' => isset( $status['raw_character_limit'] ) ? max( 0, (int) $status['raw_character_limit'] ) : 0,
 			'reserved_characters' => isset( $status['reserved_characters'] ) ? max( 0, (int) $status['reserved_characters'] ) : 0,
-			'percent_used'    => isset( $status['percent_used'] ) ? max( 0, min( 100, (int) $status['percent_used'] ) ) : 0,
+			'percent_used'    => isset( $status['percent_used'] ) ? max( 0, (int) $status['percent_used'] ) : 0,
 			'state'           => $state,
 			'fetched_at'      => isset( $status['fetched_at'] ) ? max( 0, (int) $status['fetched_at'] ) : 0,
 			'is_stale'        => (bool) $is_stale,

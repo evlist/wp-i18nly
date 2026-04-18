@@ -89,6 +89,31 @@ class DeepLUsageStatusProviderTest extends TestCase {
 	}
 
 	/**
+	 * Marks usage as over limit when consumption reaches 100% or more.
+	 *
+	 * @return void
+	 */
+	public function test_get_status_marks_over_limit_at_or_above_100_percent() {
+		$provider = new DeepLUsageStatusProvider(
+			function () {
+				return 'pro-key';
+			},
+			function () {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '{"character_count":1050,"character_limit":1000}',
+				);
+			}
+		);
+
+		$status = $provider->get_status( true );
+
+		$this->assertTrue( $status['success'] );
+		$this->assertSame( 105, $status['percent_used'] );
+		$this->assertSame( 'over_limit', $status['state'] );
+	}
+
+	/**
 	 * Falls back to stale cached values when refresh fails.
 	 *
 	 * @return void

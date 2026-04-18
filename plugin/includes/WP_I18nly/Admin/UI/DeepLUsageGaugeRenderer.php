@@ -35,12 +35,13 @@ class DeepLUsageGaugeRenderer {
 
 		$used       = isset( $status['used_characters'] ) ? max( 0, (int) $status['used_characters'] ) : 0;
 		$limit      = isset( $status['character_limit'] ) ? max( 0, (int) $status['character_limit'] ) : 0;
-		$percent    = isset( $status['percent_used'] ) ? max( 0, min( 100, (int) $status['percent_used'] ) ) : 0;
+		$percent    = isset( $status['percent_used'] ) ? max( 0, (int) $status['percent_used'] ) : 0;
+		$bar_width  = min( 100, $percent );
 		$state      = isset( $status['state'] ) ? (string) $status['state'] : 'unavailable';
 		$is_stale   = ! empty( $status['is_stale'] );
 		$message    = isset( $status['message'] ) ? (string) $status['message'] : '';
 		$fetched_at = isset( $status['fetched_at'] ) ? (int) $status['fetched_at'] : 0;
-		$state      = in_array( $state, array( 'ok', 'warning', 'critical', 'unavailable' ), true ) ? $state : 'unavailable';
+		$state      = in_array( $state, array( 'ok', 'warning', 'critical', 'over_limit', 'unavailable' ), true ) ? $state : 'unavailable';
 
 		echo '<div class="i18nly-deepl-usage-box i18nly-deepl-usage-box--' . esc_attr( $state ) . '">';
 		echo '<h3 class="i18nly-deepl-usage-title">' . esc_html( (string) $title ) . '</h3>';
@@ -55,8 +56,8 @@ class DeepLUsageGaugeRenderer {
 			echo '</span>';
 			echo '</div>';
 
-			echo '<div class="i18nly-deepl-usage-progress" role="progressbar" aria-label="' . esc_attr__( 'DeepL monthly usage', 'i18nly' ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' . esc_attr( (string) $percent ) . '">';
-			echo '<span class="i18nly-deepl-usage-progress-fill" style="width:' . esc_attr( (string) $percent ) . '%"></span>';
+			echo '<div class="i18nly-deepl-usage-progress" role="progressbar" aria-label="' . esc_attr__( 'DeepL monthly usage', 'i18nly' ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' . esc_attr( (string) $bar_width ) . '">';
+			echo '<span class="i18nly-deepl-usage-progress-fill" style="width:' . esc_attr( (string) $bar_width ) . '%"></span>';
 			echo '</div>';
 
 			echo '<p class="i18nly-deepl-usage-percent">' . esc_html( (string) $percent ) . '%</p>';
@@ -102,9 +103,10 @@ class DeepLUsageGaugeRenderer {
 		echo '.i18nly-deepl-usage-values{margin-bottom:8px;font-size:13px}';
 		echo '.i18nly-deepl-usage-unit{margin-left:4px;color:#50575e}';
 		echo '.i18nly-deepl-usage-progress{position:relative;height:10px;border-radius:999px;background:#f0f0f1;overflow:hidden}';
-		echo '.i18nly-deepl-usage-progress-fill{display:block;height:100%;background:#2271b1}';
+		echo '.i18nly-deepl-usage-progress-fill{display:block;height:100%;background:#2f9e44}';
 		echo '.i18nly-deepl-usage-box--warning .i18nly-deepl-usage-progress-fill{background:#dba617}';
-		echo '.i18nly-deepl-usage-box--critical .i18nly-deepl-usage-progress-fill{background:#d63638}';
+		echo '.i18nly-deepl-usage-box--critical .i18nly-deepl-usage-progress-fill{background:#e67700}';
+		echo '.i18nly-deepl-usage-box--over_limit .i18nly-deepl-usage-progress-fill{background:#d63638}';
 		echo '.i18nly-deepl-usage-box--unavailable .i18nly-deepl-usage-progress-fill{background:#8c8f94}';
 		echo '.i18nly-deepl-usage-percent{margin:8px 0 0 0;font-size:12px;color:#50575e}';
 		echo '.i18nly-deepl-usage-fetched-at{margin-top:8px}';
