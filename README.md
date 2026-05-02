@@ -24,6 +24,7 @@ This project is the successor to **[i18n-404-tools](https://github.com/evlist/wp
 * **POT import pipeline:** source strings can be extracted and persisted for editing inside the plugin.
 * **Plural-aware editing:** plural form metadata is resolved from generated locale specs derived from GlotPress data.
 * **DeepL integration:** optional API key based AI translation is available for single items and batch translation.
+* **DeepL usage controls:** monthly usage is exposed in admin, supports reserved quota deduction, and blocks sends above the effective limit.
 * **Adaptive throttling:** HTTP 429 handling includes shared backoff and `Retry-After` support for sequential batch execution.
 * **No shell dependency in product logic:** runtime behavior relies on PHP integrations rather than `shell_exec`.
 
@@ -42,11 +43,14 @@ Current implemented slices include:
 * translation admin pages and list table,
 * source entry import and storage,
 * plural form registry backed by generated locale classes,
-* DeepL settings and connection testing,
+* DeepL settings, connection testing, and monthly usage gauge,
 * single-item and batch AI translation flows,
-* quality and provenance tracking for translated entries.
+* quality and provenance tracking for translated entries,
+* server-side throttling and quota-aware send blocking.
 
-The architecture is still evolving, especially around admin decomposition and later build/revision flows.
+Glossaries and the broader linguistic-resource refactoring are not implemented yet and remain architecture work.
+
+The architecture is still evolving, especially around admin decomposition, glossary support, and later build/revision flows.
 
 ### 🔧 Local Activation (Development)
 1. Copy or symlink the `plugin/` directory into your WordPress `wp-content/plugins/` directory.
@@ -54,7 +58,7 @@ The architecture is still evolving, especially around admin decomposition and la
 3. Open the top-level `Translations` menu to access the translation list, creation flow, and edit screen, then use `Settings > Translations` for the DeepL settings page.
 
 ### ✅ Validation Status
-The current PHPUnit suite is green: 124 tests, 531 assertions.
+Validation is covered by PHPUnit tests and repository checks.
 
 ---
 *I18nly — Because translating a plugin in WordPress should be as simple as writing a blog post.*
