@@ -942,31 +942,32 @@ This gives a deterministic review surface and prevents silent regressions from a
 ### Git state
 
 - Branch: `main`
-- Last commit: `6f84f61` — Fixing structure incoherence in IA.md
+- Last commit: `054fc53` — feat(ai): block DeepL sends above monthly quota
 - Working tree: clean (no uncommitted changes)
 
 ### Test suite
 
-- **124 tests, 531 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
+- **140 tests, 589 assertions**, all green (PHPUnit 11.5.55, PHP 8.3.6)
 
 ### Recent commit history (most relevant)
 
 | Hash | Message |
 |------|---------|
+| `054fc53` | feat(ai): block DeepL sends above monthly quota |
+| `c43fd76` | feat(ui): refine DeepL usage gauge thresholds |
+| `067fc50` | feat(settings): add reserved DeepL monthly quota |
+| `ff89a34` | feat(admin): add DeepL monthly usage gauge and live refresh |
+| `952f0c1` | docs: refresh IA session context |
+| `a7badb1` | docs: align readmes with current implementation |
 | `6f84f61` | Fixing structure incoherence in IA.md |
-| `401f9bf` | refactor ai batch/throttle: unify single+batch flow with adaptive shared delay |
-| `cb24671` | AI bulk translation: keep adaptive inter-batch throttle across retries |
-| `161f253` | AI bulk translation: DeepL policy defaults and robust 429 backoff |
-| `7e2d11d` | AI bulk translation: batch AJAX flow with server-side throttling |
-| `359e9e5` | Hide status badges for empty translations |
-| `a417f53` | Per-form status badges for plural translations |
-| `0c0813f` | Plural witnesses: prefer singular when examples include 1 |
+| `9d53f6e` | docs(architecture): summarize translation revision storage options |
 
 ### Open items
 
 - **Expose `translateMaxRetryAttempts` via PHP filter** — add `get_translate_max_retry_attempts()` in `AiTranslationManager`, propagate to JS config, add test.
 - **AdminPage thin-facade remaining work** — `Slice 3` still technically open.
 - **Optional telemetry slice** — counters for `429`, adaptive throttle delay, request duration, and effective batch size.
+- **Glossary architecture MVP** — local glossary as source of truth with optional DeepL synchronization.
 
 ## 22) Session Safety Checklist for Future Runs
 
@@ -983,3 +984,455 @@ Before finishing:
 - run PHP lint,
 - run PHPCS with repository ruleset,
 - summarize functional impact and next steps.
+
+## 23) Local Glossary Strategy (Syncable with DeepL)
+
+### Product direction
+
+Preferred model: keep a **local glossary as source of truth** and treat DeepL glossaries as a synchronized external representation.
+
+This avoids provider lock-in and keeps glossary quality checks reusable even when AI is disabled.
+
+### Scope and goals
+
+- Keep glossary editing and governance fully local in WordPress.
+- Support optional synchronization to/from DeepL.
+- Reuse glossary for both AI and non-AI workflows.
+
+### Canonical ownership model
+
+- Local DB tables are canonical.
+- DeepL glossary IDs are external linkage metadata only.
+- Local data must remain usable when DeepL is unavailable.
+
+### Recommended V1 data model
+
+Important clarification: model a glossary as its own entity (not only entry rows).
+
+Recommended minimal normalized model (dedicated tables):
+
+1. `i18nly_glossaries`
+	- glossary identity (`slug` as stable business key),
+	- scope metadata (`source_locale`, `target_locale`, optional domain),
+	- display label (`name`, non-identity),
+	- local revision info (`local_revision` increment, timestamps).
+
+2. `i18nly_glossary_entries`
+	- FK to glossary,
+	- `source_term`,
+	- optional context note,
+	- flags (`case_sensitive`),
+	- stable ordering metadata if needed.
+
+3. `i18nly_glossary_variants`
+	- FK to entry,
+	- one accepted target term per row,
+	- optional priority/order.
+
+Operational rule:
+
+- `is_dirty_since_sync` is derived at compilation level from `compiled_hash` vs `last_synced_hash`.
+
+Safety note (MVP):
+
+- avoid a strict negative lexical rule (`forbidden target`) in MVP,
+- use preferred-term guidance as non-blocking QA warning,
+- rely on context-scoped entries to reduce ambiguity (for example product/domain-specific glossaries).
+
+### Plural-aware glossary modeling (recommended extension)
+
+Given the project already has a robust plural-form system, glossary matching should reuse it instead of relying on approximate singular/plural heuristics.
+
+Principle:
+
+1. bind glossary behavior to source and target plural specs already available in the plugin,
+2. keep one logical glossary entry for one source term family (`source_term` + optional `source_term_plural`),
+3. model target correspondences with indexed rows (`form_index`) like translation rows,
+4. use this mapping both for AI compilation and QA checks.
+
+Example (EN -> FR):
+
+1. One glossary entry stores source family: `source_term = draft`, `source_term_plural = drafts`.
+2. Target rows store `form_index` values (for FR usually `0` and `1`) with preferred terms by form.
+3. QA evaluates each translated form against the expected glossary target row for the same `form_index`.
+
+Practical storage extension:
+
+- keep current glossary tables for non-plural terms,
+- for plural-aware mode, store source family in one glossary entry and target forms in a child table using `form_index`,
+- compile to DeepL by flattening resolved per-form mappings into plain source->target pairs (DeepL-compatible projection).
+
+QA consequence:
+
+- evaluate translated plural forms against expected target `form_index` rows,
+- raise precise warnings when a form violates preferred terminology,
+- avoid false positives caused by applying one lexical rule to all plural forms.
+
+### Synchronization policy (MVP)
+
+Start with explicit user-triggered sync actions:
+
+1. Push compiled translation glossary (ordered assembly) to DeepL.
+2. Pull DeepL glossary into local staging and preview diff against the current compiled assembly.
+3. Apply merge with explicit conflict policy.
+
+Default conflict policy recommendation: **local wins** unless user explicitly imports remote changes.
+
+### Local change tracking between syncs
+
+The compiled translation glossary must expose whether it has changed since the last successful synchronization.
+
+Recommended MVP mechanism:
+
+- store `compiled_hash` for the effective ordered glossary assembly,
+- store `last_synced_hash` and `last_synced_at`,
+- set a derived `is_dirty_since_sync` flag when `compiled_hash` differs from `last_synced_hash`.
+
+This status must be visible in admin UI (for example `Up to date` / `Local changes not synced`).
+
+### Sync trigger policy
+
+Two valid product modes are acceptable:
+
+1. Manual sync mode (default MVP): keep local save fast and explicit, require a dedicated sync action.
+2. Auto-sync mode (optional): trigger a push after each glossary save.
+
+If auto-sync is enabled, failures must not roll back local glossary save. Instead:
+
+- persist local changes first,
+- mark sync as failed/pending,
+- show actionable admin notice with retry action.
+
+### Storage options: existing WordPress tables vs dedicated tables
+
+For glossary persistence, two implementation families are possible.
+
+#### Option A: Reuse existing WordPress tables (`wp_posts` + `wp_postmeta`)
+
+Advantages:
+
+- lower initial schema/setup cost,
+- native WordPress CRUD and capability patterns are familiar,
+- easier interoperability with generic admin tooling.
+
+Disadvantages:
+
+- weak fit for glossary query patterns (locale pair + source term lookup + variant checks),
+- heavier and slower filtering/search compared to normalized rows,
+- sync metadata (`hash`, dirty state, sync status) becomes fragmented in post meta,
+- more complex uniqueness guarantees (for example one canonical term per glossary scope).
+
+Best suited for:
+
+- very small glossary volumes,
+- fast prototype where performance and strict constraints are secondary.
+
+#### Option B: Create dedicated glossary tables
+
+Advantages:
+
+- strong data-model fit (canonical terms, variants, sync metadata, constraints),
+- efficient indexing for runtime lookups and QA checks,
+- explicit integrity rules (unique keys, foreign keys by design where applicable),
+- easier deterministic diff/hash computation and sync workflows.
+
+Disadvantages:
+
+- migration and schema lifecycle to maintain,
+- slightly higher initial implementation cost,
+- requires explicit admin/repository abstractions.
+
+Best suited for:
+
+- medium/large glossaries,
+- long-term maintainability and reliable synchronization.
+
+### Recommended direction for this project
+
+Use a hybrid with clear ownership:
+
+- keep one WordPress post as admin anchor for permissions/navigation,
+- store glossary business data and sync state in dedicated tables,
+- keep local tables canonical and DeepL as synchronized external target.
+
+This aligns with the existing repository direction already using business tables for structured translation data.
+
+### Runtime usage
+
+Use local glossary in two places:
+
+1. AI requests: build provider-specific glossary payloads from local canonical terms.
+2. Non-AI QA checks: detect preferred-term mismatches in edited translations and raise review warnings.
+
+### UX principles
+
+- Never hard-block save on glossary QA mismatches in V1.
+- Show warnings with actionable suggestions (preferred variants, optional quick-apply).
+- Keep AI and QA behavior aligned on the same local glossary rules.
+
+### UX placement on edit screen
+
+Glossary input and guidance should be available directly on the translation edit page as a dedicated admin block (meta box).
+
+V1 UX goals for this block:
+
+1. Keep terminology work in the same workflow as translation editing (no context switch to settings).
+2. Allow quick add/update of terms from currently edited source strings.
+3. Show local sync status (`Up to date` / `Local changes not synced`) and explicit sync actions.
+4. Keep glossary suggestions non-blocking for save and translation actions.
+
+The settings page remains useful for global configuration, but day-to-day glossary authoring should happen in the edit-screen block.
+
+### WordPress-style glossary UX direction
+
+Glossary management should follow familiar WordPress category workflows to minimize learning cost.
+
+Admin information architecture:
+
+1. add a `Glossaries` submenu under the `Translations` admin menu,
+2. use this screen for global glossary lifecycle management,
+3. keep translation edit pages focused on attaching and quick-editing relevant glossaries.
+
+Expected MVP UX behavior (category-inspired):
+
+1. global list screen with search/filter and row actions,
+2. create/edit glossary flow from the global screen,
+3. in translation edit page, attach/detach/reorder glossaries in a dedicated meta box,
+4. allow lightweight in-context term additions without leaving translation edit workflow.
+
+### Glossary sharing between translations
+
+This project should support glossary reuse, but with a progressive complexity model.
+
+Architectural principle: glossaries are independent business entities, linked to translations, and not embedded inside one translation record.
+
+This is conceptually similar to taxonomy-like reuse (category/tag style relation), while keeping a dedicated glossary domain model and tables.
+
+#### Sharing scenarios to support
+
+1. Same source, close target locales (for example fr_FR and fr_BE).
+2. Different plugins in the same business domain with same language pair.
+
+#### Recommended MVP sharing rule
+
+Share complete glossaries only (no sub-glossary composition in MVP).
+
+Per translation, allow two clear attachment modes:
+
+1. Linked glossary: translation uses one shared glossary as-is.
+2. Imported copy: translation starts from a shared glossary clone and then owns local edits.
+
+This keeps UX and data model simple while enabling immediate reuse.
+
+#### UI masking of technical complexity
+
+Even with independent glossary entities, users should be able to create/edit glossary content directly from the translation edit page.
+
+Practical UX rule:
+
+1. Edit-screen block remains the primary authoring surface.
+2. Attachment and quick edits happen in-context without leaving translation workflow.
+3. Advanced management is available in dedicated glossary admin pages.
+
+This gives both simplicity in day-to-day work and explicit governance tooling when needed.
+
+#### Why no partial sharing in MVP
+
+- Sub-glossary composition introduces ordering and conflict semantics.
+- Mixed ownership (shared base plus local additions) needs inheritance rules.
+- Sync to DeepL becomes harder to reason about when sources are layered.
+
+#### Post-MVP extension path
+
+If needed later, add an explicit overlay model:
+
+1. Base shared glossary (read-only in this context).
+2. Local overlay glossary for additions/overrides.
+3. Deterministic merge precedence (overlay wins).
+
+This gives the benefits of imported enrichments without hidden side effects.
+
+### Dedicated glossary admin pages
+
+In addition to edit-screen authoring, provide glossary-oriented admin pages to manage glossaries as first-class entities.
+
+Recommended capabilities:
+
+1. List glossaries with filters (source locale, target locale, domain, sync status).
+2. Open one glossary for full term/variant management.
+3. Inspect usage links (which translations are attached).
+4. Trigger sync actions and review sync history/errors.
+5. Follow WordPress list-table and row-action conventions for predictable admin UX.
+
+### Join model decision (current)
+
+Decision retained: keep **two additional dedicated tables** for translation-level glossary orchestration.
+
+1. `i18nly_translation_glossary_links`
+	- links one translation to one glossary,
+	- stores explicit priority order,
+	- supports deterministic assembly and reverse usage queries.
+
+2. `i18nly_translation_glossary_compilations`
+	- stores the effective compiled glossary fingerprint per translation,
+	- stores provider sync linkage/state (`deepl_glossary_id`, sync timestamps/status/error),
+	- supports dirty detection and resync targeting.
+
+Implementation note:
+
+- `post_meta` may still cache lightweight read-optimized values,
+- but canonical relation/sync state for these two concerns remains in dedicated tables.
+
+### Implementation slices (XP)
+
+1. Schema + repository for local glossary entries.
+2. Edit-screen glossary block (meta box) with lightweight CRUD for terms and variants.
+3. Translation to glossary attachment modes (linked or imported copy).
+4. Translation glossary links + compiled-sync state tables.
+5. Dedicated glossary admin list/detail pages.
+6. Read-only QA checker on translation edit screen.
+7. DeepL push sync command/action.
+8. DeepL pull + diff preview + merge policy.
+9. Plural-aware glossary mapping and slot-based QA checks.
+
+## 24) SQL DDL Proposal (5 Glossary Tables)
+
+The following DDL targets MySQL/MariaDB and follows WordPress conventions:
+
+- technical auto-increment integer primary keys,
+- explicit business unique indexes,
+- no hard foreign keys in DDL (WordPress/dbDelta-friendly),
+- timestamps stored in UTC-compatible `datetime` fields.
+
+Identity rule used below:
+
+- `name` is a user-facing label and is not part of the business uniqueness constraint,
+- `slug` is the stable business identifier (unique),
+- locale/domain scope is indexed for lookup/filtering, but not forced unique.
+
+Use `{$wpdb->prefix}` at runtime. Example physical names below assume prefix `wp_`.
+
+```sql
+CREATE TABLE wp_i18nly_glossaries (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	slug varchar(100) NOT NULL,
+	source_locale varchar(20) NOT NULL,
+	target_locale varchar(20) NOT NULL,
+	domain varchar(100) NOT NULL DEFAULT '',
+	name varchar(191) NOT NULL,
+	local_revision bigint(20) unsigned NOT NULL DEFAULT 1,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_glossary_slug (slug),
+	KEY idx_glossary_scope (source_locale, target_locale, domain),
+	KEY idx_glossary_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+CREATE TABLE wp_i18nly_glossary_entries (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	glossary_id bigint(20) unsigned NOT NULL,
+	source_term varchar(191) NOT NULL,
+	context_note text,
+	case_sensitive tinyint(1) NOT NULL DEFAULT 0,
+	sort_order int(10) unsigned NOT NULL DEFAULT 0,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_entry_glossary_source (glossary_id, source_term),
+	KEY idx_entry_glossary (glossary_id),
+	KEY idx_entry_source_term (source_term)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+CREATE TABLE wp_i18nly_glossary_variants (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	entry_id bigint(20) unsigned NOT NULL,
+	target_term varchar(191) NOT NULL,
+	is_primary tinyint(1) NOT NULL DEFAULT 0,
+	sort_order int(10) unsigned NOT NULL DEFAULT 0,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_variant_entry_target (entry_id, target_term),
+	KEY idx_variant_entry (entry_id),
+	KEY idx_variant_primary (entry_id, is_primary)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+CREATE TABLE wp_i18nly_translation_glossary_links (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	translation_id bigint(20) unsigned NOT NULL,
+	glossary_id bigint(20) unsigned NOT NULL,
+	priority int(10) unsigned NOT NULL,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_translation_glossary (translation_id, glossary_id),
+	UNIQUE KEY uq_translation_priority (translation_id, priority),
+	KEY idx_link_glossary (glossary_id),
+	KEY idx_link_translation_priority (translation_id, priority)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+CREATE TABLE wp_i18nly_translation_glossary_compilations (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	translation_id bigint(20) unsigned NOT NULL,
+	compiled_hash char(64) NOT NULL,
+	deepl_glossary_id varchar(191) DEFAULT NULL,
+	is_dirty_since_sync tinyint(1) NOT NULL DEFAULT 1,
+	last_synced_hash char(64) DEFAULT NULL,
+	last_synced_at datetime DEFAULT NULL,
+	sync_status varchar(20) NOT NULL DEFAULT 'never',
+	sync_error text,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_compilation_translation (translation_id),
+	KEY idx_compilation_sync_status (sync_status),
+	KEY idx_compilation_dirty (is_dirty_since_sync),
+	KEY idx_compilation_deepl_id (deepl_glossary_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+```
+
+Practical rules:
+
+1. `is_dirty_since_sync` can be derived from `compiled_hash <> last_synced_hash` (stored for fast filtering).
+2. One primary variant per entry must be enforced at application level.
+3. Link ordering is deterministic by `priority ASC`.
+
+### DDL impact of plural-aware modeling
+
+Yes: if plural-aware glossary rules are enabled, the base 5-table DDL needs one additional table (or equivalent columns) to encode per-form target rows.
+
+Recommended extension (6th table):
+
+```sql
+CREATE TABLE wp_i18nly_glossary_entry_targets (
+	id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	entry_id bigint(20) unsigned NOT NULL,
+	form_index smallint(5) unsigned NOT NULL DEFAULT 0,
+	source_form_index smallint(5) unsigned NOT NULL DEFAULT 0,
+	target_term varchar(191) NOT NULL,
+	is_primary tinyint(1) NOT NULL DEFAULT 1,
+	sort_order int(10) unsigned NOT NULL DEFAULT 0,
+	created_at datetime NOT NULL,
+	updated_at datetime NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE KEY uq_entry_form_term (entry_id, form_index, target_term),
+	KEY idx_entry_targets_entry (entry_id),
+	KEY idx_entry_targets_form (entry_id, form_index),
+	KEY idx_entry_targets_source_form (entry_id, source_form_index)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+```
+
+And add one nullable column in `wp_i18nly_glossary_entries`:
+
+```sql
+ALTER TABLE wp_i18nly_glossary_entries
+  ADD COLUMN source_term_plural varchar(191) DEFAULT NULL AFTER source_term,
+  ADD KEY idx_entry_source_plural (source_term_plural);
+```
+
+Operationally:
+
+1. Base DDL (5 tables) remains valid for non plural-aware mode.
+2. Plural-aware mode adds per-form target rows through this extension.
+3. DeepL sync still uses flattened pairs generated from compiled slot-aware mappings.
