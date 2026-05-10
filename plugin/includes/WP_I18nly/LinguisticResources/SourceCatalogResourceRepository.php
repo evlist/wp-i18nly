@@ -50,7 +50,7 @@ class SourceCatalogResourceRepository extends AbstractLinguisticResourceReposito
 	 * @return void
 	 */
 	public function reset_source_catalog_last_seen( $resource_id ) {
-		$this->get_storage_repository()->reset_last_seen_for_catalog( (int) $resource_id );
+		$this->get_storage_repository()->reset_last_seen_for_source_resource( (int) $resource_id );
 	}
 
 	/**
@@ -94,7 +94,7 @@ class SourceCatalogResourceRepository extends AbstractLinguisticResourceReposito
 	 * @return int
 	 */
 	public function mark_obsolete_source_catalog_entries( $resource_id, $now_gmt ) {
-		return (int) $this->get_storage_repository()->mark_obsolete_entries_not_seen(
+		return (int) $this->get_storage_repository()->mark_obsolete_source_resource_entries_not_seen(
 			(int) $resource_id,
 			(string) $now_gmt
 		);

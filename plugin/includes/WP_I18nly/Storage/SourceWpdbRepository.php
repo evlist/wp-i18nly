@@ -165,7 +165,7 @@ class SourceWpdbRepository {
 			return 'unchanged';
 		}
 
-		$entry_id = $this->find_entry_id(
+		$entry_id = $this->find_resource_entry_id(
 			(int) $entry['resource_id'],
 			isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : null,
 			(string) $entry['msgid']
@@ -247,12 +247,12 @@ class SourceWpdbRepository {
 	/**
 	 * Finds source entry row id for one source identity.
 	 *
-	 * @param int         $catalog_id Catalog ID.
+	 * @param int         $resource_id Resource ID.
 	 * @param string|null $msgctxt Message context.
 	 * @param string      $msgid Message ID.
 	 * @return int
 	 */
-	private function find_entry_id( $catalog_id, $msgctxt, $msgid ) {
+	private function find_resource_entry_id( $resource_id, $msgctxt, $msgid ) {
 		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 
 		if ( '' === $table ) {
@@ -264,7 +264,7 @@ class SourceWpdbRepository {
 				$this->wpdb->prepare(
 					'SELECT id FROM %i WHERE resource_id = %d AND msgctxt IS NULL AND msgid = %s',
 					$table,
-					$catalog_id,
+					$resource_id,
 					$msgid
 				)
 			);
@@ -274,7 +274,7 @@ class SourceWpdbRepository {
 			$this->wpdb->prepare(
 				'SELECT id FROM %i WHERE resource_id = %d AND msgctxt = %s AND msgid = %s',
 				$table,
-				$catalog_id,
+				$resource_id,
 				$msgctxt,
 				$msgid
 			)
@@ -282,13 +282,25 @@ class SourceWpdbRepository {
 	}
 
 	/**
+	 * Finds source entry row id for one source resource identity.
+	 *
+	 * @param int         $resource_id Resource ID.
+	 * @param string|null $msgctxt Message context.
+	 * @param string      $msgid Message ID.
+	 * @return int
+	 */
+	public function find_source_resource_entry_id( $resource_id, $msgctxt, $msgid ) {
+		return $this->find_resource_entry_id( (int) $resource_id, $msgctxt, (string) $msgid );
+	}
+
+	/**
 	 * Marks as obsolete active entries not seen in current import.
 	 *
-	 * @param int    $catalog_id Catalog ID.
+	 * @param int    $resource_id Resource ID.
 	 * @param string $now_gmt Update datetime in GMT.
 	 * @return int Number of rows marked obsolete.
 	 */
-	public function mark_obsolete_entries_not_seen( $catalog_id, $now_gmt ) {
+	public function mark_obsolete_source_resource_entries_not_seen( $resource_id, $now_gmt ) {
 		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 
 		if ( '' === $table ) {
@@ -300,7 +312,7 @@ class SourceWpdbRepository {
 			$table,
 			'obsolete',
 			$now_gmt,
-			(int) $catalog_id,
+			(int) $resource_id,
 			'active'
 		);
 
@@ -314,12 +326,23 @@ class SourceWpdbRepository {
 	}
 
 	/**
+	 * Marks as obsolete active entries not seen in current import.
+	 *
+	 * @param int    $catalog_id Catalog ID.
+	 * @param string $now_gmt Update datetime in GMT.
+	 * @return int Number of rows marked obsolete.
+	 */
+	public function mark_obsolete_entries_not_seen( $catalog_id, $now_gmt ) {
+		return $this->mark_obsolete_source_resource_entries_not_seen( (int) $catalog_id, (string) $now_gmt );
+	}
+
+	/**
 	 * Clears last_seen marker for active entries before one import.
 	 *
-	 * @param int $catalog_id Catalog ID.
+	 * @param int $resource_id Resource ID.
 	 * @return void
 	 */
-	public function reset_last_seen_for_catalog( $catalog_id ) {
+	public function reset_last_seen_for_source_resource( $resource_id ) {
 		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 
 		if ( '' === $table ) {
@@ -329,11 +352,21 @@ class SourceWpdbRepository {
 		$query = $this->wpdb->prepare(
 			'UPDATE %i SET last_seen_at_gmt = NULL WHERE resource_id = %d AND status = %s',
 			$table,
-			(int) $catalog_id,
+			(int) $resource_id,
 			'active'
 		);
 
 		$this->db_query( $query );
+	}
+
+	/**
+	 * Clears last_seen marker for active entries before one import.
+	 *
+	 * @param int $catalog_id Catalog ID.
+	 * @return void
+	 */
+	public function reset_last_seen_for_catalog( $catalog_id ) {
+		$this->reset_last_seen_for_source_resource( (int) $catalog_id );
 	}
 
 	/**
