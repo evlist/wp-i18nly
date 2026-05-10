@@ -20,6 +20,7 @@ use WP_I18nly\Support\TranslationRepository;
 use WP_I18nly\Support\PluginMetadataProvider;
 use WP_I18nly\Support\LanguageOptionsProvider;
 use WP_I18nly\Support\TranslationEntriesPersister;
+use WP_I18nly\LinguisticResources\TranslationEditorModel;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -739,19 +740,18 @@ class AdminPage {
 			$form_markers  = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( $locale );
 			$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
 
-			foreach ( $entries as &$entry ) {
-				if ( ! is_array( $entry ) ) {
-					continue;
-				}
+			$model = $this->create_translation_editor_model(
+				(int) $translation_id,
+				(string) $source_slug,
+				$locale,
+				is_array( $entries ) ? $entries : array(),
+				is_array( $forms ) ? $forms : array(),
+				is_array( $form_labels ) ? $form_labels : array(),
+				is_array( $form_markers ) ? $form_markers : array(),
+				is_array( $form_tooltips ) ? $form_tooltips : array()
+			);
 
-				$entry['forms']         = $forms;
-				$entry['form_labels']   = $form_labels;
-				$entry['form_markers']  = $form_markers;
-				$entry['form_tooltips'] = $form_tooltips;
-			}
-			unset( $entry );
-
-			return $entries;
+			return $model->to_rows();
 		}
 
 		if ( ! method_exists( $repository, 'list_source_entries_by_plugin_slug' ) ) {
@@ -759,6 +759,33 @@ class AdminPage {
 		}
 
 		return $repository->list_source_entries_by_plugin_slug( $source_slug );
+	}
+
+	/**
+	 * Creates a translation editor model from repository rows.
+	 *
+	 * @param int                              $translation_id Translation ID.
+	 * @param string                           $source_slug Source slug.
+	 * @param string                           $target_locale Target locale.
+	 * @param array<int, array<string, mixed>> $entries Repository rows.
+	 * @param array<int, array<string, mixed>> $forms Ordered forms metadata.
+	 * @param array<int, string>               $form_labels Labels by form index.
+	 * @param array<int, string>               $form_markers Markers by form index.
+	 * @param array<int, string>               $form_tooltips Tooltips by form index.
+	 * @return TranslationEditorModel
+	 */
+	protected function create_translation_editor_model( $translation_id, $source_slug, $target_locale, array $entries, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
+		return TranslationEditorModel::from_repository_rows(
+			(int) $translation_id,
+			(string) $source_slug,
+			self::SOURCE_LOCALE,
+			(string) $target_locale,
+			$entries,
+			$forms,
+			$form_labels,
+			$form_markers,
+			$form_tooltips
+		);
 	}
 
 	/**
