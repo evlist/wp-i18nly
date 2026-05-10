@@ -21,6 +21,7 @@ use WP_I18nly\Support\PluginMetadataProvider;
 use WP_I18nly\Support\LanguageOptionsProvider;
 use WP_I18nly\Support\TranslationEntriesPersister;
 use WP_I18nly\LinguisticResources\TranslationEditorModel;
+use WP_I18nly\LinguisticResources\TranslationResourceRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -718,10 +719,7 @@ class AdminPage {
 	 * @return array<int, array<string, mixed>>
 	 */
 	protected function get_translation_source_entries( $translation_id, $source_slug ) {
-		$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
-		$schema_manager->maybe_upgrade();
-
-		$repository  = new \WP_I18nly\Storage\SourceWpdbRepository( $schema_manager );
+		$repository  = new TranslationResourceRepository();
 		$now_gmt     = gmdate( 'Y-m-d H:i:s' );
 		$translation = $this->get_translation( $translation_id );
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
@@ -729,36 +727,25 @@ class AdminPage {
 			: '';
 		$form_count  = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
-		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
-			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
-		}
+		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
+		$entries       = $repository->list_translation_rows( (int) $translation_id, (string) $source_slug, 500, $form_count );
+		$forms         = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( $locale );
+		$form_labels   = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( $locale );
+		$form_markers  = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( $locale );
+		$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
 
-		if ( method_exists( $repository, 'list_translation_entries_by_plugin_slug' ) ) {
-			$entries       = $repository->list_translation_entries_by_plugin_slug( (int) $translation_id, (string) $source_slug, 500, $form_count );
-			$forms         = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( $locale );
-			$form_labels   = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( $locale );
-			$form_markers  = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( $locale );
-			$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
+		$model = $this->create_translation_editor_model(
+			(int) $translation_id,
+			(string) $source_slug,
+			$locale,
+			is_array( $entries ) ? $entries : array(),
+			is_array( $forms ) ? $forms : array(),
+			is_array( $form_labels ) ? $form_labels : array(),
+			is_array( $form_markers ) ? $form_markers : array(),
+			is_array( $form_tooltips ) ? $form_tooltips : array()
+		);
 
-			$model = $this->create_translation_editor_model(
-				(int) $translation_id,
-				(string) $source_slug,
-				$locale,
-				is_array( $entries ) ? $entries : array(),
-				is_array( $forms ) ? $forms : array(),
-				is_array( $form_labels ) ? $form_labels : array(),
-				is_array( $form_markers ) ? $form_markers : array(),
-				is_array( $form_tooltips ) ? $form_tooltips : array()
-			);
-
-			return $model->to_rows();
-		}
-
-		if ( ! method_exists( $repository, 'list_source_entries_by_plugin_slug' ) ) {
-			return array();
-		}
-
-		return $repository->list_source_entries_by_plugin_slug( $source_slug );
+		return $model->to_rows();
 	}
 
 	/**

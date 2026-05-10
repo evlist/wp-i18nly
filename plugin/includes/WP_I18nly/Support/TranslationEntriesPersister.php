@@ -10,6 +10,8 @@
 
 namespace WP_I18nly\Support;
 
+use WP_I18nly\LinguisticResources\TranslationResourceRepository;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -25,21 +27,12 @@ class TranslationEntriesPersister {
 	 * @return void
 	 */
 	public function persist( $translation_id, $source_slug, array $entries_payload ) {
-		$schema_manager = new \WP_I18nly\Storage\SourceSchemaManager();
-		$schema_manager->maybe_upgrade();
-
-		$repository = new \WP_I18nly\Storage\SourceWpdbRepository( $schema_manager );
+		$repository = new TranslationResourceRepository();
 		$now_gmt    = gmdate( 'Y-m-d H:i:s' );
 		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
 		$form_count = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
-		if ( method_exists( $repository, 'ensure_translated_entries_for_translation' ) ) {
-			$repository->ensure_translated_entries_for_translation( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
-		}
-
-		if ( ! method_exists( $repository, 'upsert_translated_entry' ) ) {
-			return;
-		}
+		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
 
 		foreach ( $entries_payload as $source_entry_id => $entry_payload ) {
 			if ( ! is_array( $entry_payload ) ) {
@@ -82,7 +75,7 @@ class TranslationEntriesPersister {
 					$explicit_status = '' === trim( $normalized_text ) ? null : 'draft';
 				}
 
-				$repository->upsert_translated_entry(
+				$repository->upsert_translation_target(
 					(int) $translation_id,
 					$normalized_source_entry_id,
 					$normalized_form_index,
