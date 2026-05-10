@@ -99,4 +99,18 @@ class SourceCatalogResourceRepository extends AbstractLinguisticResourceReposito
 			(string) $now_gmt
 		);
 	}
+
+	/**
+	 * Lists source catalog entries for one source slug.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @param int    $limit Maximum row count.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function list_source_catalog_entries( $source_slug, $limit = 500 ) {
+		return $this->get_storage_repository()->list_source_resource_entries_by_source_slug(
+			(string) $source_slug,
+			(int) $limit
+		);
+	}
 }

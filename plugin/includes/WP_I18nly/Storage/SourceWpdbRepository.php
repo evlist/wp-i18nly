@@ -372,11 +372,11 @@ class SourceWpdbRepository {
 	/**
 	 * Lists source entries for one plugin slug.
 	 *
-	 * @param string $plugin_slug Plugin slug.
+	 * @param string $source_slug Source slug.
 	 * @param int    $limit Maximum row count.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function list_source_entries_by_plugin_slug( $plugin_slug, $limit = 500 ) {
+	public function list_source_resource_entries_by_source_slug( $source_slug, $limit = 500 ) {
 		$entries_table  = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 		$catalogs_table = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 
@@ -391,11 +391,22 @@ class SourceWpdbRepository {
 			$entries_table,
 			$catalogs_table,
 			self::SOURCE_CATALOG_RESOURCE_KIND,
-			(string) $plugin_slug,
+			(string) $source_slug,
 			$max_rows
 		);
 
 		return $this->db_get_results( $query, ARRAY_A );
+	}
+
+	/**
+	 * Lists source entries for one plugin slug.
+	 *
+	 * @param string $plugin_slug Plugin slug.
+	 * @param int    $limit Maximum row count.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function list_source_entries_by_plugin_slug( $plugin_slug, $limit = 500 ) {
+		return $this->list_source_resource_entries_by_source_slug( (string) $plugin_slug, (int) $limit );
 	}
 
 	/**

@@ -59,6 +59,37 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$this->assertSame( 1, $rows[0]['translations'][0]['used_ai'] );
 		$this->assertSame( 0, $rows[0]['translations'][0]['used_manual'] );
 	}
+
+	/**
+	 * Lists source rows through the new resource-centric alias.
+	 *
+	 * @return void
+	 */
+	public function test_source_resource_alias_lists_source_rows_by_source_slug() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$catalog_id = $repo->upsert_catalog( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$wpdb_stub->seed_entry(
+			array(
+				'resource_id'        => $catalog_id,
+				'msgctxt'            => '',
+				'msgid'              => 'Hello world',
+				'msgid_plural'       => '',
+				'translator_comment' => 'Greeting',
+				'status'             => 'active',
+				'last_seen_at_gmt'   => '2026-05-10 10:00:00',
+				'updated_at_gmt'     => '2026-05-10 10:00:00',
+			)
+		);
+
+		$rows = $repo->list_source_resource_entries_by_source_slug( 'sample-plugin/sample.php', 500 );
+
+		$this->assertCount( 1, $rows );
+		$this->assertSame( 'Hello world', $rows[0]['msgid'] );
+		$this->assertSame( 'Greeting', $rows[0]['translator_comment'] );
+	}
 }
 
 /**
@@ -159,6 +190,10 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 		unset( $output );
 
 		$query = (string) $query;
+
+		if ( false !== strpos( $query, 'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM' ) ) {
+			return $this->build_list_source_rows( $query );
+		}
 
 		if ( false !== strpos( $query, 'SELECT e.id AS source_entry_id, e.msgid_plural FROM' ) ) {
 			return $this->build_source_rows( $query );
@@ -268,6 +303,36 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 			$results[] = array(
 				'source_entry_id' => (int) $entry['id'],
 				'msgid_plural'    => isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '',
+			);
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Builds source rows for list_source_resource_entries_by_source_slug().
+	 *
+	 * @param string $query Prepared query.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function build_list_source_rows( $query ) {
+		$catalog_ids = $this->match_catalog_ids( $query );
+		$results     = array();
+
+		foreach ( $this->entries as $entry ) {
+			if ( ! in_array( (int) $entry['resource_id'], $catalog_ids, true ) ) {
+				continue;
+			}
+
+			$results[] = array(
+				'source_entry_id'    => (int) $entry['id'],
+				'msgctxt'            => isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '',
+				'msgid'              => isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '',
+				'msgid_plural'       => isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '',
+				'translator_comment' => isset( $entry['translator_comment'] ) ? (string) $entry['translator_comment'] : '',
+				'status'             => isset( $entry['status'] ) ? (string) $entry['status'] : 'active',
+				'last_seen_at_gmt'   => isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : '',
+				'updated_at_gmt'     => isset( $entry['updated_at_gmt'] ) ? (string) $entry['updated_at_gmt'] : '',
 			);
 		}
 
