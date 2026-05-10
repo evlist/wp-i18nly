@@ -56,11 +56,34 @@ class SourceCatalogResourceRepository extends AbstractLinguisticResourceReposito
 	/**
 	 * Upserts one source catalog entry row.
 	 *
-	 * @param array<string, mixed> $entry Entry payload.
+	 * @param int         $resource_id Source catalog resource ID.
+	 * @param string|null $msgctxt Message context.
+	 * @param string      $msgid Message ID.
+	 * @param string|null $msgid_plural Optional plural source text.
+	 * @param string      $translator_comment Translator comment.
+	 * @param string      $comments_json Comments JSON.
+	 * @param string      $references_json References JSON.
+	 * @param string      $flags_json Flags JSON.
+	 * @param string      $now_gmt Datetime in GMT.
 	 * @return string
 	 */
-	public function upsert_source_catalog_entry( array $entry ) {
-		return (string) $this->get_storage_repository()->upsert_source_entry( $entry );
+	public function upsert_source_catalog_entry( $resource_id, $msgctxt, $msgid, $msgid_plural, $translator_comment, $comments_json, $references_json, $flags_json, $now_gmt ) {
+		return (string) $this->get_storage_repository()->upsert_source_entry(
+			array(
+				'resource_id'        => (int) $resource_id,
+				'msgctxt'            => null !== $msgctxt ? (string) $msgctxt : null,
+				'msgid'              => (string) $msgid,
+				'msgid_plural'       => null !== $msgid_plural ? (string) $msgid_plural : null,
+				'translator_comment' => (string) $translator_comment,
+				'comments_json'      => (string) $comments_json,
+				'references_json'    => (string) $references_json,
+				'flags_json'         => (string) $flags_json,
+				'status'             => 'active',
+				'last_seen_at_gmt'   => (string) $now_gmt,
+				'created_at_gmt'     => (string) $now_gmt,
+				'updated_at_gmt'     => (string) $now_gmt,
+			)
+		);
 	}
 
 	/**

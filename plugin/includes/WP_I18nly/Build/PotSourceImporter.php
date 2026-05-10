@@ -97,25 +97,20 @@ class PotSourceImporter {
 			$translator_comment = $this->extract_translator_comment( $translation );
 
 			$result = (string) $this->repository->upsert_source_catalog_entry(
-				array(
-					'catalog_id'         => $catalog_id,
-					'msgctxt'            => null !== $msgctxt ? (string) $msgctxt : null,
-					'msgid'              => $msgid,
-					'msgid_plural'       => null !== $msgid_plural ? (string) $msgid_plural : null,
-					'translator_comment' => $translator_comment,
-					'comments_json'      => $this->encode_json(
-						array(
-							'comments'           => $translation->getComments()->toArray(),
-							'extracted_comments' => $translation->getExtractedComments()->toArray(),
-						)
-					),
-					'references_json'    => $this->encode_json( $translation->getReferences()->toArray() ),
-					'flags_json'         => $this->encode_json( $translation->getFlags()->toArray() ),
-					'status'             => 'active',
-					'last_seen_at_gmt'   => $now_gmt,
-					'created_at_gmt'     => $now_gmt,
-					'updated_at_gmt'     => $now_gmt,
-				)
+				$catalog_id,
+				null !== $msgctxt ? (string) $msgctxt : null,
+				$msgid,
+				null !== $msgid_plural ? (string) $msgid_plural : null,
+				$translator_comment,
+				$this->encode_json(
+					array(
+						'comments'           => $translation->getComments()->toArray(),
+						'extracted_comments' => $translation->getExtractedComments()->toArray(),
+					)
+				),
+				$this->encode_json( $translation->getReferences()->toArray() ),
+				$this->encode_json( $translation->getFlags()->toArray() ),
+				$now_gmt
 			);
 
 			if ( 'inserted' === $result ) {
