@@ -10,8 +10,8 @@
 
 namespace WP_I18nly\Build;
 
+use WP_I18nly\LinguisticResources\SourceCatalogResourceRepository;
 use WP_I18nly\Storage\SourceSchemaManager;
-use WP_I18nly\Storage\SourceWpdbRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -46,7 +46,7 @@ class PotSourceImporter {
 
 		$this->repository = null !== $repository
 			? $repository
-			: new SourceWpdbRepository( $this->schema_manager );
+			: new SourceCatalogResourceRepository( null, $this->schema_manager );
 	}
 
 	/**
@@ -71,7 +71,7 @@ class PotSourceImporter {
 		$domain  = isset( $headers['X-Domain'] ) ? (string) $headers['X-Domain'] : '';
 		$now_gmt = gmdate( 'Y-m-d H:i:s' );
 
-		$catalog_id = (int) $this->repository->upsert_catalog(
+		$catalog_id = (int) $this->repository->upsert_source_catalog(
 			$plugin_slug,
 			$domain,
 			$this->encode_json( $headers ),
@@ -83,9 +83,7 @@ class PotSourceImporter {
 		$unchanged = 0;
 		$obsoleted = 0;
 
-		if ( method_exists( $this->repository, 'reset_last_seen_for_catalog' ) ) {
-			$this->repository->reset_last_seen_for_catalog( $catalog_id );
-		}
+		$this->repository->reset_source_catalog_last_seen( $catalog_id );
 
 		foreach ( $translations as $translation ) {
 			$msgid = (string) $translation->getOriginal();
@@ -98,7 +96,7 @@ class PotSourceImporter {
 			$msgid_plural       = $translation->getPlural();
 			$translator_comment = $this->extract_translator_comment( $translation );
 
-			$result = (string) $this->repository->upsert_source_entry(
+			$result = (string) $this->repository->upsert_source_catalog_entry(
 				array(
 					'catalog_id'         => $catalog_id,
 					'msgctxt'            => null !== $msgctxt ? (string) $msgctxt : null,
@@ -129,9 +127,7 @@ class PotSourceImporter {
 			}
 		}
 
-		if ( method_exists( $this->repository, 'mark_obsolete_entries_not_seen' ) ) {
-			$obsoleted = (int) $this->repository->mark_obsolete_entries_not_seen( $catalog_id, $now_gmt );
-		}
+		$obsoleted = (int) $this->repository->mark_obsolete_source_catalog_entries( $catalog_id, $now_gmt );
 
 		return array(
 			'catalog_id' => $catalog_id,

@@ -243,6 +243,19 @@ class I18nly_Test_InMemory_Source_Repository {
 	}
 
 	/**
+	 * Upserts one source catalog resource row.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @param string $domain Domain.
+	 * @param string $headers_json Headers JSON.
+	 * @param string $now_gmt GMT datetime.
+	 * @return int
+	 */
+	public function upsert_source_catalog( $source_slug, $domain, $headers_json, $now_gmt ) {
+		return $this->upsert_catalog( $source_slug, $domain, $headers_json, $now_gmt );
+	}
+
+	/**
 	 * Upserts one source entry row.
 	 *
 	 * @param array<string, mixed> $entry Entry payload.
@@ -289,6 +302,16 @@ class I18nly_Test_InMemory_Source_Repository {
 	}
 
 	/**
+	 * Upserts one source catalog entry row.
+	 *
+	 * @param array<string, mixed> $entry Entry payload.
+	 * @return string
+	 */
+	public function upsert_source_catalog_entry( array $entry ) {
+		return (string) $this->upsert_source_entry( $entry );
+	}
+
+	/**
 	 * Marks active entries as obsolete when not seen in current import.
 	 *
 	 * @param int    $catalog_id Catalog ID.
@@ -320,6 +343,17 @@ class I18nly_Test_InMemory_Source_Repository {
 	}
 
 	/**
+	 * Marks missing active source catalog entries as obsolete.
+	 *
+	 * @param int    $catalog_id Catalog ID.
+	 * @param string $now_gmt Update datetime.
+	 * @return int
+	 */
+	public function mark_obsolete_source_catalog_entries( $catalog_id, $now_gmt ) {
+		return (int) $this->mark_obsolete_entries_not_seen( $catalog_id, $now_gmt );
+	}
+
+	/**
 	 * Clears last_seen marker for active entries in one catalog.
 	 *
 	 * @param int $catalog_id Catalog ID.
@@ -337,6 +371,16 @@ class I18nly_Test_InMemory_Source_Repository {
 
 			$this->entries[ $key ]['last_seen_at_gmt'] = null;
 		}
+	}
+
+	/**
+	 * Clears last_seen markers for one source catalog resource.
+	 *
+	 * @param int $catalog_id Catalog ID.
+	 * @return void
+	 */
+	public function reset_source_catalog_last_seen( $catalog_id ) {
+		$this->reset_last_seen_for_catalog( $catalog_id );
 	}
 }
 

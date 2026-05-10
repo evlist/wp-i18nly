@@ -27,6 +27,7 @@ class LinguisticResourceModelTest extends TestCase {
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationResource' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationResourceEntry' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationEditorModel' ) );
+		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\SourceCatalogResourceRepository' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationResourceRepository' ) );
 	}
 
