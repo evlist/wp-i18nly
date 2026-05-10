@@ -90,6 +90,38 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$this->assertSame( 'Hello world', $rows[0]['msgid'] );
 		$this->assertSame( 'Greeting', $rows[0]['translator_comment'] );
 	}
+
+	/**
+	 * Lists source rows through the source catalog repository abstraction.
+	 *
+	 * @return void
+	 */
+	public function test_source_catalog_resource_repository_lists_entries() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$storage   = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+		$repo      = new \WP_I18nly\LinguisticResources\SourceCatalogResourceRepository( $storage, $manager );
+
+		$catalog_id = $storage->upsert_catalog( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$wpdb_stub->seed_entry(
+			array(
+				'resource_id'        => $catalog_id,
+				'msgctxt'            => '',
+				'msgid'              => 'Hello world',
+				'msgid_plural'       => '',
+				'translator_comment' => 'Greeting',
+				'status'             => 'active',
+				'last_seen_at_gmt'   => '2026-05-10 10:00:00',
+				'updated_at_gmt'     => '2026-05-10 10:00:00',
+			)
+		);
+
+		$rows = $repo->list_source_catalog_entries( 'sample-plugin/sample.php', 500 );
+
+		$this->assertCount( 1, $rows );
+		$this->assertSame( 'Hello world', $rows[0]['msgid'] );
+		$this->assertSame( 'Greeting', $rows[0]['translator_comment'] );
+	}
 }
 
 /**
