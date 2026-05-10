@@ -68,6 +68,13 @@ class I18nly_Test_WPDB_Stub {
 	private $entries = array();
 
 	/**
+	 * Target rows.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private $targets = array();
+
+	/**
 	 * Executes SQL query.
 	 *
 	 * @param string $sql SQL query.
@@ -134,40 +141,184 @@ class I18nly_Test_WPDB_Stub {
 	public function get_var( $query ) {
 		$query = (string) $query;
 
-		if ( preg_match( "/FROM\\s+\\w+i18nly_source_catalogs\\s+WHERE\\s+plugin_slug\\s*=\\s*'([^']+)'/", $query, $matches ) ) {
-			$plugin_slug = stripslashes( $matches[1] );
+		if ( preg_match( "/FROM\\s+\\w+i18nly_linguistic_resources\\s+WHERE\\s+resource_kind\\s*=\\s*'([^']+)'\\s+AND\\s+source_slug\\s*=\\s*'([^']+)'/", $query, $matches ) ) {
+			$resource_kind = stripslashes( $matches[1] );
+			$plugin_slug   = stripslashes( $matches[2] );
 
 			foreach ( $this->catalogs as $catalog ) {
-				if ( $plugin_slug === (string) $catalog['plugin_slug'] ) {
+				if ( $resource_kind === (string) $catalog['resource_kind'] && $plugin_slug === (string) $catalog['source_slug'] ) {
 					return (int) $catalog['id'];
 				}
 			}
 		}
 
-		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s+IS\\s+NULL\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
+		if ( preg_match( "/FROM\\s+\\w+i18nly_linguistic_resource_entries\\s+WHERE\\s+resource_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s+IS\\s+NULL\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
 			$catalog_id = (int) $matches[1];
 			$msgid      = stripslashes( $matches[2] );
 
 			foreach ( $this->entries as $entry ) {
-				if ( $catalog_id === (int) $entry['catalog_id'] && null === $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
+				if ( $catalog_id === (int) $entry['resource_id'] && null === $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
 					return (int) $entry['id'];
 				}
 			}
 		}
 
-		if ( preg_match( "/FROM\\s+\\w+i18nly_source_entries\\s+WHERE\\s+catalog_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s*=\\s*'([^']*)'\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
+		if ( preg_match( "/FROM\\s+\\w+i18nly_linguistic_resource_entries\\s+WHERE\\s+resource_id\\s*=\\s*(\\d+)\\s+AND\\s+msgctxt\\s*=\\s*'([^']*)'\\s+AND\\s+msgid\\s*=\\s*'([^']*)'/", $query, $matches ) ) {
 			$catalog_id = (int) $matches[1];
 			$msgctxt    = stripslashes( $matches[2] );
 			$msgid      = stripslashes( $matches[3] );
 
 			foreach ( $this->entries as $entry ) {
-				if ( $catalog_id === (int) $entry['catalog_id'] && $msgctxt === (string) $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
+				if ( $catalog_id === (int) $entry['resource_id'] && $msgctxt === (string) $entry['msgctxt'] && $msgid === (string) $entry['msgid'] ) {
 					return (int) $entry['id'];
 				}
 			}
 		}
 
+		if ( preg_match( "/FROM\\s+\\w+i18nly_linguistic_resource_targets\\s+WHERE\\s+resource_id\\s*=\\s*(\\d+)\\s+AND\\s+source_entry_id\\s*=\\s*(\\d+)\\s+AND\\s+form_index\\s*=\\s*(\\d+)/", $query, $matches ) ) {
+			$resource_id    = (int) $matches[1];
+			$source_entry_id = (int) $matches[2];
+			$form_index     = (int) $matches[3];
+
+			foreach ( $this->targets as $target ) {
+				if ( $resource_id === (int) $target['resource_id'] && $source_entry_id === (int) $target['source_entry_id'] && $form_index === (int) $target['form_index'] ) {
+					return (int) $target['id'];
+				}
+			}
+		}
+
 		return null;
+	}
+
+	/**
+	 * Returns multiple rows from in-memory tables.
+	 *
+	 * @param string $query SQL query.
+	 * @param string $output Output type.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_results( $query, $output = ARRAY_A ) {
+		unset( $output );
+
+		$query = (string) $query;
+
+		if ( preg_match( "/FROM\\s+\\w+i18nly_linguistic_resource_entries\\s+e\\s+INNER JOIN\\s+\\w+i18nly_linguistic_resources\\s+c ON c\\.id = e\\.resource_id\\s+WHERE c\\.resource_kind = '([^']+)' AND c\\.source_slug = '([^']+)' ORDER BY e\\.id ASC/", $query, $matches ) ) {
+			$resource_kind = stripslashes( $matches[1] );
+			$source_slug   = stripslashes( $matches[2] );
+			$catalog_ids   = array();
+			$results       = array();
+
+			foreach ( $this->catalogs as $catalog ) {
+				if ( $resource_kind === (string) $catalog['resource_kind'] && $source_slug === (string) $catalog['source_slug'] ) {
+					$catalog_ids[] = (int) $catalog['id'];
+				}
+			}
+
+			foreach ( $this->entries as $entry ) {
+				if ( ! in_array( (int) $entry['resource_id'], $catalog_ids, true ) ) {
+					continue;
+				}
+
+				$results[] = array(
+					'source_entry_id' => (int) $entry['id'],
+					'msgid_plural'    => isset( $entry['msgid_plural'] ) ? $entry['msgid_plural'] : '',
+				);
+			}
+
+			usort(
+				$results,
+				static function ( $left, $right ) {
+					return (int) $left['source_entry_id'] <=> (int) $right['source_entry_id'];
+				}
+			);
+
+			return $results;
+		}
+
+		if ( preg_match( "/LEFT JOIN\\s+\\w+i18nly_linguistic_resource_targets\\s+t ON t\\.source_entry_id = e\\.id AND t\\.resource_id = (\\d+)\\s+WHERE c\\.resource_kind = '([^']+)' AND c\\.source_slug = '([^']+)'/", $query, $matches ) ) {
+			$target_resource_id = (int) $matches[1];
+			$resource_kind      = stripslashes( $matches[2] );
+			$source_slug        = stripslashes( $matches[3] );
+			$catalog_ids        = array();
+			$results            = array();
+
+			foreach ( $this->catalogs as $catalog ) {
+				if ( $resource_kind === (string) $catalog['resource_kind'] && $source_slug === (string) $catalog['source_slug'] ) {
+					$catalog_ids[] = (int) $catalog['id'];
+				}
+			}
+
+			foreach ( $this->entries as $entry ) {
+				if ( ! in_array( (int) $entry['resource_id'], $catalog_ids, true ) ) {
+					continue;
+				}
+
+				$matching_targets = array();
+				foreach ( $this->targets as $target ) {
+					if ( $target_resource_id === (int) $target['resource_id'] && (int) $entry['id'] === (int) $target['source_entry_id'] ) {
+						$matching_targets[] = $target;
+					}
+				}
+
+				if ( empty( $matching_targets ) ) {
+					$results[] = array(
+						'source_entry_id'            => (int) $entry['id'],
+						'msgctxt'                    => isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '',
+						'msgid'                      => isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '',
+						'msgid_plural'               => isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '',
+						'translator_comment'         => isset( $entry['translator_comment'] ) ? (string) $entry['translator_comment'] : '',
+						'source_status'              => isset( $entry['status'] ) ? (string) $entry['status'] : 'active',
+						'last_seen_at_gmt'           => isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : '',
+						'updated_at_gmt'             => isset( $entry['updated_at_gmt'] ) ? (string) $entry['updated_at_gmt'] : '',
+						'translation_updated_at_gmt' => '',
+					);
+					continue;
+				}
+
+				foreach ( $matching_targets as $target ) {
+					$results[] = array(
+						'source_entry_id'            => (int) $entry['id'],
+						'msgctxt'                    => isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : '',
+						'msgid'                      => isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '',
+						'msgid_plural'               => isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '',
+						'translator_comment'         => isset( $entry['translator_comment'] ) ? (string) $entry['translator_comment'] : '',
+						'source_status'              => isset( $entry['status'] ) ? (string) $entry['status'] : 'active',
+						'last_seen_at_gmt'           => isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : '',
+						'updated_at_gmt'             => isset( $entry['updated_at_gmt'] ) ? (string) $entry['updated_at_gmt'] : '',
+						'form_index'                 => (int) $target['form_index'],
+						'translation'                => isset( $target['target_text'] ) ? (string) $target['target_text'] : '',
+						'translated_status'          => isset( $target['status'] ) ? (string) $target['status'] : 'draft',
+						'used_ai'                    => isset( $target['used_ai'] ) ? (int) $target['used_ai'] : 0,
+						'used_manual'                => isset( $target['used_manual'] ) ? (int) $target['used_manual'] : 1,
+						'comment'                    => isset( $target['comment'] ) ? (string) $target['comment'] : '',
+						'translation_updated_at_gmt' => isset( $target['updated_at_gmt'] ) ? (string) $target['updated_at_gmt'] : '',
+					);
+				}
+			}
+
+			usort(
+				$results,
+				static function ( $left, $right ) {
+					$left_msgid  = isset( $left['msgid'] ) ? (string) $left['msgid'] : '';
+					$right_msgid = isset( $right['msgid'] ) ? (string) $right['msgid'] : '';
+
+					if ( $left_msgid !== $right_msgid ) {
+						return $left_msgid <=> $right_msgid;
+					}
+
+					$entry_compare = (int) $left['source_entry_id'] <=> (int) $right['source_entry_id'];
+					if ( 0 !== $entry_compare ) {
+						return $entry_compare;
+					}
+
+					return (int) ( $left['form_index'] ?? -1 ) <=> (int) ( $right['form_index'] ?? -1 );
+				}
+			);
+
+			return $results;
+		}
+
+		return array();
 	}
 
 	/**
@@ -210,7 +361,7 @@ class I18nly_Test_WPDB_Stub {
 	public function insert( $table, $data, $format = null ) {
 		unset( $format );
 
-		if ( false !== strpos( (string) $table, 'i18nly_source_catalogs' ) ) {
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resources' ) ) {
 			$this->insert_id  = count( $this->catalogs ) + 1;
 			$data['id']       = $this->insert_id;
 			$this->catalogs[] = $data;
@@ -218,10 +369,18 @@ class I18nly_Test_WPDB_Stub {
 			return 1;
 		}
 
-		if ( false !== strpos( (string) $table, 'i18nly_source_entries' ) ) {
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resource_entries' ) ) {
 			$this->insert_id = count( $this->entries ) + 1;
 			$data['id']      = $this->insert_id;
 			$this->entries[] = $data;
+
+			return 1;
+		}
+
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resource_targets' ) ) {
+			$this->insert_id = count( $this->targets ) + 1;
+			$data['id']      = $this->insert_id;
+			$this->targets[] = $data;
 
 			return 1;
 		}
@@ -242,7 +401,7 @@ class I18nly_Test_WPDB_Stub {
 	public function update( $table, $data, $where, $format = null, $where_format = null ) {
 		unset( $format, $where_format );
 
-		if ( false !== strpos( (string) $table, 'i18nly_source_catalogs' ) && isset( $where['id'] ) ) {
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resources' ) && isset( $where['id'] ) ) {
 			foreach ( $this->catalogs as $index => $row ) {
 				if ( (int) $row['id'] === (int) $where['id'] ) {
 					$this->catalogs[ $index ] = array_merge( $row, $data );
@@ -251,10 +410,19 @@ class I18nly_Test_WPDB_Stub {
 			}
 		}
 
-		if ( false !== strpos( (string) $table, 'i18nly_source_entries' ) && isset( $where['id'] ) ) {
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resource_entries' ) && isset( $where['id'] ) ) {
 			foreach ( $this->entries as $index => $row ) {
 				if ( (int) $row['id'] === (int) $where['id'] ) {
 					$this->entries[ $index ] = array_merge( $row, $data );
+					return 1;
+				}
+			}
+		}
+
+		if ( false !== strpos( (string) $table, 'i18nly_linguistic_resource_targets' ) && isset( $where['id'] ) ) {
+			foreach ( $this->targets as $index => $row ) {
+				if ( (int) $row['id'] === (int) $where['id'] ) {
+					$this->targets[ $index ] = array_merge( $row, $data );
 					return 1;
 				}
 			}

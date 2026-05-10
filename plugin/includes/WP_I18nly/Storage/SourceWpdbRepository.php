@@ -16,16 +16,23 @@ defined( 'ABSPATH' ) || exit;
  * Persists source catalogs and entries in WordPress tables.
  */
 class SourceWpdbRepository {
+	use SourceWpdbRepositoryDbAccessTrait;
+
 	/**
 	 * Source entry identity columns.
 	 *
 	 * @var array<int, string>
 	 */
 	private const ENTRY_IDENTITY_COLUMNS = array(
-		'catalog_id',
+		'resource_id',
 		'msgctxt',
 		'msgid',
 	);
+
+	/**
+	 * Resource kind used for imported source catalogs.
+	 */
+	private const SOURCE_CATALOG_RESOURCE_KIND = 'source_catalog';
 
 	/**
 	 * Default plural forms count used when locale rules are unknown.
@@ -97,9 +104,11 @@ class SourceWpdbRepository {
 
 		$catalog_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				'SELECT id FROM %i WHERE plugin_slug = %s',
+				'SELECT id FROM %i WHERE resource_kind = %s AND source_slug = %s AND target_locale = %s',
 				$table,
-				$plugin_slug
+				self::SOURCE_CATALOG_RESOURCE_KIND,
+				$plugin_slug,
+				''
 			)
 		);
 
@@ -122,13 +131,16 @@ class SourceWpdbRepository {
 		$this->wpdb->insert(
 			$table,
 			array(
-				'plugin_slug'    => $plugin_slug,
+				'resource_kind'  => self::SOURCE_CATALOG_RESOURCE_KIND,
+				'source_slug'    => $plugin_slug,
+				'source_locale'  => 'en_US',
+				'target_locale'  => '',
 				'domain'         => $domain,
 				'headers_json'   => $headers_json,
 				'created_at_gmt' => $now_gmt,
 				'updated_at_gmt' => $now_gmt,
 			),
-			array( '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		return (int) $this->wpdb->insert_id;
@@ -145,13 +157,16 @@ class SourceWpdbRepository {
 		$entry['translator_comment'] = isset( $entry['translator_comment'] )
 			? (string) $entry['translator_comment']
 			: '';
+		$entry['resource_id']        = isset( $entry['resource_id'] )
+			? (int) $entry['resource_id']
+			: ( isset( $entry['catalog_id'] ) ? (int) $entry['catalog_id'] : 0 );
 
 		if ( '' === $table ) {
 			return 'unchanged';
 		}
 
 		$entry_id = $this->find_entry_id(
-			(int) $entry['catalog_id'],
+			(int) $entry['resource_id'],
 			isset( $entry['msgctxt'] ) ? (string) $entry['msgctxt'] : null,
 			(string) $entry['msgid']
 		);
@@ -164,14 +179,14 @@ class SourceWpdbRepository {
 
 			$existing = $this->db_get_row(
 				$this->wpdb->prepare(
-					'SELECT catalog_id, msgctxt, msgid, msgid_plural, translator_comment, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
+					'SELECT resource_id, msgctxt, msgid, msgid_plural, translator_comment, comments_json, references_json, flags_json, status, last_seen_at_gmt FROM %i WHERE id = %d',
 					$table,
 					$entry_id
 				),
 				ARRAY_A
 			);
 
-			$unchanged = $this->entry_rows_are_equal( $existing, $entry );
+			$unchanged = ( new SourceEntryRowComparator() )->rows_are_equal( $existing, $entry, self::ENTRY_IDENTITY_COLUMNS, self::ENTRY_CONTENT_COLUMNS );
 
 			if ( $unchanged ) {
 				$this->wpdb->update(
@@ -210,7 +225,7 @@ class SourceWpdbRepository {
 		$this->wpdb->insert(
 			$table,
 			array(
-				'catalog_id'         => $entry['catalog_id'],
+				'resource_id'        => $entry['resource_id'],
 				'msgctxt'            => $entry['msgctxt'],
 				'msgid'              => $entry['msgid'],
 				'msgid_plural'       => $entry['msgid_plural'],
@@ -247,7 +262,7 @@ class SourceWpdbRepository {
 		if ( null === $msgctxt ) {
 			return (int) $this->db_get_var(
 				$this->wpdb->prepare(
-					'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt IS NULL AND msgid = %s',
+					'SELECT id FROM %i WHERE resource_id = %d AND msgctxt IS NULL AND msgid = %s',
 					$table,
 					$catalog_id,
 					$msgid
@@ -257,7 +272,7 @@ class SourceWpdbRepository {
 
 		return (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				'SELECT id FROM %i WHERE catalog_id = %d AND msgctxt = %s AND msgid = %s',
+				'SELECT id FROM %i WHERE resource_id = %d AND msgctxt = %s AND msgid = %s',
 				$table,
 				$catalog_id,
 				$msgctxt,
@@ -281,7 +296,7 @@ class SourceWpdbRepository {
 		}
 
 		$query = $this->wpdb->prepare(
-			'UPDATE %i SET status = %s, updated_at_gmt = %s WHERE catalog_id = %d AND status = %s AND last_seen_at_gmt IS NULL',
+			'UPDATE %i SET status = %s, updated_at_gmt = %s WHERE resource_id = %d AND status = %s AND last_seen_at_gmt IS NULL',
 			$table,
 			'obsolete',
 			$now_gmt,
@@ -312,7 +327,7 @@ class SourceWpdbRepository {
 		}
 
 		$query = $this->wpdb->prepare(
-			'UPDATE %i SET last_seen_at_gmt = NULL WHERE catalog_id = %d AND status = %s',
+			'UPDATE %i SET last_seen_at_gmt = NULL WHERE resource_id = %d AND status = %s',
 			$table,
 			(int) $catalog_id,
 			'active'
@@ -339,9 +354,10 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
+			self::SOURCE_CATALOG_RESOURCE_KIND,
 			(string) $plugin_slug,
 			$max_rows
 		);
@@ -362,6 +378,7 @@ class SourceWpdbRepository {
 		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
 
 		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
 			return 0;
@@ -371,9 +388,10 @@ class SourceWpdbRepository {
 
 		$source_rows = $this->db_get_results(
 			$this->wpdb->prepare(
-				'SELECT e.id AS source_entry_id, e.msgid_plural FROM %i e INNER JOIN %i c ON c.id = e.catalog_id WHERE c.plugin_slug = %s ORDER BY e.id ASC',
+				'SELECT e.id AS source_entry_id, e.msgid_plural FROM %i e INNER JOIN %i c ON c.id = e.resource_id WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.id ASC',
 				$entries_table,
 				$catalogs_table,
+				self::SOURCE_CATALOG_RESOURCE_KIND,
 				(string) $plugin_slug
 			),
 			ARRAY_A
@@ -394,9 +412,9 @@ class SourceWpdbRepository {
 			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
 				$existing_translated_entry_id = (int) $this->db_get_var(
 					$this->wpdb->prepare(
-						'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d AND form_index = %d',
+						'SELECT id FROM %i WHERE resource_id = %d AND source_entry_id = %d AND form_index = %d',
 						$translated_entries_table,
-						(int) $translation_id,
+						$target_resource_id,
 						$source_entry_id,
 						$form_index
 					)
@@ -409,10 +427,10 @@ class SourceWpdbRepository {
 				$result = $this->wpdb->insert(
 					$translated_entries_table,
 					array(
-						'translation_id'  => (int) $translation_id,
+						'resource_id'     => $target_resource_id,
 						'source_entry_id' => $source_entry_id,
 						'form_index'      => $form_index,
-						'translation'     => '',
+						'target_text'     => '',
 						'status'          => 'draft',
 						'comment'         => '',
 						'created_at_gmt'  => (string) $now_gmt,
@@ -443,6 +461,7 @@ class SourceWpdbRepository {
 		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
 		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
 
 		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
 			return array();
@@ -451,11 +470,12 @@ class SourceWpdbRepository {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.catalog_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.translation_id = %d WHERE c.plugin_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.target_text AS translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.resource_id = %d WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$catalogs_table,
 			$translated_entries_table,
-			(int) $translation_id,
+			$target_resource_id,
+			self::SOURCE_CATALOG_RESOURCE_KIND,
 			(string) $plugin_slug,
 			$max_rows
 		);
@@ -541,14 +561,15 @@ class SourceWpdbRepository {
 	 */
 	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
 		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
+		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
 		if ( '' === $translated_entries_table ) {
 			return false;
 		}
 		$translated_entry_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
-				'SELECT id FROM %i WHERE translation_id = %d AND source_entry_id = %d AND form_index = %d',
+				'SELECT id FROM %i WHERE resource_id = %d AND source_entry_id = %d AND form_index = %d',
 				$translated_entries_table,
-				(int) $translation_id,
+				$target_resource_id,
 				(int) $source_entry_id,
 				(int) $form_index
 			)
@@ -556,7 +577,7 @@ class SourceWpdbRepository {
 
 		if ( $translated_entry_id > 0 ) {
 			$update_data   = array(
-				'translation'    => (string) $translation,
+				'target_text'    => (string) $translation,
 				'updated_at_gmt' => (string) $now_gmt,
 			);
 			$update_format = array( '%s', '%s' );
@@ -584,10 +605,10 @@ class SourceWpdbRepository {
 		$result = $this->wpdb->insert(
 			$translated_entries_table,
 			array(
-				'translation_id'  => (int) $translation_id,
+				'resource_id'     => $target_resource_id,
 				'source_entry_id' => (int) $source_entry_id,
 				'form_index'      => (int) $form_index,
-				'translation'     => (string) $translation,
+				'target_text'     => (string) $translation,
 				'status'          => null === $status ? 'draft' : (string) $status,
 				'used_ai'         => null === $used_ai ? 0 : max( 0, min( 1, (int) $used_ai ) ),
 				'used_manual'     => null === $used_manual ? 1 : max( 0, min( 1, (int) $used_manual ) ),
@@ -602,118 +623,16 @@ class SourceWpdbRepository {
 	}
 
 	/**
-	 * Validates and escapes a table name.
+	 * Maps the current translation-facing API to the target resource identifier used in storage.
 	 *
-	 * @param string $table_name Raw table name.
-	 * @return string
+	 * Slice 2 keeps the public PHP API centered on translation IDs while the database
+	 * now stores all target rows against generic linguistic resources.
+	 *
+	 * @param int $translation_id Translation post ID.
+	 * @return int Target resource ID used by the storage layer.
 	 */
-	private function escape_table_name( $table_name ) {
-		$table_name = (string) $table_name;
-
-		if ( 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table_name ) ) {
-			return '';
-		}
-
-		if ( function_exists( 'esc_sql' ) ) {
-			return (string) esc_sql( $table_name );
-		}
-
-		return $table_name;
+	private function get_target_resource_id_from_translation_id( $translation_id ) {
+		return max( 0, (int) $translation_id );
 	}
 
-	/**
-	 * Executes one scalar read query.
-	 *
-	 * @param string $query Prepared query.
-	 * @return mixed
-	 */
-	private function db_get_var( $query ) {
-		$method = 'get_var';
-
-		return $this->wpdb->{$method}( $query );
-	}
-
-	/**
-	 * Executes one row read query.
-	 *
-	 * @param string $query Prepared query.
-	 * @param string $output Output type.
-	 * @return array<string, mixed>|null
-	 */
-	private function db_get_row( $query, $output = OBJECT ) {
-		$method = 'get_row';
-
-		$result = $this->wpdb->{$method}( $query, $output );
-
-		return is_array( $result ) ? $result : null;
-	}
-
-	/**
-	 * Executes one multi-row read query.
-	 *
-	 * @param string $query Prepared query.
-	 * @param string $output Output type.
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function db_get_results( $query, $output = OBJECT ) {
-		$method = 'get_results';
-
-		if ( ! method_exists( $this->wpdb, $method ) ) {
-			return array();
-		}
-
-		$results = $this->wpdb->{$method}( $query, $output );
-
-		if ( ! is_array( $results ) ) {
-			return array();
-		}
-
-		$normalized = array();
-
-		foreach ( $results as $row ) {
-			if ( ! is_array( $row ) ) {
-				continue;
-			}
-
-			$normalized[] = $row;
-		}
-
-		return $normalized;
-	}
-
-	/**
-	 * Executes one write query.
-	 *
-	 * @param string $query Prepared query.
-	 * @return int|false
-	 */
-	private function db_query( $query ) {
-		$method = 'query';
-
-		return $this->wpdb->{$method}( $query );
-	}
-
-	/**
-	 * Returns whether existing DB row and candidate entry are equivalent.
-	 *
-	 * @param array<string, mixed>|null $existing Existing DB row.
-	 * @param array<string, mixed>      $entry Candidate entry payload.
-	 * @return bool
-	 */
-	private function entry_rows_are_equal( $existing, array $entry ) {
-		if ( ! is_array( $existing ) ) {
-			return false;
-		}
-
-		foreach ( array_merge( self::ENTRY_IDENTITY_COLUMNS, self::ENTRY_CONTENT_COLUMNS ) as $column ) {
-			$existing_value = array_key_exists( $column, $existing ) ? $existing[ $column ] : null;
-			$entry_value    = array_key_exists( $column, $entry ) ? $entry[ $column ] : null;
-
-			if ( (string) $existing_value !== (string) $entry_value ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
 }

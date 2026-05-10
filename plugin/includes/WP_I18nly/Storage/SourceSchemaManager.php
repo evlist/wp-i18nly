@@ -19,7 +19,7 @@ class SourceSchemaManager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.1.0';
+	private const SCHEMA_VERSION = '0.2.0';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -73,12 +73,30 @@ class SourceSchemaManager {
 	}
 
 	/**
+	 * Returns linguistic resources table name.
+	 *
+	 * @return string
+	 */
+	public function get_resources_table_name() {
+		return (string) $this->wpdb->prefix . 'i18nly_linguistic_resources';
+	}
+
+	/**
 	 * Returns source catalogs table name.
 	 *
 	 * @return string
 	 */
 	public function get_catalogs_table_name() {
-		return (string) $this->wpdb->prefix . 'i18nly_source_catalogs';
+		return $this->get_resources_table_name();
+	}
+
+	/**
+	 * Returns linguistic resource entries table name.
+	 *
+	 * @return string
+	 */
+	public function get_resource_entries_table_name() {
+		return (string) $this->wpdb->prefix . 'i18nly_linguistic_resource_entries';
 	}
 
 	/**
@@ -87,7 +105,16 @@ class SourceSchemaManager {
 	 * @return string
 	 */
 	public function get_entries_table_name() {
-		return (string) $this->wpdb->prefix . 'i18nly_source_entries';
+		return $this->get_resource_entries_table_name();
+	}
+
+	/**
+	 * Returns linguistic resource targets table name.
+	 *
+	 * @return string
+	 */
+	public function get_resource_targets_table_name() {
+		return (string) $this->wpdb->prefix . 'i18nly_linguistic_resource_targets';
 	}
 
 	/**
@@ -96,7 +123,7 @@ class SourceSchemaManager {
 	 * @return string
 	 */
 	public function get_translated_entries_table_name() {
-		return (string) $this->wpdb->prefix . 'i18nly_translated_entries';
+		return $this->get_resource_targets_table_name();
 	}
 
 	/**
@@ -116,18 +143,22 @@ class SourceSchemaManager {
 
 		$catalogs_sql = "CREATE TABLE {$catalogs_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			plugin_slug varchar(191) NOT NULL,
+			resource_kind varchar(32) NOT NULL,
+			source_slug varchar(191) NOT NULL,
+			source_locale varchar(20) NOT NULL DEFAULT 'en_US',
+			target_locale varchar(20) NOT NULL DEFAULT '',
 			domain varchar(191) DEFAULT NULL,
 			headers_json longtext DEFAULT NULL,
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY plugin_slug (plugin_slug)
+			UNIQUE KEY resource_identity (resource_kind, source_slug, target_locale),
+			KEY resource_lookup (resource_kind, source_slug)
 		) {$collation}";
 
 		$entries_sql = "CREATE TABLE {$entries_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			catalog_id bigint(20) unsigned NOT NULL,
+			resource_id bigint(20) unsigned NOT NULL,
 			msgctxt text DEFAULT NULL,
 			msgid longtext NOT NULL,
 			msgid_plural longtext DEFAULT NULL,
@@ -140,16 +171,16 @@ class SourceSchemaManager {
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY source_identity (catalog_id, msgctxt(191), msgid(191)),
-			KEY catalog_status (catalog_id, status)
+			UNIQUE KEY source_identity (resource_id, msgctxt(191), msgid(191)),
+			KEY resource_status (resource_id, status)
 		) {$collation}";
 
 		$translated_entries_sql = "CREATE TABLE {$translated_entries_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			translation_id bigint(20) unsigned NOT NULL,
+			resource_id bigint(20) unsigned NOT NULL,
 			source_entry_id bigint(20) unsigned NOT NULL,
 			form_index smallint(5) unsigned NOT NULL DEFAULT 0,
-			translation longtext DEFAULT NULL,
+			target_text longtext DEFAULT NULL,
 			status varchar(32) NOT NULL DEFAULT 'draft',
 			used_ai tinyint(1) unsigned NOT NULL DEFAULT 0,
 			used_manual tinyint(1) unsigned NOT NULL DEFAULT 1,
@@ -157,8 +188,8 @@ class SourceSchemaManager {
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
-			UNIQUE KEY translation_source_entry_form (translation_id, source_entry_id, form_index),
-			KEY translation_lookup (translation_id),
+			UNIQUE KEY resource_source_entry_form (resource_id, source_entry_id, form_index),
+			KEY resource_lookup (resource_id),
 			KEY source_entry_lookup (source_entry_id)
 		) {$collation}";
 

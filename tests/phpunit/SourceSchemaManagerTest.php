@@ -30,17 +30,23 @@ class SourceSchemaManagerTest extends TestCase {
 		$manager->maybe_upgrade();
 
 		$this->assertCount( 3, $wpdb_stub->queries );
-		$this->assertStringContainsString( 'i18nly_source_catalogs', $wpdb_stub->queries[0] );
-		$this->assertStringContainsString( 'i18nly_source_entries', $wpdb_stub->queries[1] );
+		$this->assertStringContainsString( 'i18nly_linguistic_resources', $wpdb_stub->queries[0] );
+		$this->assertStringContainsString( 'resource_kind varchar(32) NOT NULL', $wpdb_stub->queries[0] );
+		$this->assertStringContainsString( 'source_slug varchar(191) NOT NULL', $wpdb_stub->queries[0] );
+		$this->assertStringContainsString( 'i18nly_linguistic_resource_entries', $wpdb_stub->queries[1] );
+		$this->assertStringContainsString( 'resource_id bigint(20) unsigned NOT NULL', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'translator_comment', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'last_seen_at_gmt', $wpdb_stub->queries[1] );
-		$this->assertStringContainsString( 'i18nly_translated_entries', $wpdb_stub->queries[2] );
-		$this->assertStringContainsString( 'translation_source_entry_form', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'i18nly_linguistic_resource_targets', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'resource_id bigint(20) unsigned NOT NULL', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'resource_source_entry_form', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'resource_lookup (resource_id)', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( 'form_index', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'target_text longtext DEFAULT NULL', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( "status varchar(32) NOT NULL DEFAULT 'draft'", $wpdb_stub->queries[2] );
-		$this->assertStringContainsString( "used_ai tinyint(1) unsigned NOT NULL DEFAULT 0", $wpdb_stub->queries[2] );
-		$this->assertStringContainsString( "used_manual tinyint(1) unsigned NOT NULL DEFAULT 1", $wpdb_stub->queries[2] );
-		$this->assertSame( '0.1.0', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertStringContainsString( 'used_ai tinyint(1) unsigned NOT NULL DEFAULT 0', $wpdb_stub->queries[2] );
+		$this->assertStringContainsString( 'used_manual tinyint(1) unsigned NOT NULL DEFAULT 1', $wpdb_stub->queries[2] );
+		$this->assertSame( '0.2.0', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 
