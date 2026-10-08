@@ -93,6 +93,19 @@ test( 'clearing an input resets its status and removes provenance badges', async
 	env.close();
 } );
 
+test( 'clearing an AI translated input removes its AI badge', async () => {
+	const env = await createEnvironment();
+
+	assert.deepEqual( env.provenanceTokens( 12, 0 ), [ 'ai' ] );
+
+	env.typeInto( env.input( 12, 0 ), '' );
+
+	assert.deepEqual( env.provenanceTokens( 12, 0 ), [] );
+	assert.equal( env.payload()[ 12 ].used_ai[ 0 ], 0 );
+
+	env.close();
+} );
+
 test( 'editing a validated input downgrades it to draft', async () => {
 	const env = await createEnvironment();
 

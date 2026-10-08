@@ -52,11 +52,11 @@ class TranslationEditController {
 	private $current_edit_translation_id_reader;
 
 	/**
-	 * Callback returning translation edit script URL.
+	 * Callback returning the translation edit script definitions.
 	 *
 	 * @var callable
 	 */
-	private $script_url_provider;
+	private $script_definitions_provider;
 
 	/**
 	 * Callback returning translation edit style URL.
@@ -87,7 +87,7 @@ class TranslationEditController {
 	 * @param callable $meta_box_renderer_provider Callback returning meta box renderer.
 	 * @param callable $save_handler_provider Callback returning save handler.
 	 * @param callable $current_edit_translation_id_reader Callback returning edit translation id.
-	 * @param callable $script_url_provider Callback returning script URL.
+	 * @param callable $script_definitions_provider Callback returning the script definitions, entry point last.
 	 * @param callable $style_url_provider Callback returning style URL.
 	 * @param callable $script_config_builder Callback building script config.
 	 * @param callable $ajax_controller_provider Callback returning AJAX controller.
@@ -98,7 +98,7 @@ class TranslationEditController {
 		callable $meta_box_renderer_provider,
 		callable $save_handler_provider,
 		callable $current_edit_translation_id_reader,
-		callable $script_url_provider,
+		callable $script_definitions_provider,
 		callable $style_url_provider,
 		callable $script_config_builder,
 		callable $ajax_controller_provider
@@ -108,7 +108,7 @@ class TranslationEditController {
 		$this->meta_box_renderer_provider         = $meta_box_renderer_provider;
 		$this->save_handler_provider              = $save_handler_provider;
 		$this->current_edit_translation_id_reader = $current_edit_translation_id_reader;
-		$this->script_url_provider                = $script_url_provider;
+		$this->script_definitions_provider        = $script_definitions_provider;
 		$this->style_url_provider                 = $style_url_provider;
 		$this->script_config_builder              = $script_config_builder;
 		$this->ajax_controller_provider           = $ajax_controller_provider;
@@ -206,13 +206,15 @@ class TranslationEditController {
 			(string) $asset_version
 		);
 
-		wp_enqueue_script(
-			$script_handle,
-			(string) call_user_func( $this->script_url_provider ),
-			array( 'wp-i18n' ),
-			(string) $asset_version,
-			true
-		);
+		foreach ( (array) call_user_func( $this->script_definitions_provider ) as $definition ) {
+			wp_enqueue_script(
+				(string) $definition['handle'],
+				(string) $definition['src'],
+				(array) $definition['deps'],
+				(string) $asset_version,
+				true
+			);
+		}
 
 		$config_json = wp_json_encode( call_user_func( $this->script_config_builder, $translation_id ) );
 		if ( false === $config_json ) {

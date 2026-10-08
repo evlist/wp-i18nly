@@ -364,12 +364,12 @@ class AdminPage {
 	}
 
 	/**
-	 * Returns translation edit script URL.
+	 * Returns the translation edit script definitions.
 	 *
-	 * @return string
+	 * @return array<int, array{handle: string, src: string, deps: array<int, string>}>
 	 */
-	private function get_translation_edit_script_url() {
-		return $this->get_edit_screen_assets()->get_script_url();
+	private function get_translation_edit_script_definitions() {
+		return $this->get_edit_screen_assets()->get_script_definitions();
 	}
 
 	/**
@@ -452,7 +452,7 @@ class AdminPage {
 				return $this->get_current_edit_translation_id();
 			},
 			function () {
-				return $this->get_translation_edit_script_url();
+				return $this->get_translation_edit_script_definitions();
 			},
 			function () {
 				return $this->get_translation_edit_style_url();

@@ -63,6 +63,13 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringContainsString( 'assets/css/translation-edit.css', $styles['i18nly-translation-edit-style']['src'] );
 		$this->assertArrayHasKey( 'i18nly-translation-edit', $scripts );
 		$this->assertStringContainsString( 'assets/js/translation-edit.js', $scripts['i18nly-translation-edit']['src'] );
+		foreach ( ( new \WP_I18nly\Admin\UI\EditScreenAssets() )->get_script_definitions() as $definition ) {
+			$this->assertArrayHasKey( $definition['handle'], $scripts );
+			$this->assertSame( $definition['deps'], $scripts[ $definition['handle'] ]['deps'] );
+			$this->assertTrue( $scripts[ $definition['handle'] ]['in_footer'] );
+		}
+
+		$this->assertContains( 'i18nly-translation-editor', $scripts['i18nly-translation-edit']['deps'] );
 		$this->assertArrayHasKey( 'i18nly-translation-edit', $inline );
 		$this->assertNotEmpty( $inline['i18nly-translation-edit'] );
 		$this->assertStringContainsString( 'window.i18nlyTranslationEditConfig', $inline['i18nly-translation-edit'][0]['data'] );
