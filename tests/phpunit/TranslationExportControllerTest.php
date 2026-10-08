@@ -337,6 +337,9 @@ class TranslationExportControllerTest extends TestCase {
 		$this->assertStringContainsString( '>Install on this site</button>', $html );
 		$this->assertStringContainsString( '>Download</button>', $html );
 		$this->assertStringContainsString( 'value="bundle"', $html );
+		$this->assertStringNotContainsString( '<form', $html, 'a form cannot be nested in the form of the post' );
+		// Two radio buttons (a translation is not validated in the fixture) and two buttons.
+		$this->assertSame( 4, substr_count( $html, 'form="i18nly-export-form"' ) );
 		$this->assertStringNotContainsString( 'disabled="disabled"', $html );
 		$this->assertStringNotContainsString( 'Download MO', $html );
 		$this->assertStringNotContainsString( 'Download PO', $html );
@@ -356,7 +359,7 @@ class TranslationExportControllerTest extends TestCase {
 		$html = ob_get_clean();
 
 		$this->assertSame( 2, substr_count( $html, 'disabled="disabled"' ) );
-		$this->assertStringContainsString( 'Translate at least one string to enable these buttons.', $html );
+		$this->assertStringContainsString( 'Translate and save at least one string to enable these buttons.', $html );
 	}
 
 	/**
@@ -370,5 +373,30 @@ class TranslationExportControllerTest extends TestCase {
 		$this->controller()->install( 7, true, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
 
 		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json', $filesystem->files );
+	}
+
+	/**
+	 * The form the buttons submit is printed apart, with its own nonce and the translation ID, only after the box was rendered.
+	 *
+	 * @return void
+	 */
+	public function test_form_of_the_box_is_printed_apart() {
+		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller() );
+
+		ob_start();
+		$box->render_form();
+		$this->assertSame( '', ob_get_clean(), 'nothing before the box is rendered' );
+
+		ob_start();
+		$box->render( (object) array( 'ID' => 7 ) );
+		ob_end_clean();
+
+		ob_start();
+		$box->render_form();
+		$form = ob_get_clean();
+
+		$this->assertStringContainsString( '<form id="i18nly-export-form" method="post"', $form );
+		$this->assertStringContainsString( 'name="_wpnonce" value="nonce-i18nly_translation_files_7"', $form );
+		$this->assertStringContainsString( 'name="translation_id" value="7"', $form );
 	}
 }

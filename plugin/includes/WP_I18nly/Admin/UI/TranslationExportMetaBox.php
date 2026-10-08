@@ -27,6 +27,18 @@ class TranslationExportMetaBox {
 	private const POST_TYPE = 'i18nly_translation';
 
 	/**
+	 * ID of the form submitted by the controls of the box.
+	 */
+	public const FORM_ID = 'i18nly-export-form';
+
+	/**
+	 * Translation whose controls were rendered, for the form of the footer.
+	 *
+	 * @var int
+	 */
+	private $form_translation_id = 0;
+
+	/**
 	 * Controller handling the requests.
 	 *
 	 * @var TranslationExportController
@@ -49,6 +61,7 @@ class TranslationExportMetaBox {
 	 */
 	public function register() {
 		add_meta_box( 'i18nly-translation-export', __( 'Export', 'i18nly' ), array( $this, 'render' ), self::POST_TYPE, 'side', 'default' );
+		add_action( 'admin_footer', array( $this, 'render_form' ) );
 	}
 
 	/**
@@ -67,11 +80,10 @@ class TranslationExportMetaBox {
 		}
 
 		$doubtful = $this->controller->count_unvalidated( $translation_id );
-		$action   = admin_url( 'admin-post.php' );
 
-		echo '<form method="post" action="' . esc_url( $action ) . '">';
-		wp_nonce_field( TranslationExportController::get_nonce_action( $translation_id ), '_wpnonce', false );
-		echo '<input type="hidden" name="translation_id" value="' . esc_attr( (string) $translation_id ) . '" />';
+		// The controls belong to the form printed in the footer (see render_form()): a form cannot be nested in the
+		// form of the post, and the fields of the post form (action, _wpnonce) would override the ones needed here.
+		$this->form_translation_id = $translation_id;
 
 		$this->render_choice( $doubtful );
 
@@ -85,14 +97,29 @@ class TranslationExportMetaBox {
 		echo '</p>';
 
 		if ( ! $can_export ) {
-			echo '<p class="description">' . esc_html__( 'Translate at least one string to enable these buttons.', 'i18nly' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Translate and save at least one string to enable these buttons.', 'i18nly' ) . '</p>';
 		} elseif ( ! $can_archive ) {
 			echo '<p class="description">' . esc_html__( 'Download is not available: the PHP zip extension is missing on this server.', 'i18nly' ) . '</p>';
 		}
 
 		echo '<p class="description">' . esc_html__( 'Install makes the translation available on this site. Download gives a ZIP with all the files, to use on another site.', 'i18nly' ) . '</p>';
-		echo '<p class="description">' . esc_html__( 'Strings without translation are left out. A plural string is left out unless all its forms are translated.', 'i18nly' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Only saved translations are exported. Strings without translation are left out, and so is a plural string unless all its forms are translated.', 'i18nly' ) . '</p>';
 		echo '<p class="description">' . esc_html__( 'A language pack from WordPress.org may replace the installed files when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup.', 'i18nly' ) . '</p>';
+	}
+
+	/**
+	 * Prints the form the controls of the box submit, outside the form of the post.
+	 *
+	 * @return void
+	 */
+	public function render_form() {
+		if ( $this->form_translation_id <= 0 ) {
+			return;
+		}
+
+		echo '<form id="' . esc_attr( self::FORM_ID ) . '" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( TranslationExportController::get_nonce_action( $this->form_translation_id ), '_wpnonce', false );
+		echo '<input type="hidden" name="translation_id" value="' . esc_attr( (string) $this->form_translation_id ) . '" />';
 		echo '</form>';
 	}
 
@@ -114,8 +141,8 @@ class TranslationExportMetaBox {
 				$doubtful
 			)
 		) . '</strong><br />' . esc_html__( 'Drafts, machine suggestions and suspect translations may be wrong. Choose what to do with them:', 'i18nly' ) . '</p>';
-		echo '<p><label><input type="radio" name="unvalidated" value="' . esc_attr( TranslationExportController::CHOICE_EXCLUDE ) . '" required /> ' . esc_html__( 'Leave them out', 'i18nly' ) . '</label><br />';
-		echo '<label><input type="radio" name="unvalidated" value="' . esc_attr( TranslationExportController::CHOICE_INCLUDE ) . '" required /> ' . esc_html__( 'Include them (flagged fuzzy in the PO file)', 'i18nly' ) . '</label></p></fieldset>';
+		echo '<p><label><input type="radio" form="' . esc_attr( self::FORM_ID ) . '" name="unvalidated" value="' . esc_attr( TranslationExportController::CHOICE_EXCLUDE ) . '" required /> ' . esc_html__( 'Leave them out', 'i18nly' ) . '</label><br />';
+		echo '<label><input type="radio" form="' . esc_attr( self::FORM_ID ) . '" name="unvalidated" value="' . esc_attr( TranslationExportController::CHOICE_INCLUDE ) . '" required /> ' . esc_html__( 'Include them (flagged fuzzy in the PO file)', 'i18nly' ) . '</label></p></fieldset>';
 	}
 
 	/**
@@ -129,7 +156,7 @@ class TranslationExportMetaBox {
 	 * @return void
 	 */
 	private function render_button( $action, $label, $format, $primary = false, $disabled = false ) {
-		echo '<button type="submit" class="button' . ( $primary ? ' button-primary' : '' ) . '"' . ( $disabled ? ' disabled="disabled"' : '' ) . ' formaction="' . esc_url( admin_url( 'admin-post.php?action=' . $action ) ) . '"';
+		echo '<button type="submit" class="button' . ( $primary ? ' button-primary' : '' ) . '"' . ( $disabled ? ' disabled="disabled"' : '' ) . ' form="' . esc_attr( self::FORM_ID ) . '" formaction="' . esc_url( admin_url( 'admin-post.php?action=' . $action ) ) . '"';
 
 		if ( '' !== $format ) {
 			echo ' name="format" value="' . esc_attr( $format ) . '"';
