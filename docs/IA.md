@@ -313,7 +313,7 @@ Translation layer, `translation/`:
 
 `translation-edit.js` is only the entry point and keeps its handle and globals (`window.i18nlyTranslationEditConfig`, `window.i18nlyRebuildEntriesPayload`, `window.i18nlyPotInitDone`).
 
-The JavaScript behavior is covered by jsdom tests in `tests/js` (see its README); the HTML fixtures they use are generated from the PHP renderers. A glossary editor will extend the same abstract classes.
+The JavaScript behavior is covered by jsdom tests in `tests/js` (see its README); the HTML fixtures they use are generated from the PHP renderers. They are not run by the CI yet; `tests/js/README.md` explains how to enable them without touching the files managed by the graft. A glossary editor will extend the same abstract classes.
 
 ## Build and Revision Status
 
