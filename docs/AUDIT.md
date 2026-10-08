@@ -37,7 +37,7 @@ Items marked *(to verify)* are hypotheses from code reading.
 - `AdminPage` still 654 lines (target 400): menu, screens, AJAX registration and row actions remain mixed.
 - JS tests (65) and `tests/js` are not part of CI (options in `tests/js/README.md`).
 - Nonce checks are duplicated inline (kept for WPCS); a shared helper needs a phpcs annotation strategy.
-- `Plurals/Languages/Lang*.php` are generated from a GlotPress snapshot without a documented regeneration command *(to verify)*.
+- Plural data: the GlotPress-vs-CLDR choice and the regeneration commands are documented in `scripts/plurals/README.md` (correction of an earlier remark of this audit). The README does not mention `gettext/languages`, which Composer installs as a dependency of `gettext/gettext` and which the plugin does not use.
 - No static analysis in CI; phpstan level 5 should be introduced with a baseline.
 - Dependencies: vendored gettext/peast have no known advisory; `composer audit` and `npm audit` are clean.
 
