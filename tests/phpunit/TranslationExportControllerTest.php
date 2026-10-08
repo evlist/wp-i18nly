@@ -9,6 +9,7 @@
  */
 
 use Gettext\Loader\MoLoader;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/support/class-i18nly-test-memory-filesystem.php';
@@ -75,6 +76,19 @@ class TranslationExportControllerTest extends TestCase {
 							array(
 								'form_index'  => 0,
 								'translation' => 'Cześć <b>%s</b>',
+								'status'      => 'validated',
+							),
+						),
+					),
+					array(
+						'msgctxt'      => '',
+						'msgid'        => 'Draft text',
+						'msgid_plural' => '',
+						'translations' => array(
+							array(
+								'form_index'  => 0,
+								'translation' => 'Brouillon',
+								'status'      => 'draft_ai',
 							),
 						),
 					),
@@ -91,7 +105,7 @@ class TranslationExportControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function test_builds_the_mo_file_with_plugin_data() {
-		$file = $this->controller()->build_file( 7, 'mo' );
+		$file = $this->controller()->build_file( 7, 'mo', true );
 
 		$this->assertSame( 'sample-pl_PL.mo', $file['name'] );
 
@@ -108,7 +122,7 @@ class TranslationExportControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function test_builds_the_po_file() {
-		$file = $this->controller()->build_file( 7, 'po' );
+		$file = $this->controller()->build_file( 7, 'po', true );
 
 		$this->assertSame( 'sample-pl_PL.po', $file['name'] );
 		$this->assertStringContainsString( 'msgstr "Cześć <b>%s</b>"', $file['contents'] );
@@ -128,20 +142,6 @@ class TranslationExportControllerTest extends TestCase {
 	}
 
 	/**
-	 * The download URL carries the action, the format and a nonce bound to the translation.
-	 *
-	 * @return void
-	 */
-	public function test_download_url_is_signed() {
-		$url = $this->controller()->get_download_url( 7, 'mo' );
-
-		$this->assertStringContainsString( 'action=i18nly_export_translation', $url );
-		$this->assertStringContainsString( 'translation_id=7', $url );
-		$this->assertStringContainsString( 'format=mo', $url );
-		$this->assertStringContainsString( 'nonce-i18nly_export_translation_7', $url );
-	}
-
-	/**
 	 * Installing writes the MO and PO files named after the plugin text domain and locale.
 	 *
 	 * @return void
@@ -150,7 +150,7 @@ class TranslationExportControllerTest extends TestCase {
 		$filesystem = new I18nly_Test_Memory_Filesystem();
 		$controller = $this->controller();
 
-		$result = $controller->install( 7, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
+		$result = $controller->install( 7, true, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
 
 		$this->assertSame( TranslationInstaller::INSTALLED, $result );
 		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL.mo', $filesystem->files );
@@ -166,7 +166,7 @@ class TranslationExportControllerTest extends TestCase {
 	public function test_install_refuses_a_translation_without_identity() {
 		$filesystem = new I18nly_Test_Memory_Filesystem();
 
-		$this->assertSame( 'not_exportable', $this->controller()->install( 8, new TranslationInstaller( $filesystem, '/lang/plugins' ) ) );
+		$this->assertSame( 'not_exportable', $this->controller()->install( 8, false, new TranslationInstaller( $filesystem, '/lang/plugins' ) ) );
 		$this->assertSame( array(), $filesystem->files );
 	}
 
@@ -182,6 +182,52 @@ class TranslationExportControllerTest extends TestCase {
 
 		$i18nly_test_plugins['sample/sample.php']['TextDomain'] = 'sample-domain';
 
-		$this->assertSame( 'sample-domain-pl_PL.mo', $controller->build_file( 7, 'mo' )['name'] );
+		$this->assertSame( 'sample-domain-pl_PL.mo', $controller->build_file( 7, 'mo', true )['name'] );
+	}
+
+	/**
+	 * Doubtful translations are left out unless the administrator chose to include them.
+	 *
+	 * @return void
+	 */
+	public function test_doubtful_translations_are_left_out_by_default() {
+		$controller = $this->controller();
+
+		$default = ( new MoLoader() )->loadString( $controller->build_file( 7, 'mo' )['contents'] );
+		$all     = ( new MoLoader() )->loadString( $controller->build_file( 7, 'mo', true )['contents'] );
+
+		$this->assertNull( $default->find( null, 'Draft text' ) );
+		$this->assertNotNull( $default->find( null, 'Hello' ) );
+		$this->assertNotNull( $all->find( null, 'Draft text' ) );
+		$this->assertSame( 1, $controller->count_unvalidated( 7 ) );
+	}
+
+	/**
+	 * A choice is required when there are doubtful translations, and only then.
+	 *
+	 * @param string    $choice Posted choice.
+	 * @param bool|null $expected Expected result.
+	 * @return void
+	 */
+	#[DataProvider( 'choices' )]
+	public function test_choice_is_required_when_there_are_doubtful_translations( $choice, $expected ) {
+		$method = new ReflectionMethod( TranslationExportController::class, 'resolve_choice' );
+		$method->setAccessible( true );
+
+		$this->assertSame( $expected, $method->invoke( $this->controller(), 7, $choice ) );
+	}
+
+	/**
+	 * Posted choices.
+	 *
+	 * @return array<string, array<int, mixed>>
+	 */
+	public static function choices() {
+		return array(
+			'no choice'      => array( '', null ),
+			'unknown choice' => array( 'maybe', null ),
+			'exclude'        => array( 'exclude', false ),
+			'include'        => array( 'include', true ),
+		);
 	}
 }

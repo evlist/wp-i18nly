@@ -30,16 +30,17 @@ class TranslationFileExporterTest extends TestCase {
 	 * @param array<int,string> $forms Translated forms.
 	 * @param string            $plural Plural.
 	 * @param string            $context Context.
+	 * @param string            $status Status of the translated forms.
 	 * @return array<string, mixed>
 	 */
-	private function row( $msgid, array $forms, $plural = '', $context = '' ) {
+	private function row( $msgid, array $forms, $plural = '', $context = '', $status = 'validated' ) {
 		$translations = array();
 
 		foreach ( $forms as $index => $text ) {
 			$translations[] = array(
 				'form_index'  => $index,
 				'translation' => $text,
-				'status'      => 'validated',
+				'status'      => $status,
 			);
 		}
 
@@ -67,7 +68,7 @@ class TranslationFileExporterTest extends TestCase {
 			$this->row( 'Untranslated', array( '' ) ),
 		);
 
-		return ( new TranslationCatalogBuilder() )->build( $rows, 'pl_PL', 'sample', 3, self::POLISH, array( 'Project-Id-Version' => 'Sample 1.0' ), $complete_plurals_only );
+		return ( new TranslationCatalogBuilder() )->build( $rows, 'pl_PL', 'sample', 3, self::POLISH, array( 'Project-Id-Version' => 'Sample 1.0' ), array( 'complete_plurals_only' => $complete_plurals_only ) );
 	}
 
 	/**
@@ -127,5 +128,51 @@ class TranslationFileExporterTest extends TestCase {
 		$this->assertTrue( TranslationFileExporter::is_supported_format( 'mo' ) );
 		$this->assertFalse( TranslationFileExporter::is_supported_format( 'php' ) );
 		$this->assertSame( 'sample-pl_PL.mo', TranslationFileExporter::get_file_name( 'sample', 'pl_PL', 'mo' ) );
+	}
+
+	/**
+	 * Entries having a translation that is not validated are counted, ignoring empty forms.
+	 *
+	 * @return void
+	 */
+	public function test_counts_doubtful_entries() {
+		$builder = new TranslationCatalogBuilder();
+		$rows    = array(
+			$this->row( 'A', array( 'a' ) ),
+			$this->row( 'B', array( 'b' ), '', '', 'draft_ai' ),
+			$this->row( 'C', array( 'c' ), '', '', 'suspect' ),
+			$this->row( 'D', array( '' ), '', '', 'draft' ),
+		);
+
+		$this->assertSame( 2, $builder->count_unvalidated( $rows ) );
+	}
+
+	/**
+	 * Doubtful entries can be left out.
+	 *
+	 * @return void
+	 */
+	public function test_doubtful_entries_can_be_left_out() {
+		$rows    = array( $this->row( 'A', array( 'a' ) ), $this->row( 'B', array( 'b' ), '', '', 'draft_ai' ) );
+		$catalog = ( new TranslationCatalogBuilder() )->build( $rows, 'fr_FR', 'sample', 2, '(n > 1)', array(), array( 'include_unvalidated' => false ) );
+
+		$this->assertCount( 1, $catalog );
+		$this->assertNotNull( $catalog->find( null, 'A' ) );
+	}
+
+	/**
+	 * Doubtful entries can be included and flagged fuzzy in the PO file only.
+	 *
+	 * @return void
+	 */
+	public function test_doubtful_entries_can_be_flagged_fuzzy() {
+		$rows    = array( $this->row( 'A', array( 'a' ) ), $this->row( 'B', array( 'b' ), '', '', 'draft' ) );
+		$catalog = ( new TranslationCatalogBuilder() )->build( $rows, 'fr_FR', 'sample', 2, '(n > 1)', array(), array( 'fuzzy_unvalidated' => true ) );
+		$po      = ( new TranslationFileExporter() )->generate( $catalog, 'po' );
+
+		$this->assertCount( 2, $catalog );
+		$this->assertSame( array(), $catalog->find( null, 'A' )->getFlags()->toArray() );
+		$this->assertSame( array( 'fuzzy' ), $catalog->find( null, 'B' )->getFlags()->toArray() );
+		$this->assertStringContainsString( "#, fuzzy\nmsgid \"B\"", $po );
 	}
 }

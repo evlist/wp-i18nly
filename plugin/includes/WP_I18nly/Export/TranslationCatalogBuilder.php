@@ -23,11 +23,18 @@ defined( 'ABSPATH' ) || exit;
  */
 class TranslationCatalogBuilder {
 	/**
+	 * Status of a translation that a human validated. Any other status (draft, AI draft, suspect) is doubtful.
+	 */
+	public const VALIDATED_STATUS = 'validated';
+
+	/**
 	 * Builds the catalog.
 	 *
-	 * Entries without any translation are left out. A plural entry is left out too when
-	 * $complete_plurals_only is set and one of its forms is empty: binary MO files cannot represent a
-	 * partly translated plural entry.
+	 * Entries without any translation are left out. Options:
+	 * - complete_plurals_only (false): leave out a plural entry when one of its forms is empty, because
+	 *   binary MO files cannot represent a partly translated plural entry;
+	 * - include_unvalidated (true): when false, leave out the entries having a translation that is not validated;
+	 * - fuzzy_unvalidated (false): flag the entries having a translation that is not validated as fuzzy.
 	 *
 	 * @param array<int, array<string, mixed>> $rows Rows as returned by list_translation_rows().
 	 * @param string                           $locale Target locale, for example fr_FR.
@@ -35,10 +42,18 @@ class TranslationCatalogBuilder {
 	 * @param int                              $plural_count Number of plural forms of the locale.
 	 * @param string                           $plural_expression Gettext plural expression.
 	 * @param array<string, string>            $headers Extra headers.
-	 * @param bool                             $complete_plurals_only Whether to leave out partly translated plural entries.
+	 * @param array<string, bool>              $options Options.
 	 * @return Translations
 	 */
-	public function build( array $rows, $locale, $text_domain, $plural_count, $plural_expression, array $headers = array(), $complete_plurals_only = false ) {
+	public function build( array $rows, $locale, $text_domain, $plural_count, $plural_expression, array $headers = array(), array $options = array() ) {
+		$options      = array_merge(
+			array(
+				'complete_plurals_only' => false,
+				'include_unvalidated'   => true,
+				'fuzzy_unvalidated'     => false,
+			),
+			$options
+		);
 		$translations = Translations::create( (string) $text_domain );
 		$plural_count = max( 1, (int) $plural_count );
 
@@ -54,14 +69,59 @@ class TranslationCatalogBuilder {
 		}
 
 		foreach ( $rows as $row ) {
-			$translation = $this->build_entry( $row, $plural_count, $complete_plurals_only );
+			$doubtful = $this->is_doubtful( $row );
 
-			if ( null !== $translation ) {
-				$translations->add( $translation );
+			if ( $doubtful && ! $options['include_unvalidated'] ) {
+				continue;
 			}
+
+			$translation = $this->build_entry( $row, $plural_count, (bool) $options['complete_plurals_only'] );
+
+			if ( null === $translation ) {
+				continue;
+			}
+
+			if ( $doubtful && $options['fuzzy_unvalidated'] ) {
+				$translation->getFlags()->add( 'fuzzy' );
+			}
+
+			$translations->add( $translation );
 		}
 
 		return $translations;
+	}
+
+	/**
+	 * Counts the entries having a translation that is not validated (empty forms are ignored).
+	 *
+	 * @param array<int, array<string, mixed>> $rows Rows as returned by list_translation_rows().
+	 * @return int
+	 */
+	public function count_unvalidated( array $rows ) {
+		return count( array_filter( $rows, array( $this, 'is_doubtful' ) ) );
+	}
+
+	/**
+	 * Tells whether an entry has at least one non-empty form whose status is not validated.
+	 *
+	 * @param array<string, mixed> $row Row.
+	 * @return bool
+	 */
+	public function is_doubtful( array $row ) {
+		if ( ! isset( $row['translations'] ) || ! is_array( $row['translations'] ) ) {
+			return false;
+		}
+
+		foreach ( $row['translations'] as $target ) {
+			$text   = isset( $target['translation'] ) ? (string) $target['translation'] : '';
+			$status = isset( $target['status'] ) ? (string) $target['status'] : '';
+
+			if ( '' !== $text && self::VALIDATED_STATUS !== $status ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

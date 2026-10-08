@@ -519,6 +519,7 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - The plural header comes from `Plurals\PluralFormsRegistry` (GlotPress data), never from gettext's own language database.
 - The MO generator is used with `includeHeaders( true )`: without the headers the MO has no `Plural-Forms`.
 - `Export\TranslationInstaller` writes the MO and PO files into `WP_LANG_DIR/plugins/` through `WP_Filesystem` (backing up a file it did not write).
+- Doubtful translations (status other than `validated`): the administrator must choose to include or leave them out at each download or install; the server refuses a request without a choice; included entries are flagged `fuzzy` in the PO file.
 - Not exported: empty translations; in MO, plural entries with an empty form.
 
 ## Lifecycle and Schema Changes
