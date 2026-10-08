@@ -37,6 +37,11 @@ class SourceWpdbRepository {
 	private const SOURCE_CATALOG_RESOURCE_KIND = 'source_catalog';
 
 	/**
+	 * Resource kind used for translation resources.
+	 */
+	private const TRANSLATION_RESOURCE_KIND = 'translation';
+
+	/**
 	 * Default plural forms count used when locale rules are unknown.
 	 */
 	private const DEFAULT_PLURAL_FORMS_COUNT = 2;

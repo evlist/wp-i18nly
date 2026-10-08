@@ -40,11 +40,15 @@ class SourceWpdbRepositoryTest extends TestCase {
 			)
 		);
 
-		$inserted = $repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', '2026-05-10 11:00:00', 2 );
+		$inserted = $repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00', 2 );
+
+		$translation_resource_id = $repo->find_translation_resource_id( 42 );
 
 		$this->assertSame( 1, $inserted );
+		$this->assertGreaterThan( 0, $translation_resource_id );
+		$this->assertNotSame( 42, $translation_resource_id );
 		$this->assertCount( 1, $wpdb_stub->get_targets() );
-		$this->assertSame( 42, $wpdb_stub->get_targets()[0]['resource_id'] );
+		$this->assertSame( $translation_resource_id, $wpdb_stub->get_targets()[0]['resource_id'] );
 		$this->assertArrayNotHasKey( 'translation_id', $wpdb_stub->get_targets()[0] );
 
 		$this->assertTrue( $repo->upsert_translation_target( 42, $entry_id, 0, 'Bonjour le monde', '2026-05-10 12:00:00', 'translated', 1, 0 ) );
@@ -58,6 +62,80 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$this->assertSame( 'translated', $rows[0]['translations'][0]['status'] );
 		$this->assertSame( 1, $rows[0]['translations'][0]['used_ai'] );
 		$this->assertSame( 0, $rows[0]['translations'][0]['used_manual'] );
+	}
+
+	/**
+	 * Creates one translation resource row anchored on the translation post.
+	 *
+	 * @return void
+	 */
+	public function test_ensure_translation_resource_creates_one_anchored_row_once() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$this->assertSame( 0, $repo->find_translation_resource_id( 42 ) );
+
+		$first  = $repo->ensure_translation_resource( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00' );
+		$second = $repo->ensure_translation_resource( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 12:00:00' );
+
+		$this->assertGreaterThan( 0, $first );
+		$this->assertSame( $first, $second );
+		$this->assertSame( $first, $repo->find_translation_resource_id( 42 ) );
+		$this->assertCount( 1, $wpdb_stub->get_resources() );
+
+		$row = $wpdb_stub->get_resources()[0];
+		$this->assertSame( 'translation', $row['resource_kind'] );
+		$this->assertSame( 'sample-plugin/sample.php', $row['source_slug'] );
+		$this->assertSame( 'fr_FR', $row['target_locale'] );
+		$this->assertSame( 42, $row['anchor_post_id'] );
+	}
+
+	/**
+	 * Keeps target rows of two translations apart.
+	 *
+	 * @return void
+	 */
+	public function test_translation_targets_are_isolated_per_translation_resource() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$catalog_id = $repo->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$entry_id   = $wpdb_stub->seed_entry(
+			array(
+				'resource_id'  => $catalog_id,
+				'msgctxt'      => '',
+				'msgid'        => 'Hello world',
+				'msgid_plural' => '',
+				'status'       => 'active',
+			)
+		);
+
+		$repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00', 2 );
+		$repo->ensure_translation_target_rows( 43, 'sample-plugin/sample.php', 'de_DE', '2026-05-10 11:00:00', 2 );
+		$repo->upsert_translation_target( 42, $entry_id, 0, 'Bonjour le monde', '2026-05-10 12:00:00' );
+
+		$french = $repo->list_translation_rows( 42, 'sample-plugin/sample.php', 500, 2 );
+		$german = $repo->list_translation_rows( 43, 'sample-plugin/sample.php', 500, 2 );
+
+		$this->assertNotSame( $repo->find_translation_resource_id( 42 ), $repo->find_translation_resource_id( 43 ) );
+		$this->assertSame( 'Bonjour le monde', $french[0]['translations'][0]['translation'] );
+		$this->assertSame( '', $german[0]['translations'][0]['translation'] );
+	}
+
+	/**
+	 * Refuses to write targets for a translation without a resource row.
+	 *
+	 * @return void
+	 */
+	public function test_upsert_translation_target_requires_existing_resource() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$this->assertFalse( $repo->upsert_translation_target( 42, 1, 0, 'Bonjour', '2026-05-10 12:00:00' ) );
+		$this->assertCount( 0, $wpdb_stub->get_targets() );
 	}
 
 	/**
@@ -175,6 +253,15 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 	}
 
 	/**
+	 * Returns stored resource rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_resources() {
+		return $this->catalogs;
+	}
+
+	/**
 	 * Returns stored target rows.
 	 *
 	 * @return array<int, array<string, mixed>>
@@ -195,6 +282,14 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 		if ( preg_match( '/FROM\s+`?\w+i18nly_linguistic_resources`?\s+WHERE\s+resource_kind\s*=\s*\'([^\']+)\'\s+AND\s+source_slug\s*=\s*\'([^\']+)\'\s+AND\s+target_locale\s*=\s*\'([^\']*)\'/', $query, $matches ) ) {
 			foreach ( $this->catalogs as $catalog ) {
 				if ( stripslashes( $matches[1] ) === (string) $catalog['resource_kind'] && stripslashes( $matches[2] ) === (string) $catalog['source_slug'] && stripslashes( $matches[3] ) === (string) $catalog['target_locale'] ) {
+					return (int) $catalog['id'];
+				}
+			}
+		}
+
+		if ( preg_match( '/FROM\s+`?\w+i18nly_linguistic_resources`?\s+WHERE\s+resource_kind\s*=\s*\'([^\']+)\'\s+AND\s+anchor_post_id\s*=\s*(\d+)/', $query, $matches ) ) {
+			foreach ( $this->catalogs as $catalog ) {
+				if ( stripslashes( $matches[1] ) === (string) $catalog['resource_kind'] && isset( $catalog['anchor_post_id'] ) && (int) $matches[2] === (int) $catalog['anchor_post_id'] ) {
 					return (int) $catalog['id'];
 				}
 			}
@@ -252,9 +347,9 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 		$table = (string) $table;
 
 		if ( false !== strpos( $table, 'i18nly_linguistic_resources' ) ) {
-			$this->insert_id = count( $this->catalogs ) + 1;
-			$data['id']      = $this->insert_id;
-			$data += array(
+			$this->insert_id  = count( $this->catalogs ) + 1;
+			$data['id']       = $this->insert_id;
+			$data            += array(
 				'target_locale' => '',
 			);
 			$this->catalogs[] = $data;

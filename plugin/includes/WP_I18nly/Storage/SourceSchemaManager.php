@@ -19,7 +19,7 @@ class SourceSchemaManager {
 	/**
 	 * Source schema version.
 	 */
-	private const SCHEMA_VERSION = '0.2.0';
+	private const SCHEMA_VERSION = '0.3.0';
 
 	/**
 	 * Option key storing installed source schema version.
@@ -120,12 +120,14 @@ class SourceSchemaManager {
 			source_slug varchar(191) NOT NULL,
 			source_locale varchar(20) NOT NULL DEFAULT 'en_US',
 			target_locale varchar(20) NOT NULL DEFAULT '',
+			anchor_post_id bigint(20) unsigned DEFAULT NULL,
 			domain varchar(191) DEFAULT NULL,
 			headers_json longtext DEFAULT NULL,
 			created_at_gmt datetime NOT NULL,
 			updated_at_gmt datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY resource_identity (resource_kind, source_slug, target_locale),
+			UNIQUE KEY resource_anchor (resource_kind, anchor_post_id),
 			KEY resource_lookup (resource_kind, source_slug)
 		) {$collation}";
 

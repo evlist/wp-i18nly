@@ -727,7 +727,7 @@ class AdminPage {
 			: '';
 		$form_count  = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
-		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
+		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $locale, $now_gmt, $form_count );
 		$entries       = $repository->list_translation_rows( (int) $translation_id, (string) $source_slug, 500, $form_count );
 		$forms         = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( $locale );
 		$form_labels   = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( $locale );

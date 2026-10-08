@@ -30,14 +30,16 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	 *
 	 * @param int    $translation_id Translation ID.
 	 * @param string $source_slug Source slug.
+	 * @param string $target_locale Target locale.
 	 * @param string $now_gmt Datetime in GMT.
 	 * @param int    $plural_forms_count Plural forms count.
 	 * @return int
 	 */
-	public function ensure_translation_targets( $translation_id, $source_slug, $now_gmt, $plural_forms_count ) {
+	public function ensure_translation_targets( $translation_id, $source_slug, $target_locale, $now_gmt, $plural_forms_count ) {
 		return (int) $this->get_storage_repository()->ensure_translation_target_rows(
 			(int) $translation_id,
 			(string) $source_slug,
+			(string) $target_locale,
 			(string) $now_gmt,
 			(int) $plural_forms_count
 		);

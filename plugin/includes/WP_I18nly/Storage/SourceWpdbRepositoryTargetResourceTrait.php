@@ -17,21 +17,93 @@ defined( 'ABSPATH' ) || exit;
  */
 trait SourceWpdbRepositoryTargetResourceTrait {
 	/**
-	 * Ensures translated rows exist for all source entries of one translation.
+	 * Ensures the translation resource row exists for one translation post.
 	 *
-	 * @param int    $translation_id Translation ID.
+	 * @param int    $translation_id Translation post ID used as anchor.
+	 * @param string $source_slug Source slug.
+	 * @param string $target_locale Target locale.
+	 * @param string $now_gmt Current GMT datetime.
+	 * @return int Translation resource ID, or 0 when it cannot be stored.
+	 */
+	public function ensure_translation_resource( $translation_id, $source_slug, $target_locale, $now_gmt ) {
+		$existing_id = $this->find_translation_resource_id( $translation_id );
+
+		if ( $existing_id > 0 ) {
+			return $existing_id;
+		}
+
+		$table = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+
+		if ( '' === $table || (int) $translation_id <= 0 ) {
+			return 0;
+		}
+
+		$result = $this->wpdb->insert(
+			$table,
+			array(
+				'resource_kind'  => self::TRANSLATION_RESOURCE_KIND,
+				'source_slug'    => (string) $source_slug,
+				'source_locale'  => 'en_US',
+				'target_locale'  => (string) $target_locale,
+				'anchor_post_id' => (int) $translation_id,
+				'created_at_gmt' => (string) $now_gmt,
+				'updated_at_gmt' => (string) $now_gmt,
+			),
+			array( '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
+		);
+
+		if ( false === $result ) {
+			return 0;
+		}
+
+		return (int) $this->wpdb->insert_id;
+	}
+
+	/**
+	 * Finds the translation resource ID anchored on one translation post.
+	 *
+	 * @param int $translation_id Translation post ID.
+	 * @return int Translation resource ID, or 0 when none exists.
+	 */
+	public function find_translation_resource_id( $translation_id ) {
+		$table = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+
+		if ( '' === $table || (int) $translation_id <= 0 ) {
+			return 0;
+		}
+
+		return (int) $this->db_get_var(
+			$this->wpdb->prepare(
+				'SELECT id FROM %i WHERE resource_kind = %s AND anchor_post_id = %d',
+				$table,
+				self::TRANSLATION_RESOURCE_KIND,
+				(int) $translation_id
+			)
+		);
+	}
+
+	/**
+	 * Ensures target rows exist for all source entries of one translation.
+	 *
+	 * @param int    $translation_id Translation post ID.
 	 * @param string $plugin_slug Plugin slug.
+	 * @param string $target_locale Target locale.
 	 * @param string $now_gmt Current GMT datetime.
 	 * @param int    $plural_forms_count Number of target plural forms.
 	 * @return int Number of inserted rows.
 	 */
-	public function ensure_translation_target_rows( $translation_id, $plugin_slug, $now_gmt, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
-		$entries_table      = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
-		$resources_table    = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
-		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
-		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
+	public function ensure_translation_target_rows( $translation_id, $plugin_slug, $target_locale, $now_gmt, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
+		$entries_table   = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
+		$resources_table = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+		$targets_table   = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
 
 		if ( '' === $entries_table || '' === $resources_table || '' === $targets_table ) {
+			return 0;
+		}
+
+		$target_resource_id = $this->ensure_translation_resource( $translation_id, $plugin_slug, $target_locale, $now_gmt );
+
+		if ( $target_resource_id <= 0 ) {
 			return 0;
 		}
 
@@ -112,7 +184,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 		$entries_table      = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
 		$resources_table    = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
 		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
-		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
+		$target_resource_id = $this->find_translation_resource_id( $translation_id );
 
 		if ( '' === $entries_table || '' === $resources_table || '' === $targets_table ) {
 			return array();
@@ -212,8 +284,9 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 	 */
 	public function upsert_translation_target( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
 		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
-		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
-		if ( '' === $targets_table ) {
+		$target_resource_id = $this->find_translation_resource_id( $translation_id );
+
+		if ( '' === $targets_table || $target_resource_id <= 0 ) {
 			return false;
 		}
 		$target_id = (int) $this->db_get_var(
@@ -271,18 +344,5 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 		);
 
 		return false !== $result;
-	}
-
-	/**
-	 * Maps the current translation-facing API to the target resource identifier used in storage.
-	 *
-	 * Slice 2 keeps the public PHP API centered on translation IDs while the database
-	 * now stores all target rows against generic linguistic resources.
-	 *
-	 * @param int $translation_id Translation post ID.
-	 * @return int Target resource ID used by the storage layer.
-	 */
-	private function get_target_resource_id_from_translation_id( $translation_id ) {
-		return max( 0, (int) $translation_id );
 	}
 }

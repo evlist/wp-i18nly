@@ -32,7 +32,7 @@ class TranslationEntriesPersister {
 		$locale     = (string) get_post_meta( (int) $translation_id, '_i18nly_target_language', true );
 		$form_count = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
-		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $now_gmt, $form_count );
+		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $locale, $now_gmt, $form_count );
 
 		foreach ( $entries_payload as $source_entry_id => $entry_payload ) {
 			if ( ! is_array( $entry_payload ) ) {
