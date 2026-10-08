@@ -55,8 +55,8 @@ class DeepLUsageStatusProvider {
 	 * @param callable|null $get_reserved_characters_callback Optional callback returning reserved monthly characters.
 	 */
 	public function __construct( callable $get_api_key_callback, $http_get = null, $get_reserved_characters_callback = null ) {
-		$this->get_api_key_callback = $get_api_key_callback;
-		$this->http_get             = is_callable( $http_get )
+		$this->get_api_key_callback             = $get_api_key_callback;
+		$this->http_get                         = is_callable( $http_get )
 			? $http_get
 			: function ( $url, array $args ) {
 				return wp_remote_get( (string) $url, $args );
@@ -178,15 +178,15 @@ class DeepLUsageStatusProvider {
 			: 0;
 
 		return array(
-			'success'         => true,
-			'used_characters' => $used,
-			'character_limit' => $limit,
+			'success'             => true,
+			'used_characters'     => $used,
+			'character_limit'     => $limit,
 			'raw_character_limit' => $raw_limit,
 			'reserved_characters' => $reserved_limit,
-			'percent_used'    => $percent,
-			'state'           => $this->resolve_state_from_percent( $percent ),
-			'fetched_at'      => time(),
-			'message'         => '',
+			'percent_used'        => $percent,
+			'state'               => $this->resolve_state_from_percent( $percent ),
+			'fetched_at'          => time(),
+			'message'             => '',
 		);
 	}
 
@@ -238,15 +238,15 @@ class DeepLUsageStatusProvider {
 	 */
 	private function build_unavailable_status( $message ) {
 		return array(
-			'success'         => false,
-			'used_characters' => 0,
-			'character_limit' => 0,
+			'success'             => false,
+			'used_characters'     => 0,
+			'character_limit'     => 0,
 			'raw_character_limit' => 0,
 			'reserved_characters' => 0,
-			'percent_used'    => 0,
-			'state'           => 'unavailable',
-			'fetched_at'      => time(),
-			'message'         => (string) $message,
+			'percent_used'        => 0,
+			'state'               => 'unavailable',
+			'fetched_at'          => time(),
+			'message'             => (string) $message,
 		);
 	}
 
@@ -338,16 +338,16 @@ class DeepLUsageStatusProvider {
 		}
 
 		return array(
-			'success'         => ! empty( $status['success'] ),
-			'used_characters' => isset( $status['used_characters'] ) ? max( 0, (int) $status['used_characters'] ) : 0,
-			'character_limit' => isset( $status['character_limit'] ) ? max( 0, (int) $status['character_limit'] ) : 0,
+			'success'             => ! empty( $status['success'] ),
+			'used_characters'     => isset( $status['used_characters'] ) ? max( 0, (int) $status['used_characters'] ) : 0,
+			'character_limit'     => isset( $status['character_limit'] ) ? max( 0, (int) $status['character_limit'] ) : 0,
 			'raw_character_limit' => isset( $status['raw_character_limit'] ) ? max( 0, (int) $status['raw_character_limit'] ) : 0,
 			'reserved_characters' => isset( $status['reserved_characters'] ) ? max( 0, (int) $status['reserved_characters'] ) : 0,
-			'percent_used'    => isset( $status['percent_used'] ) ? max( 0, (int) $status['percent_used'] ) : 0,
-			'state'           => $state,
-			'fetched_at'      => isset( $status['fetched_at'] ) ? max( 0, (int) $status['fetched_at'] ) : 0,
-			'is_stale'        => (bool) $is_stale,
-			'message'         => $message,
+			'percent_used'        => isset( $status['percent_used'] ) ? max( 0, (int) $status['percent_used'] ) : 0,
+			'state'               => $state,
+			'fetched_at'          => isset( $status['fetched_at'] ) ? max( 0, (int) $status['fetched_at'] ) : 0,
+			'is_stale'            => (bool) $is_stale,
+			'message'             => $message,
 		);
 	}
 }

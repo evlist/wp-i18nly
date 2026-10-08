@@ -66,9 +66,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		return array(
 			'clear_selected_translations' => __( 'Clear selected translations', 'i18nly' ),
 			'copy_source_to_translation'  => __( 'Copy source to translation', 'i18nly' ),
-			'mark_as_draft'              => __( 'Mark as draft', 'i18nly' ),
-			'mark_as_suspect'            => __( 'Mark as suspect', 'i18nly' ),
-			'mark_as_validated'          => __( 'Mark as validated', 'i18nly' ),
+			'mark_as_draft'               => __( 'Mark as draft', 'i18nly' ),
+			'mark_as_suspect'             => __( 'Mark as suspect', 'i18nly' ),
+			'mark_as_validated'           => __( 'Mark as validated', 'i18nly' ),
 			'ai_translate_selected'       => __( 'Translate selected with AI', 'i18nly' ),
 		);
 	}
@@ -312,13 +312,25 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	 */
 	private function render_status_badge_for_input( $input_id, $status ) {
 		$status_map = array(
-			'draft'     => array( 'class' => 'i18nly-entry-status--draft', 'label' => __( 'Draft', 'i18nly' ) ),
-			'suspect'   => array( 'class' => 'i18nly-entry-status--suspect', 'label' => __( 'Suspect', 'i18nly' ) ),
-			'validated' => array( 'class' => 'i18nly-entry-status--validated', 'label' => __( 'Validated', 'i18nly' ) ),
+			'draft'     => array(
+				'class' => 'i18nly-entry-status--draft',
+				'label' => __( 'Draft', 'i18nly' ),
+			),
+			'suspect'   => array(
+				'class' => 'i18nly-entry-status--suspect',
+				'label' => __( 'Suspect', 'i18nly' ),
+			),
+			'validated' => array(
+				'class' => 'i18nly-entry-status--validated',
+				'label' => __( 'Validated', 'i18nly' ),
+			),
 		);
 
 		$status_token = isset( $status_map[ $status ] ) ? $status : '__empty__';
-		$status_meta  = isset( $status_map[ $status ] ) ? $status_map[ $status ] : array( 'class' => 'i18nly-entry-status--placeholder', 'label' => '&nbsp;' );
+		$status_meta  = isset( $status_map[ $status ] ) ? $status_map[ $status ] : array(
+			'class' => 'i18nly-entry-status--placeholder',
+			'label' => '&nbsp;',
+		);
 
 		$toggle_html = sprintf(
 			'<button type="button" class="i18nly-quality-toggle" aria-haspopup="true" aria-expanded="false"%1$s><span class="i18nly-quality-label">%2$s</span><span class="i18nly-quality-caret" aria-hidden="true">&#9662;</span></button>',

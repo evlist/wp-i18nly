@@ -48,10 +48,10 @@ class TranslationEntriesPersister {
 				? $entry_payload['forms']
 				: array();
 
-			$statuses = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
+			$statuses    = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
 				? $entry_payload['statuses']
 				: array();
-			$used_ai = isset( $entry_payload['used_ai'] ) && is_array( $entry_payload['used_ai'] )
+			$used_ai     = isset( $entry_payload['used_ai'] ) && is_array( $entry_payload['used_ai'] )
 				? $entry_payload['used_ai']
 				: array();
 			$used_manual = isset( $entry_payload['used_manual'] ) && is_array( $entry_payload['used_manual'] )
@@ -133,12 +133,12 @@ class TranslationEntriesPersister {
 				$normalized_statuses[ absint( $form_index ) ] = sanitize_key( (string) $status_value );
 
 				if ( array_key_exists( $form_index, $used_ai ) || array_key_exists( absint( $form_index ), $used_ai ) ) {
-					$used_ai_value = array_key_exists( absint( $form_index ), $used_ai ) ? $used_ai[ absint( $form_index ) ] : $used_ai[ $form_index ];
+					$used_ai_value                               = array_key_exists( absint( $form_index ), $used_ai ) ? $used_ai[ absint( $form_index ) ] : $used_ai[ $form_index ];
 					$normalized_used_ai[ absint( $form_index ) ] = max( 0, min( 1, (int) $used_ai_value ) );
 				}
 
 				if ( array_key_exists( $form_index, $used_manual ) || array_key_exists( absint( $form_index ), $used_manual ) ) {
-					$used_manual_value = array_key_exists( absint( $form_index ), $used_manual ) ? $used_manual[ absint( $form_index ) ] : $used_manual[ $form_index ];
+					$used_manual_value                               = array_key_exists( absint( $form_index ), $used_manual ) ? $used_manual[ absint( $form_index ) ] : $used_manual[ $form_index ];
 					$normalized_used_manual[ absint( $form_index ) ] = max( 0, min( 1, (int) $used_manual_value ) );
 				}
 			}

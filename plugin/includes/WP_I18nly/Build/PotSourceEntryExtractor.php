@@ -69,7 +69,7 @@ class PotSourceEntryExtractor {
 			}
 
 			$relative_path = ltrim( str_replace( $plugin_directory, '', $file_path ), '/\\' );
-			$entries = $this->extract_php_entries_from_code( $code, $relative_path );
+			$entries       = $this->extract_php_entries_from_code( $code, $relative_path );
 
 			foreach ( $entries as $entry ) {
 				$this->merge_entry_into_map( $entries_map, $entry );
@@ -566,7 +566,7 @@ class PotSourceEntryExtractor {
 	 * Merges one extracted entry into map with deduplicated references/comments.
 	 *
 	 * @param array<string, array<string, mixed>> $entries_map Existing entries map.
-	 * @param array<string, mixed>                 $entry One extracted entry.
+	 * @param array<string, mixed>                $entry One extracted entry.
 	 * @return void
 	 */
 	private function merge_entry_into_map( array &$entries_map, array $entry ) {
@@ -656,7 +656,7 @@ class PotSourceEntryExtractor {
 					return;
 				}
 
-				$line = $node->getLocation()->getStart()->getLine();
+				$line                = $node->getLocation()->getStart()->getLine();
 				$translator_comments = array_values(
 					array_unique(
 						array_merge(
@@ -995,10 +995,11 @@ class PotSourceEntryExtractor {
 	/**
 	 * Builds one normalized entry from one JS gettext function call.
 	 *
-	 * @param string           $function_name Function name.
-	 * @param array<int, mixed> $args Parsed args.
-	 * @param string           $relative_path Relative reference file path.
-	 * @param int              $line Source line.
+	 * @param string             $function_name Function name.
+	 * @param array<int, mixed>  $args Parsed args.
+	 * @param string             $relative_path Relative reference file path.
+	 * @param int                $line Source line.
+	 * @param array<int, string> $translator_comments Translator comments.
 	 * @return array<string, mixed>|null
 	 */
 	private function build_entry_from_js_gettext_call( $function_name, array $args, $relative_path, $line, array $translator_comments = array() ) {

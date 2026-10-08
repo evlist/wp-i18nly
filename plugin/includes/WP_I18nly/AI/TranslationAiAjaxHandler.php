@@ -158,11 +158,11 @@ class TranslationAiAjaxHandler {
 				return $client->translate_batch( $items, $source_locale, $target_locale );
 			};
 		}
-		$this->persist_status_callback  = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
-		$this->throttle_wait_callback   = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
-		$this->rate_limit_callback      = is_callable( $rate_limit_callback ) ? $rate_limit_callback : null;
+		$this->persist_status_callback     = is_callable( $persist_status_callback ) ? $persist_status_callback : null;
+		$this->throttle_wait_callback      = is_callable( $throttle_wait_callback ) ? $throttle_wait_callback : null;
+		$this->rate_limit_callback         = is_callable( $rate_limit_callback ) ? $rate_limit_callback : null;
 		$this->post_batch_success_callback = is_callable( $post_batch_success_callback ) ? $post_batch_success_callback : null;
-		$this->can_translate_callback   = is_callable( $can_translate_callback ) ? $can_translate_callback : null;
+		$this->can_translate_callback      = is_callable( $can_translate_callback ) ? $can_translate_callback : null;
 	}
 
 	/**
@@ -414,11 +414,11 @@ class TranslationAiAjaxHandler {
 			return;
 		}
 
-		$results = isset( $batch_result['results'] ) && is_array( $batch_result['results'] ) ? $batch_result['results'] : array();
+		$results      = isset( $batch_result['results'] ) && is_array( $batch_result['results'] ) ? $batch_result['results'] : array();
 		$usage_status = isset( $batch_result['usage_status'] ) && is_array( $batch_result['usage_status'] )
 			? $batch_result['usage_status']
 			: null;
-		$usage_html = isset( $batch_result['usage_html'] ) && is_string( $batch_result['usage_html'] )
+		$usage_html   = isset( $batch_result['usage_html'] ) && is_string( $batch_result['usage_html'] )
 			? $batch_result['usage_html']
 			: '';
 
@@ -470,10 +470,10 @@ class TranslationAiAjaxHandler {
 		}
 
 		return array(
-			'blocked' => ! empty( $result['blocked'] ),
-			'message' => isset( $result['message'] ) ? (string) $result['message'] : '',
-			'status'  => isset( $result['status'] ) ? (int) $result['status'] : 403,
-			'settings_url' => isset( $result['settings_url'] ) ? (string) $result['settings_url'] : '',
+			'blocked'        => ! empty( $result['blocked'] ),
+			'message'        => isset( $result['message'] ) ? (string) $result['message'] : '',
+			'status'         => isset( $result['status'] ) ? (int) $result['status'] : 403,
+			'settings_url'   => isset( $result['settings_url'] ) ? (string) $result['settings_url'] : '',
 			'settings_label' => isset( $result['settings_label'] ) ? (string) $result['settings_label'] : '',
 		);
 	}
@@ -481,8 +481,8 @@ class TranslationAiAjaxHandler {
 	/**
 	 * Translates one or many items in one provider call and maps results to UI payload.
 	 *
-	 * @param int                           $translation_id Translation ID.
-	 * @param string                        $target_locale Target locale.
+	 * @param int                              $translation_id Translation ID.
+	 * @param string                           $target_locale Target locale.
 	 * @param array<int, array<string, mixed>> $raw_items Incoming payload items.
 	 * @return array{success: bool, results?: array<int, array<string, mixed>>, message?: string, rate_limited?: bool, retry_after_ms?: int}
 	 */

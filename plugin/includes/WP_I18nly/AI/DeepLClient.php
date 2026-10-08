@@ -84,8 +84,8 @@ class DeepLClient {
 	 * Translates multiple source text items in one DeepL request.
 	 *
 	 * @param array<int, array<string, mixed>|string> $items Source items. Each item can be string or array{text: string, context?: string}.
-	 * @param string                                   $source_locale WordPress source locale (e.g. en_US).
-	 * @param string                                   $target_locale WordPress target locale (e.g. fr_FR).
+	 * @param string                                  $source_locale WordPress source locale (e.g. en_US).
+	 * @param string                                  $target_locale WordPress target locale (e.g. fr_FR).
 	 * @return array{success: bool, items?: array<int, array<string, mixed>>, message?: string, rate_limited?: bool, retry_after_ms?: int}
 	 */
 	public function translate_batch( array $items, $source_locale, $target_locale ) {

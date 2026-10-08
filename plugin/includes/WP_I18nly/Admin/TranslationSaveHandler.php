@@ -195,10 +195,10 @@ class TranslationSaveHandler {
 				? $entry_payload['forms']
 				: array();
 
-			$statuses = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
+			$statuses    = isset( $entry_payload['statuses'] ) && is_array( $entry_payload['statuses'] )
 				? $entry_payload['statuses']
 				: array();
-			$used_ai = isset( $entry_payload['used_ai'] ) && is_array( $entry_payload['used_ai'] )
+			$used_ai     = isset( $entry_payload['used_ai'] ) && is_array( $entry_payload['used_ai'] )
 				? $entry_payload['used_ai']
 				: array();
 			$used_manual = isset( $entry_payload['used_manual'] ) && is_array( $entry_payload['used_manual'] )

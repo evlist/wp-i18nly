@@ -835,10 +835,10 @@ class AdminPage {
 	 */
 	private function extract_translation_filter_query_values_from_request() {
 		$values = array(
-			self::FILTER_QUERY_KEY_ENTRY   => '',
-			self::FILTER_QUERY_KEY_QUALITY => '',
-			self::FILTER_QUERY_KEY_PROVENANCE => '',
-			self::FILTER_QUERY_KEY_SEARCH => '',
+			self::FILTER_QUERY_KEY_ENTRY         => '',
+			self::FILTER_QUERY_KEY_QUALITY       => '',
+			self::FILTER_QUERY_KEY_PROVENANCE    => '',
+			self::FILTER_QUERY_KEY_SEARCH        => '',
 			self::FILTER_QUERY_KEY_SEARCH_FIELDS => '',
 		);
 
@@ -902,6 +902,7 @@ class AdminPage {
 	 * Sanitizes one translation filter query value.
 	 *
 	 * @param string $value Raw filter query value.
+	 * @param string $query_key Filter query key.
 	 * @return string
 	 */
 	private function sanitize_translation_filter_query_value( $value, $query_key = '' ) {

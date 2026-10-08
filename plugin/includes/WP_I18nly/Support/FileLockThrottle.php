@@ -85,15 +85,15 @@ class FileLockThrottle {
 			return;
 		}
 
-		$state     = $this->read_state( $handle );
-		$now_ms    = (int) floor( microtime( true ) * 1000 );
-		$state     = $this->normalize_state( $state, $now_ms );
-		$last_ms   = (int) $state['last_ms'];
-		$delay_ms  = (int) $state['delay_ms'];
-		$now_ms           = (int) floor( microtime( true ) * 1000 );
-		$elapsed_ms       = $now_ms - $last_ms;
-		$effective_delay  = max( $this->minimal_delay_ms, $delay_ms );
-		$wait_ms          = $effective_delay - $elapsed_ms;
+		$state           = $this->read_state( $handle );
+		$now_ms          = (int) floor( microtime( true ) * 1000 );
+		$state           = $this->normalize_state( $state, $now_ms );
+		$last_ms         = (int) $state['last_ms'];
+		$delay_ms        = (int) $state['delay_ms'];
+		$now_ms          = (int) floor( microtime( true ) * 1000 );
+		$elapsed_ms      = $now_ms - $last_ms;
+		$effective_delay = max( $this->minimal_delay_ms, $delay_ms );
+		$wait_ms         = $effective_delay - $elapsed_ms;
 
 		if ( $wait_ms > 0 ) {
 			usleep( $wait_ms * 1000 );
@@ -218,7 +218,7 @@ class FileLockThrottle {
 	/**
 	 * Writes throttle state to file handle.
 	 *
-	 * @param resource                              $handle File handle.
+	 * @param resource                                               $handle File handle.
 	 * @param array{last_ms: int, delay_ms: int, expires_at_ms: int} $state State.
 	 * @return void
 	 */
@@ -239,7 +239,7 @@ class FileLockThrottle {
 	 * Normalizes state and clears expired adaptive delay.
 	 *
 	 * @param array{last_ms: int, delay_ms: int, expires_at_ms: int} $state State.
-	 * @param int                                                     $now_ms Current timestamp.
+	 * @param int                                                    $now_ms Current timestamp.
 	 * @return array{last_ms: int, delay_ms: int, expires_at_ms: int}
 	 */
 	private function normalize_state( array $state, $now_ms ) {

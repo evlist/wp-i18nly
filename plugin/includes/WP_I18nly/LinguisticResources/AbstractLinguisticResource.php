@@ -47,9 +47,9 @@ abstract class AbstractLinguisticResource {
 	/**
 	 * Constructor.
 	 *
-	 * @param int                                    $resource_id Resource ID.
-	 * @param string                                 $source_locale Source locale.
-	 * @param string                                 $target_locale Target locale.
+	 * @param int                                         $resource_id Resource ID.
+	 * @param string                                      $source_locale Source locale.
+	 * @param string                                      $target_locale Target locale.
 	 * @param array<int, AbstractLinguisticResourceEntry> $entries Resource entries.
 	 */
 	public function __construct( $resource_id, $source_locale, $target_locale, array $entries = array() ) {

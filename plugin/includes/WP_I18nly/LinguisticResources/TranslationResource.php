@@ -26,11 +26,11 @@ class TranslationResource extends AbstractLinguisticResource {
 	/**
 	 * Constructor.
 	 *
-	 * @param int                                    $translation_id Translation ID.
-	 * @param string                                 $source_slug Source slug.
-	 * @param string                                 $source_locale Source locale.
-	 * @param string                                 $target_locale Target locale.
-	 * @param array<int, TranslationResourceEntry>   $entries Translation entries.
+	 * @param int                                  $translation_id Translation ID.
+	 * @param string                               $source_slug Source slug.
+	 * @param string                               $source_locale Source locale.
+	 * @param string                               $target_locale Target locale.
+	 * @param array<int, TranslationResourceEntry> $entries Translation entries.
 	 */
 	public function __construct( $translation_id, $source_slug, $source_locale, $target_locale, array $entries = array() ) {
 		parent::__construct( $translation_id, $source_locale, $target_locale, $entries );

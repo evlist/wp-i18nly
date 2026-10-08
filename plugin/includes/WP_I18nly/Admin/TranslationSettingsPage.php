@@ -92,8 +92,8 @@ class TranslationSettingsPage {
 	 * @return array<string, mixed>
 	 */
 	public function sanitize_settings( $raw ) {
-		$raw = is_array( $raw ) ? $raw : array();
-		$previous_api_key = $this->get_saved_api_key();
+		$raw               = is_array( $raw ) ? $raw : array();
+		$previous_api_key  = $this->get_saved_api_key();
 		$previous_reserved = $this->get_saved_reserved_characters();
 
 		$api_key = isset( $raw['deepl_api_key'] )
@@ -113,7 +113,7 @@ class TranslationSettingsPage {
 		}
 
 		return array(
-			'deepl_api_key'            => $api_key,
+			'deepl_api_key'             => $api_key,
 			'deepl_reserved_characters' => $reserved_characters,
 		);
 	}

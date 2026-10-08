@@ -38,7 +38,7 @@ class TranslationEditorModel extends AbstractLinguisticResourceEditorModel {
 				continue;
 			}
 
-			$entry = new TranslationResourceEntry( $row );
+			$entry     = new TranslationResourceEntry( $row );
 			$entries[] = $entry->with_plural_metadata( $forms, $form_labels, $form_markers, $form_tooltips );
 		}
 
@@ -53,7 +53,11 @@ class TranslationEditorModel extends AbstractLinguisticResourceEditorModel {
 	 * @return TranslationResource
 	 */
 	public function get_translation_resource() {
-		/** @var TranslationResource $resource */
+		/**
+		 * Resource narrowed to the translation kind.
+		 *
+		 * @var TranslationResource $resource
+		 */
 		$resource = $this->get_resource();
 
 		return $resource;

@@ -80,7 +80,7 @@ abstract class AbstractLinguisticResourceEntry {
 	 * @return static
 	 */
 	protected function with_row_value( $key, $value ) {
-		$row = $this->row;
+		$row                  = $this->row;
 		$row[ (string) $key ] = $value;
 
 		return new static( $row );

@@ -101,7 +101,7 @@ class AiTranslationManager {
 				$settings_url   = admin_url( 'options-general.php?page=i18nly-translations-settings' );
 
 				if ( $percent_used > 100 ) {
-					$message = __( 'DeepL monthly usage is above 100%. Please wait for quota reset before sending new translations.', 'i18nly' );
+					$message  = __( 'DeepL monthly usage is above 100%. Please wait for quota reset before sending new translations.', 'i18nly' );
 					$response = array(
 						'blocked' => true,
 						'status'  => 403,
@@ -109,9 +109,9 @@ class AiTranslationManager {
 					);
 
 					if ( $reserved_chars > 0 ) {
-						$message .= ' ' . __( 'You can also reduce the reserved monthly characters in Settings > Translations.', 'i18nly' );
-						$response['message'] = $message;
-						$response['settings_url'] = $settings_url;
+						$message                   .= ' ' . __( 'You can also reduce the reserved monthly characters in Settings > Translations.', 'i18nly' );
+						$response['message']        = $message;
+						$response['settings_url']   = $settings_url;
 						$response['settings_label'] = __( 'Settings > Translations', 'i18nly' );
 					}
 
