@@ -522,6 +522,125 @@ class TranslationAiAjaxHandlerTest extends TestCase {
 	}
 
 	/**
+	 * Batch endpoint keeps the batch progress in its rate limit error.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_rate_limit_error_includes_progress_metadata() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index' => 0,
+						'source_text' => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entries_batch_7',
+			'batch_index'    => '2',
+			'total_batches'  => '5',
+		);
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'        => false,
+					'rate_limited'   => true,
+					'retry_after_ms' => 1500,
+					'message'        => 'DeepL rate limit reached.',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertSame( 429, $response['status'] );
+		$this->assertSame( 2, $response['data']['batch_index'] );
+		$this->assertSame( 5, $response['data']['total_batches'] );
+	}
+
+	/**
+	 * Batch endpoint accepts the single-entry nonce, which the editor script sends for batches.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_accepts_the_single_entry_nonce() {
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => wp_json_encode(
+				array(
+					array(
+						'source_entry_id' => 3,
+						'form_index' => 0,
+						'source_text' => 'Hello',
+					),
+				)
+			),
+			'nonce'          => 'nonce-i18nly_translate_entry_7',
+		);
+
+		$handler = $this->make_handler(
+			null,
+			null,
+			function () {
+				return array(
+					'success'      => true,
+					'translation'  => 'Bonjour',
+					'review_token' => 'draft_ai',
+				);
+			}
+		);
+
+		$handler->handle_translate_entries_batch();
+
+		$this->assertTrue( i18nly_test_get_last_json_response()['success'] );
+	}
+
+	/**
+	 * Batch endpoint rejects an unknown nonce and an invalid translation id.
+	 *
+	 * @return void
+	 */
+	public function test_handle_translate_entries_batch_rejects_invalid_nonce_and_id() {
+		$items = wp_json_encode(
+			array(
+				array(
+					'source_entry_id' => 3,
+					'form_index' => 0,
+					'source_text' => 'Hello',
+				),
+			)
+		);
+
+		$_POST = array(
+			'translation_id' => '7',
+			'items_json'     => $items,
+			'nonce'          => 'nonce-something_else_7',
+		);
+		$this->make_handler()->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertSame( 403, $response['status'] );
+		$this->assertSame( 'Invalid nonce.', $response['data']['message'] );
+
+		$_POST = array(
+			'translation_id' => '0',
+			'items_json'     => $items,
+			'nonce'          => 'nonce-i18nly_translate_entry_0',
+		);
+		$this->make_handler()->handle_translate_entries_batch();
+
+		$response = i18nly_test_get_last_json_response();
+		$this->assertSame( 400, $response['status'] );
+		$this->assertSame( 'Invalid translation id.', $response['data']['message'] );
+	}
+
+	/**
 	 * Batch endpoint lets throttle callback compute retry delay when Retry-After is absent.
 	 *
 	 * @return void
