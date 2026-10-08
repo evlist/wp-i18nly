@@ -33,7 +33,9 @@ class LanguageOptionsProvider {
 		}
 
 		if ( function_exists( 'wp_get_available_translations' ) ) {
-			$all_translations = wp_get_available_translations();
+			// The function returns false when the list of languages cannot be fetched (no network, API down).
+			$available        = wp_get_available_translations();
+			$all_translations = is_array( $available ) ? $available : array();
 		}
 
 		foreach ( GeneratedTargetLocales::all() as $locale ) {

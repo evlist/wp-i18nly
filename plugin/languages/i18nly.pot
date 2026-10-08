@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 16:43+0000\n"
+"POT-Creation-Date: 2026-10-08 21:35+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -111,6 +111,198 @@ msgstr ""
 msgid "DeepL monthly usage"
 msgstr ""
 
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:97
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:98
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:113
+msgid "Glossaries"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:135
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:175
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:198
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:250
+#: includes/WP_I18nly/Admin/TranslationExportController.php:143
+#: includes/WP_I18nly/Admin/TranslationExportController.php:177
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:226
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:260
+msgid "You are not allowed to perform this action."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:139
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:179
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:202
+#: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:254
+#: includes/WP_I18nly/Admin/TranslationExportController.php:147
+#: includes/WP_I18nly/Admin/TranslationExportController.php:181
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:234
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:268
+msgid "Invalid request."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:134
+msgid "Glossary created."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:135
+msgid "Glossary deleted."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:136
+msgid "Term saved."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:137
+msgid "Term deleted."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:177
+msgid "A glossary lists terms of a source language with the translations to use in a target language."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:180
+msgid "There is no glossary yet."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:183
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:220
+msgid "Identifier"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:183
+msgid "Languages"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:183
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+msgid "Actions"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:189
+msgid "Edit terms"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:190
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:355
+msgid "Delete"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:190
+msgid "Delete this glossary and all its terms?"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:213
+msgid "Add a glossary"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:222
+msgid "Lowercase letters, digits, hyphens and underscores, for example \"my-plugin\"."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:223
+msgid "Source language"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:226
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:36
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:44
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:49
+msgid "Target language"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:229
+msgid "Add glossary"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:259
+msgid "— Select —"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:303
+msgid "All glossaries"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:309
+msgid "This glossary has no term yet."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:408
+msgid "Term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:409
+msgid "Match"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:413
+msgid "Preferred translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+msgid "Alternatives"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:312
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:416
+msgid "Note"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:343
+msgid "Partial"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:343
+msgid "Exact"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:354
+msgid "Edit"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:355
+msgid "Delete this term?"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:399
+msgid "Edit the term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:399
+msgid "Add a term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:410
+msgid "Exact: the whole text is the term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:411
+msgid "Partial: the term may appear inside a text"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:414
+msgid "Alternative translations"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:415
+msgid "One per line, in order of preference."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:418
+msgid "Save the term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:418
+msgid "Add the term"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:421
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:197
+#: assets/js/translation/ai-batch-translation.js:142
+msgid "Cancel"
+msgstr ""
+
 #. translators: %d: number of entries displayed.
 #: includes/WP_I18nly/Admin/TranslationAjaxController.php:194
 #, php-format
@@ -139,11 +331,6 @@ msgstr ""
 msgid "A translation already exists for %1$s in %2$s."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:197
-#: assets/js/translation/ai-batch-translation.js:142
-msgid "Cancel"
-msgstr ""
-
 #: includes/WP_I18nly/Admin/TranslationEditController.php:127
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:63
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:173
@@ -152,20 +339,6 @@ msgstr ""
 #: includes/WP_I18nly/Support/AdminRegistration.php:31
 #: includes/WP_I18nly/Support/AdminRegistration.php:35
 msgid "Translation"
-msgstr ""
-
-#: includes/WP_I18nly/Admin/TranslationExportController.php:143
-#: includes/WP_I18nly/Admin/TranslationExportController.php:177
-#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:226
-#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:260
-msgid "You are not allowed to perform this action."
-msgstr ""
-
-#: includes/WP_I18nly/Admin/TranslationExportController.php:147
-#: includes/WP_I18nly/Admin/TranslationExportController.php:181
-#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:234
-#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:268
-msgid "Invalid request."
 msgstr ""
 
 #: includes/WP_I18nly/Admin/TranslationExportController.php:161
@@ -469,12 +642,6 @@ msgstr ""
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:40
 #: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:125
 msgid "Source"
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:36
-#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:44
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:49
-msgid "Target language"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/TranslationMessages.php:29

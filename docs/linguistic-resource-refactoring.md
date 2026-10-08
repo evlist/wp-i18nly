@@ -540,6 +540,14 @@ Deliverables:
 
 ### Slice 5: Add first glossary editor UI
 
+Status: 5a done (2026-10-08), 5b not needed so far.
+
+Done (5a): Translations > Glossaries (`manage_options`), `Admin\Glossary\GlossaryAdminController` (menu at priority 20, `admin-post` handlers with a nonce per form and per glossary, redirect after post) and `GlossaryScreen` (list with create and delete, one glossary with its terms table, form to add or edit a term). It goes through `GlossaryResourceRepository`, so the validation rules of slice 4 apply; the errors and the submitted values are kept in a per-user transient and shown above the form again. Texts are stored as typed (`TranslationTextNormalizer`), and escaped when displayed. Decisions: no `GlossaryEditor` JS class and no `GlossaryEditorModel`: one-term-at-a-time server forms are enough for a first screen and do not duplicate the translation editor; the generic editor is not extended (slice 5b stays open and is only worth doing if import, filters or bulk editing of terms need the same machinery). Limits: no human readable name, no search or pagination of the terms, no import or export (CSV), no link with the translation editor (slice 6), tested on the in-memory storage only (`GlossaryAdminTest`).
+
+While writing the tests the test doubles of `esc_html()` and `esc_attr()` were made faithful (they used to return the text unchanged); the golden test of the entries table now records escaped output, which shows the table does escape source texts, comments and values. The same work found that `LanguageOptionsProvider` failed (TypeError) when `wp_get_available_translations()` returns `false` (languages API unreachable); fixed.
+
+Original plan:
+
 Prerequisites: H1 and H2 (the glossary save path must be authorised and must not alter terms).
 
 Revised by the audit: the generic editor is translation-centric (source text, N target forms driven by plural data). A glossary has variants ranked by `form_index` and a `match_mode`. Do not force the generic editor to fit before the need is proven.

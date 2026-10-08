@@ -70,7 +70,7 @@ Current edit-screen behavior includes:
 - single-item and bulk AI translation actions,
 - DeepL monthly usage visibility in admin.
 
-There is no implemented glossary UI yet.
+Glossaries have a basic administration screen (Translations > Glossaries): list, create and delete glossaries, add, edit and delete terms. They are not used yet by the translation editor.
 
 ## Implemented Capabilities
 
@@ -368,7 +368,7 @@ Translation history remains an open architecture topic.
 
 ### Current implementation status
 
-The glossary backend exists (slice 4 of the refactoring plan); there is no glossary UI, no matching or QA usage and no DeepL glossary synchronization yet.
+The glossary backend exists (slice 4 of the refactoring plan) with a basic administration screen (slice 5a); there is no matching or QA usage in the translation editor and no DeepL glossary synchronization yet.
 
 What is implemented:
 
@@ -492,7 +492,7 @@ The schema version is stored in the `i18nly_source_schema_version` option and `d
 
 ### Glossaries
 
-- there is no human readable glossary name (the slug is the only label), no editor model, no UI, no import or export format (CSV, TBX...) and no DeepL glossary synchronization,
+- there is no human readable glossary name (the slug is the only label), no import or export format (CSV, TBX...), no search or pagination of the terms and no DeepL glossary synchronization; the administration screen (`Admin\Glossary\GlossaryAdminController` for the forms, `GlossaryScreen` for the display) is made of plain server-side forms, one term at a time, without JavaScript,
 - terms are unique per glossary ignoring case; the repository checks it with PHP case folding, while the database key relies on the collation, so the two can disagree on accented characters,
 - the glossary persistence has only been tested on the in-memory double (see Validation).
 

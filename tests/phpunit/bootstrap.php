@@ -795,7 +795,8 @@ if ( ! function_exists( 'esc_attr' ) ) {
 	 * @return string
 	 */
 	function esc_attr( $text ) {
-		return (string) $text;
+		// As WordPress: special characters are escaped, existing entities are kept.
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
 	}
 }
 
@@ -807,7 +808,7 @@ if ( ! function_exists( 'esc_html' ) ) {
 	 * @return string
 	 */
 	function esc_html( $text ) {
-		return (string) $text;
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
 	}
 }
 
@@ -1223,6 +1224,30 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'submit_button' ) ) {
+	/**
+	 * Echoes a submit button.
+	 *
+	 * @param string $text Label.
+	 * @return void
+	 */
+	function submit_button( $text = 'Save Changes' ) {
+		echo '<p class="submit"><input type="submit" class="button button-primary" value="' . htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' ) . '" /></p>';
+	}
+}
+
+if ( ! function_exists( 'esc_textarea' ) ) {
+	/**
+	 * Escapes the content of a textarea.
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_textarea( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 if ( ! function_exists( 'wp_kses_post' ) ) {
 	/**
 	 * Returns the content unchanged in tests.
@@ -1246,7 +1271,10 @@ if ( ! function_exists( 'wp_die' ) ) {
 	 * @throws RuntimeException Always.
 	 */
 	function wp_die( $message = '', $title = '', $args = array() ) {
-		unset( $title );
+		// As in WordPress, an integer title is the response code.
+		if ( is_int( $title ) ) {
+			$args = array( 'response' => $title );
+		}
 
 		throw new RuntimeException( 'wp_die:' . ( is_array( $args ) && isset( $args['response'] ) ? (int) $args['response'] : '' ) . ':' . (string) $message );
 	}
@@ -1988,7 +2016,7 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 			echo '<thead><tr>';
 
 			foreach ( $columns as $label ) {
-				echo '<th scope="col">' . esc_html( (string) $label ) . '</th>';
+				echo '<th scope="col">' . (string) $label . '</th>';
 			}
 
 			echo '</tr></thead>';
