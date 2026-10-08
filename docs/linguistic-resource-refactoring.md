@@ -350,6 +350,8 @@ Validation:
 
 ### Slice 4: Add first glossary resource backend
 
+Status: done, without `GlossaryEditorModel` (it belongs to the UI slice). `GlossaryResource`, `GlossaryResourceEntry`, `GlossaryResourceTarget` and `GlossaryResourceRepository` are implemented, with a `GlossaryValidator` for the glossary-specific rules. The form index of glossary targets is the rank of the variant (0 preferred, 1+ alternates).
+
 Goal:
 
 - prove the abstraction with a second resource kind on the backend first.

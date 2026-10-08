@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (172 tests, 804 assertions)`, plus 65 JavaScript tests (`tests/js`),
+- PHPUnit status: `OK (214 tests, 1013 assertions)`, plus 65 JavaScript tests (`tests/js`),
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -153,7 +153,7 @@ The current canonical business tables are created by `SourceSchemaManager`:
 
 These tables currently hold:
 
-- resource rows: one `source_catalog` row per extracted plugin catalog, and one `translation` row per translation, the latter anchored on the WordPress post through `anchor_post_id` (`0` for source catalogs); a translation resource is deleted with its targets when its post is permanently deleted, while a trashed translation keeps its data,
+- resource rows: one `source_catalog` row per extracted plugin catalog, one `translation` row per translation, and one `glossary` row per glossary, the latter anchored on the WordPress post through `anchor_post_id` (`0` for source catalogs); a translation resource is deleted with its targets when its post is permanently deleted, while a trashed translation keeps its data,
 - source entries, which belong to a `source_catalog` resource,
 - target values keyed by translation resource, source entry, and `form_index`.
 
@@ -352,9 +352,22 @@ Translation history remains an open architecture topic.
 
 ### Current implementation status
 
-Glossaries are not implemented yet as a first-class product feature.
+The glossary backend exists (slice 4 of the refactoring plan); there is no glossary UI, no matching or QA usage and no DeepL glossary synchronization yet.
 
-The current repository only contains the architectural direction for that work.
+What is implemented:
+
+- `GlossaryResource`, `GlossaryResourceEntry` and `GlossaryResourceTarget` extend the abstract linguistic resource classes,
+- `GlossaryResourceRepository` creates, lists, loads and deletes glossaries and saves and deletes terms; writes return a `GlossaryOperationResult` and term writes are transactional,
+- `GlossaryValidator` holds the glossary rules.
+
+Storage conventions of a glossary:
+
+- identity: `resource_kind = 'glossary'`, `source_slug` is the glossary slug chosen by the user, plus the target locale; `anchor_post_id` is 0 as a glossary has no WordPress post; the slug and the locales cannot change after creation,
+- a term is an entry row: `msgid` is the term, `msgctxt` is an empty string so that the unique key applies, `match_mode` is `exact` or `partial`, `translator_comment` holds the note,
+- the translations of a term are target rows whose `form_index` is the rank of the variant, not a plural form: 0 is the preferred translation, 1 and above are the alternates,
+- terms are unique per glossary ignoring case; the repository checks it, the database key is the safety net.
+
+Not decided yet: a human readable glossary name (the slug is the only label), whether glossaries get a post anchor or dedicated admin pages, plural-aware terms.
 
 ### Preferred generic term
 
