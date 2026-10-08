@@ -19,6 +19,7 @@ class SourceWpdbRepository {
 	use SourceWpdbRepositoryDbAccessTrait;
 	use SourceWpdbRepositorySourceResourceTrait;
 	use SourceWpdbRepositoryTargetResourceTrait;
+	use SourceWpdbRepositoryGlossaryResourceTrait;
 
 	/**
 	 * Source entry identity columns.
@@ -35,6 +36,11 @@ class SourceWpdbRepository {
 	 * Resource kind used for imported source catalogs.
 	 */
 	private const SOURCE_CATALOG_RESOURCE_KIND = 'source_catalog';
+
+	/**
+	 * Resource kind used for glossary resources.
+	 */
+	private const GLOSSARY_RESOURCE_KIND = 'glossary';
 
 	/**
 	 * Resource kind used for translation resources.

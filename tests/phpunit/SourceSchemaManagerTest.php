@@ -39,6 +39,7 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertStringContainsString( 'i18nly_linguistic_resource_entries', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'resource_id bigint(20) unsigned NOT NULL', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'translator_comment', $wpdb_stub->queries[1] );
+		$this->assertStringContainsString( "match_mode varchar(16) NOT NULL DEFAULT 'exact'", $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'last_seen_at_gmt', $wpdb_stub->queries[1] );
 		$this->assertStringContainsString( 'i18nly_linguistic_resource_targets', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( 'resource_id bigint(20) unsigned NOT NULL', $wpdb_stub->queries[2] );
@@ -49,7 +50,7 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertStringContainsString( "status varchar(32) NOT NULL DEFAULT 'draft'", $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( 'used_ai tinyint(1) unsigned NOT NULL DEFAULT 0', $wpdb_stub->queries[2] );
 		$this->assertStringContainsString( 'used_manual tinyint(1) unsigned NOT NULL DEFAULT 1', $wpdb_stub->queries[2] );
-		$this->assertSame( '0.3.1', get_option( 'i18nly_source_schema_version', '' ) );
+		$this->assertSame( '0.4.0', get_option( 'i18nly_source_schema_version', '' ) );
 	}
 }
 

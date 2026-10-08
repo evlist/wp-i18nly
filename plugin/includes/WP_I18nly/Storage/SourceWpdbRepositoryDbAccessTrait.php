@@ -17,6 +17,46 @@ defined( 'ABSPATH' ) || exit;
  */
 trait SourceWpdbRepositoryDbAccessTrait {
 	/**
+	 * Current transaction nesting depth.
+	 *
+	 * @var int
+	 */
+	private $transaction_depth = 0;
+
+	/**
+	 * Runs a callback in a database transaction.
+	 *
+	 * The transaction is committed when the callback returns a truthy value, and rolled back when it
+	 * returns a falsy value or throws. A call made inside a running transaction joins it.
+	 *
+	 * @param callable $callback Callback returning a truthy value on success.
+	 * @return mixed Callback result.
+	 * @throws \Throwable Rethrows what the callback throws, after the rollback.
+	 */
+	private function run_in_transaction( callable $callback ) {
+		if ( $this->transaction_depth > 0 ) {
+			return $callback();
+		}
+
+		$this->db_query( 'START TRANSACTION' );
+		++$this->transaction_depth;
+
+		try {
+			$result = $callback();
+		} catch ( \Throwable $error ) {
+			--$this->transaction_depth;
+			$this->db_query( 'ROLLBACK' );
+
+			throw $error;
+		}
+
+		--$this->transaction_depth;
+		$this->db_query( $result ? 'COMMIT' : 'ROLLBACK' );
+
+		return $result;
+	}
+
+	/**
 	 * Validates and escapes a table name.
 	 *
 	 * @param string $table_name Raw table name.
