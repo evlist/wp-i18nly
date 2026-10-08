@@ -10,7 +10,10 @@
 
 use Gettext\Loader\MoLoader;
 use PHPUnit\Framework\TestCase;
+
+require_once __DIR__ . '/support/class-i18nly-test-memory-filesystem.php';
 use WP_I18nly\Admin\TranslationExportController;
+use WP_I18nly\Export\TranslationInstaller;
 use WP_I18nly\LinguisticResources\TranslationResourceRepository;
 
 /**
@@ -136,5 +139,49 @@ class TranslationExportControllerTest extends TestCase {
 		$this->assertStringContainsString( 'translation_id=7', $url );
 		$this->assertStringContainsString( 'format=mo', $url );
 		$this->assertStringContainsString( 'nonce-i18nly_export_translation_7', $url );
+	}
+
+	/**
+	 * Installing writes the MO and PO files named after the plugin text domain and locale.
+	 *
+	 * @return void
+	 */
+	public function test_install_writes_the_files() {
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+		$controller = $this->controller();
+
+		$result = $controller->install( 7, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
+
+		$this->assertSame( TranslationInstaller::INSTALLED, $result );
+		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL.mo', $filesystem->files );
+		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL.po', $filesystem->files );
+		$this->assertStringContainsString( 'X-Generator: I18nly', $filesystem->files['/lang/plugins/sample-pl_PL.mo'] );
+	}
+
+	/**
+	 * A translation without identity cannot be installed.
+	 *
+	 * @return void
+	 */
+	public function test_install_refuses_a_translation_without_identity() {
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+
+		$this->assertSame( 'not_exportable', $this->controller()->install( 8, new TranslationInstaller( $filesystem, '/lang/plugins' ) ) );
+		$this->assertSame( array(), $filesystem->files );
+	}
+
+	/**
+	 * The text domain declared by the plugin header wins over the folder name.
+	 *
+	 * @return void
+	 */
+	public function test_file_name_uses_the_declared_text_domain() {
+		global $i18nly_test_plugins;
+
+		$controller = $this->controller();
+
+		$i18nly_test_plugins['sample/sample.php']['TextDomain'] = 'sample-domain';
+
+		$this->assertSame( 'sample-domain-pl_PL.mo', $controller->build_file( 7, 'mo' )['name'] );
 	}
 }

@@ -1205,6 +1205,18 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_key' ) ) {
+	/**
+	 * Sanitizes a key like WordPress.
+	 *
+	 * @param string $key Key.
+	 * @return string
+	 */
+	function sanitize_key( $key ) {
+		return (string) preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+	}
+}
+
 if ( ! function_exists( 'sanitize_file_name' ) ) {
 	/**
 	 * Sanitizes a file name in tests.

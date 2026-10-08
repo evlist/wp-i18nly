@@ -12,6 +12,7 @@ namespace WP_I18nly\Admin;
 
 use WP_I18nly\Export\TranslationCatalogBuilder;
 use WP_I18nly\Export\TranslationFileExporter;
+use WP_I18nly\Export\TranslationInstaller;
 use WP_I18nly\LinguisticResources\TranslationResourceRepository;
 use WP_I18nly\Plurals\PluralFormsRegistry;
 use WP_I18nly\Support\PluginMetadataProvider;
@@ -27,6 +28,16 @@ class TranslationExportController {
 	 * Admin-post action.
 	 */
 	public const ACTION = 'i18nly_export_translation';
+
+	/**
+	 * Admin-post action installing the files in the languages directory.
+	 */
+	public const INSTALL_ACTION = 'i18nly_install_translation';
+
+	/**
+	 * Query argument carrying the result of an installation.
+	 */
+	private const RESULT_ARG = 'i18nly_install';
 
 	/**
 	 * Translation post type.
@@ -71,6 +82,8 @@ class TranslationExportController {
 	 */
 	public function register() {
 		add_action( 'admin_post_' . self::ACTION, array( $this, 'handle_export' ) );
+		add_action( 'admin_post_' . self::INSTALL_ACTION, array( $this, 'handle_install' ) );
+		add_action( 'admin_notices', array( $this, 'render_install_notice' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $this, 'register_meta_box' ) );
 	}
 
@@ -103,6 +116,14 @@ class TranslationExportController {
 		echo '<a class="button" href="' . esc_url( $this->get_download_url( $translation_id, 'mo' ) ) . '">' . esc_html__( 'Download MO', 'i18nly' ) . '</a> ';
 		echo '<a class="button" href="' . esc_url( $this->get_download_url( $translation_id, 'po' ) ) . '">' . esc_html__( 'Download PO', 'i18nly' ) . '</a>';
 		echo '</p>';
+		echo '<hr />';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( self::INSTALL_ACTION . '_' . $translation_id, '_wpnonce', false );
+		echo '<input type="hidden" name="action" value="' . esc_attr( self::INSTALL_ACTION ) . '" />';
+		echo '<input type="hidden" name="translation_id" value="' . esc_attr( (string) $translation_id ) . '" />';
+		echo '<p><button type="submit" class="button button-primary">' . esc_html__( 'Install on this site', 'i18nly' ) . '</button></p>';
+		echo '<p class="description">' . esc_html__( 'Writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup.', 'i18nly' ) . '</p>';
+		echo '</form>';
 		echo '<p class="description">' . esc_html__( 'Entries without translation are left out. In the MO file, plural entries are left out unless all their forms are translated.', 'i18nly' ) . '</p>';
 	}
 
@@ -155,11 +176,85 @@ class TranslationExportController {
 	}
 
 	/**
+	 * Handles the request installing the files in the languages directory.
+	 *
+	 * @return void
+	 */
+	public function handle_install() {
+		$translation_id = isset( $_POST['translation_id'] ) ? absint( $_POST['translation_id'] ) : 0;
+		$nonce          = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+
+		if ( $translation_id <= 0 || ! current_user_can( 'edit_post', $translation_id ) || ! current_user_can( 'install_languages' ) ) {
+			wp_die( esc_html__( 'You are not allowed to perform this action.', 'i18nly' ), 403 );
+		}
+
+		if ( ! wp_verify_nonce( $nonce, self::INSTALL_ACTION . '_' . $translation_id ) ) {
+			wp_die( esc_html__( 'Invalid request.', 'i18nly' ), 400 );
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				self::RESULT_ARG,
+				$this->install( $translation_id ),
+				admin_url( 'post.php?post=' . $translation_id . '&action=edit' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Installs the files of a translation.
+	 *
+	 * @param int                       $translation_id Translation ID.
+	 * @param TranslationInstaller|null $installer Optional installer.
+	 * @return string Result code: a TranslationInstaller constant or "not_exportable".
+	 */
+	public function install( $translation_id, TranslationInstaller $installer = null ) {
+		$mo_file = $this->build_file( $translation_id, 'mo' );
+		$po_file = $this->build_file( $translation_id, 'po' );
+
+		if ( null === $mo_file || null === $po_file ) {
+			return 'not_exportable';
+		}
+
+		$installer = $installer instanceof TranslationInstaller ? $installer : new TranslationInstaller();
+
+		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'] );
+	}
+
+	/**
+	 * Shows the result of an installation on the edit screen.
+	 *
+	 * @return void
+	 */
+	public function render_install_notice() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! is_object( $screen ) || self::POST_TYPE !== $screen->post_type || ! isset( $_GET[ self::RESULT_ARG ] ) ) {
+			return;
+		}
+
+		$messages = array(
+			TranslationInstaller::INSTALLED        => array( 'success', __( 'Translation installed in the languages directory.', 'i18nly' ) ),
+			TranslationInstaller::FILESYSTEM_ERROR => array( 'error', __( 'The languages directory cannot be written: WordPress needs direct file access or file system credentials.', 'i18nly' ) ),
+			TranslationInstaller::WRITE_ERROR      => array( 'error', __( 'A translation file could not be written.', 'i18nly' ) ),
+			'not_exportable'                       => array( 'error', __( 'This translation cannot be installed.', 'i18nly' ) ),
+		);
+		$code     = sanitize_key( wp_unslash( $_GET[ self::RESULT_ARG ] ) );
+
+		if ( ! isset( $messages[ $code ] ) ) {
+			return;
+		}
+
+		echo '<div class="notice notice-' . esc_attr( $messages[ $code ][0] ) . ' is-dismissible"><p>' . esc_html( $messages[ $code ][1] ) . '</p></div>';
+	}
+
+	/**
 	 * Builds the file of a translation.
 	 *
 	 * @param int    $translation_id Translation ID.
 	 * @param string $format Format.
-	 * @return array{name: string, mime: string, contents: string}|null Null when the translation or the format is invalid.
+	 * @return array{text_domain: string, locale: string, name: string, mime: string, contents: string}|null Null when the translation or the format is invalid.
 	 */
 	public function build_file( $translation_id, $format ) {
 		$translation = $this->get_translation( $translation_id );
@@ -176,7 +271,7 @@ class TranslationExportController {
 		}
 
 		$metadata    = new PluginMetadataProvider();
-		$text_domain = $metadata->infer_text_domain( $source_slug );
+		$text_domain = $metadata->resolve_text_domain( $source_slug );
 		$spec        = PluralFormsRegistry::get_spec_for_locale( $locale );
 		$rows        = ( $this->repository instanceof TranslationResourceRepository ? $this->repository : new TranslationResourceRepository() )->list_translation_rows( (int) $translation_id, $source_slug, self::ROW_LIMIT, (int) $spec['nplurals'] );
 
@@ -195,6 +290,8 @@ class TranslationExportController {
 		);
 
 		return array(
+			'text_domain' => $text_domain,
+			'locale'      => $locale,
 			'name'     => TranslationFileExporter::get_file_name( $text_domain, $locale, $format ),
 			'mime'     => TranslationFileExporter::get_mime_type( $format ),
 			'contents' => ( new TranslationFileExporter() )->generate( $catalog, $format ),

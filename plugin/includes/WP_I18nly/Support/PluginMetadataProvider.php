@@ -79,6 +79,24 @@ class PluginMetadataProvider {
 	}
 
 	/**
+	 * Returns the text domain a plugin declares in its header, or the one inferred from its folder.
+	 *
+	 * Translation files must be named after the real text domain to be found by WordPress.
+	 *
+	 * @param string $source_slug Source slug.
+	 * @return string
+	 */
+	public function resolve_text_domain( $source_slug ) {
+		$plugin_data = $this->get_plugin_data( $source_slug );
+
+		if ( ! empty( $plugin_data['TextDomain'] ) ) {
+			return sanitize_key( $plugin_data['TextDomain'] );
+		}
+
+		return $this->infer_text_domain( $source_slug );
+	}
+
+	/**
 	 * Builds POT header overrides from source plugin metadata.
 	 *
 	 * @param string $source_slug Source slug.

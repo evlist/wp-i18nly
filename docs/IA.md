@@ -518,6 +518,7 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - `Export\TranslationCatalogBuilder` builds a `Gettext\Translations` catalog from the rows of a translation; `Export\TranslationFileExporter` writes PO or MO; `Admin\TranslationExportController` provides the download (admin-post, `edit_post` capability, nonce) and the "Export" box of the edit screen.
 - The plural header comes from `Plurals\PluralFormsRegistry` (GlotPress data), never from gettext's own language database.
 - The MO generator is used with `includeHeaders( true )`: without the headers the MO has no `Plural-Forms`.
+- `Export\TranslationInstaller` writes the MO and PO files into `WP_LANG_DIR/plugins/` through `WP_Filesystem` (backing up a file it did not write).
 - Not exported: empty translations; in MO, plural entries with an empty form.
 
 ## Lifecycle and Schema Changes
@@ -543,7 +544,7 @@ The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 ar
 2. H2 raw storage of translations (no `sanitize_text_field` on translations): done,
 3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI): code done, JS tests in CI not done,
 4. H4 uninstall, activation and schema migrations: done,
-5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download done (H5a); JSON, direct installation and extractor comparison open,
+5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download (H5a), direct installation (H5c) and extractor comparison (H5d) done; JSON open,
 6. H6 concurrency, pagination, restoring a trashed translation,
 7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),
 8. slice 5a: dedicated glossary editor screen; slice 5b only if duplication is proven,
