@@ -332,22 +332,49 @@ class PotSourceEntryExtractorTest extends TestCase {
 			'description' => 'Sample block description',
 			'keywords'    => array( 'alpha keyword', 'beta keyword' ),
 			'styles'      => array(
-				array( 'name' => 'outline', 'label' => 'Outline style' ),
+				array(
+					'name' => 'outline',
+					'label' => 'Outline style',
+				),
 			),
 			'variations'  => array(
-				array( 'name' => 'compact', 'title' => 'Compact variation', 'description' => 'Compact variation description' ),
+				array(
+					'name' => 'compact',
+					'title' => 'Compact variation',
+					'description' => 'Compact variation description',
+				),
 			),
 		);
 
 		$theme_json = array(
 			'settings' => array(
 				'color'      => array(
-					'palette'   => array( array( 'name' => 'Palette name', 'slug' => 'palette' ) ),
-					'gradients' => array( array( 'name' => 'Gradient name', 'slug' => 'gradient' ) ),
+					'palette'   => array(
+						array(
+							'name' => 'Palette name',
+							'slug' => 'palette',
+						),
+					),
+					'gradients' => array(
+						array(
+							'name' => 'Gradient name',
+							'slug' => 'gradient',
+						),
+					),
 				),
 				'typography' => array(
-					'fontFamilies' => array( array( 'name' => 'Theme font family', 'slug' => 'theme-font' ) ),
-					'fontSizes'    => array( array( 'name' => 'Theme font size', 'slug' => 'theme-size' ) ),
+					'fontFamilies' => array(
+						array(
+							'name' => 'Theme font family',
+							'slug' => 'theme-font',
+						),
+					),
+					'fontSizes'    => array(
+						array(
+							'name' => 'Theme font size',
+							'slug' => 'theme-size',
+						),
+					),
 				),
 			),
 			'styles'   => array(
@@ -364,7 +391,12 @@ class PotSourceEntryExtractorTest extends TestCase {
 		$style_variation_json = array(
 			'settings' => array(
 				'color' => array(
-					'palette' => array( array( 'name' => 'Style variation palette', 'slug' => 'style-palette' ) ),
+					'palette' => array(
+						array(
+							'name' => 'Style variation palette',
+							'slug' => 'style-palette',
+						),
+					),
 				),
 			),
 		);

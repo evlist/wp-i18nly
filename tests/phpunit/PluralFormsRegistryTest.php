@@ -98,5 +98,4 @@ class PluralFormsRegistryTest extends TestCase {
 	public function test_registry_resolves_six_form_locale() {
 		$this->assertSame( 6, \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( 'ar' ) );
 	}
-
 }
