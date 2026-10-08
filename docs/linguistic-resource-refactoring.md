@@ -433,8 +433,9 @@ Goal:
 
 Deliverables:
 
-- decision record: reuse the vendored `plugin/third-party/wp-cli` i18n code (and possibly replace the homemade extractors) or delete it from the repository,
-- `PoExporter`, `MoExporter` and JSON per-script exporter (using `gettext/gettext` already vendored), with plural forms taken from the plural data,
+- decision (see `IA.md`, Third-Party Code): the vendored `third-party/wp-cli` copy is a reference, not a library, because it targets gettext 4 and WP-CLI classes while the plugin uses gettext 5; keep re-implementing on gettext 5 and port wp-cli behaviors case by case,
+- before choosing, run the wp-cli test cases / sample sources through the `Build/` extractors and list the behavior gaps (feeds H7 extractor work),
+- `MoExporter` on the gettext 5 `MoGenerator`; JSON (JED) exporter ported from `JedGenerator` (82 lines) with the `make-json` splitting rules by script; optional `.l10n.php` exporter ported from `PhpArrayGenerator`; plural forms taken from the plural data,
 - download/save action on the edit screen, tests against files produced by `msgfmt`/WP-CLI when available.
 
 #### H6: Robustness and scale (audit I4, I5, I9)

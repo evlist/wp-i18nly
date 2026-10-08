@@ -513,6 +513,12 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - the browser `alert()` fallback of the AI error dialog is unreachable while the message is not empty, which is always the case,
 - the `suppressNotice` flag of the modified rows tracker has no observable effect after "Apply filters and close", because the tracked rows are emptied anyway.
 
+## Third-Party Code
+
+- `plugin/third-party/vendor` (Composer, loaded by `i18nly.php`): `gettext/gettext` 5.7 (`PoLoader`, `PoGenerator`, `Translations` are used in `Build/`; the MO loader/generators are available for the export), `mck89/peast` (JavaScript parser of `JsGettextExtractor`), and `gettext/languages` (transitive, CLDR plural rules, currently unused: the plugin has its own GlotPress-based `Plurals` registry).
+- `plugin/third-party/wp-cli/src` is a **reference copy** of `wp-cli/i18n-command` (see `SYNC-LOG.md`), not runtime code: nothing autoloads it. It targets `gettext/gettext` 4.x (`Gettext\Extractors\*`, `Gettext\Utils\ParsedComment`, `Gettext\Merge`) and WP-CLI classes (`WP_CLI`, `WP_CLI\Utils`, command classes), whereas the plugin depends on gettext 5.x, whose API is different (`Scanner`, `Loader`, `Generator`). Both gettext majors cannot be loaded together. The plugin therefore re-implements the extraction (`Build/` extractors) and uses the wp-cli sources as a behavior specification and a source of cases to test, not as a library.
+- Porting rule: when a wp-cli behavior is wanted, port it to gettext 5 inside `Build/` (adapter style) and cover it with a test; do not call the vendored copy.
+
 ## Open Items
 
 The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 are defined in

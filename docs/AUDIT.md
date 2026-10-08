@@ -51,3 +51,12 @@ Items marked *(to verify)* are hypotheses from code reading.
 
 The findings are planned as slices H1-H7 in `docs/linguistic-resource-refactoring.md`:
 B1, B2 -> H1; B3 -> H2; B4 and I7 -> H3; I1, I2, I3 -> H4; B5 -> H5; I4, I5, I9 -> H6; I6, I8 and minor items -> H7.
+
+## Addendum: vendored wp-cli code
+
+Checked after the audit: `third-party/wp-cli/src` cannot be used as is. It is written for `gettext/gettext` 4.x
+(`Gettext\Extractors`, `Gettext\Utils\ParsedComment`, `Gettext\Merge`) and WP-CLI (`WP_CLI`, `WP_CLI\Utils`, command classes: 12 of 21
+files reference them), while the plugin requires gettext 5.7, an incompatible API. This is why the extractors were re-implemented
+on gettext 5 (`Build/`). Conclusion: B5 is not "reuse wp-cli" but "port the needed generators (MO is native in gettext 5; JED about 80
+lines; PHP array about 190 lines)". The copy stays as a reference; see `IA.md`, Third-Party Code. Open question for H5: delete the copy once the
+extractor gaps are ported, to avoid carrying 170 KB of unused code. Also noted: `PotGenerator` and `PotSourceImporter` repeat a `require_once` of the autoloader already loaded by `i18nly.php`.
