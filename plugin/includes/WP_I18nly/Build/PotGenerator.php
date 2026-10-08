@@ -30,8 +30,7 @@ class PotGenerator {
 		$this->ensure_gettext_classes_are_available();
 
 		$destination_file = (string) $destination_file;
-		$text_domain      = (string) $text_domain;
-		$translations     = $this->build_translations( $text_domain, $entries, $header_overrides );
+		$translations     = $this->build_translations( (string) $text_domain, $entries, $header_overrides );
 
 		$directory = dirname( $destination_file );
 		if ( ! is_dir( $directory ) && ! wp_mkdir_p( $directory ) && ! is_dir( $directory ) ) {
@@ -42,6 +41,20 @@ class PotGenerator {
 		if ( ! $generator->generateFile( $translations, $destination_file ) ) {
 			throw new \RuntimeException( 'Unable to write POT file to destination.' );
 		}
+	}
+
+	/**
+	 * Generates the contents of a POT file.
+	 *
+	 * @param string                          $text_domain Text domain for generated headers.
+	 * @param array<int, array<string,mixed>> $entries Extracted entries.
+	 * @param array<string, string>           $header_overrides Header values overriding defaults.
+	 * @return string
+	 */
+	public function generate_string( $text_domain, array $entries, array $header_overrides = array() ) {
+		$this->ensure_gettext_classes_are_available();
+
+		return ( new \Gettext\Generator\PoGenerator() )->generateString( $this->build_translations( (string) $text_domain, $entries, $header_overrides ) );
 	}
 
 	/**

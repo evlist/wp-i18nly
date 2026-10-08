@@ -12,6 +12,7 @@ namespace WP_I18nly\Admin;
 
 use WP_I18nly\Admin\UI\TranslationExportMetaBox;
 use WP_I18nly\Export\ScriptTranslationsBuilder;
+use WP_I18nly\Export\SourcePotBuilder;
 use WP_I18nly\Export\TranslationCatalogBuilder;
 use WP_I18nly\Export\TranslationFileExporter;
 use WP_I18nly\Export\TranslationInstaller;
@@ -401,7 +402,7 @@ class TranslationExportController {
 		$files   = array(
 			$mo_file['name'] => $mo_file['contents'],
 			$po_file['name'] => $po_file['contents'],
-		) + $this->build_script_files( $translation_id, $include_unvalidated );
+		) + $this->build_script_files( $translation_id, $include_unvalidated ) + $this->build_pot_files( $translation_id );
 		$archive = ( new TranslationFileExporter() )->zip( $files );
 
 		if ( null === $archive ) {
@@ -472,6 +473,22 @@ class TranslationExportController {
 	}
 
 	/**
+	 * Builds the POT file of the installed version of the plugin.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return array<string, string> Contents indexed by file name.
+	 */
+	public function build_pot_files( $translation_id ) {
+		$translation = $this->get_translation( $translation_id );
+
+		if ( null === $translation || '' === $translation['source_slug'] ) {
+			return array();
+		}
+
+		return ( new SourcePotBuilder() )->build( $translation['source_slug'] );
+	}
+
+	/**
 	 * Installs the files of a translation.
 	 *
 	 * @param int                       $translation_id Translation ID.
@@ -489,7 +506,7 @@ class TranslationExportController {
 
 		$installer = $installer instanceof TranslationInstaller ? $installer : ( $this->installer instanceof TranslationInstaller ? $this->installer : new TranslationInstaller() );
 
-		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) );
+		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) + $this->build_pot_files( $translation_id ) );
 	}
 
 	/**
