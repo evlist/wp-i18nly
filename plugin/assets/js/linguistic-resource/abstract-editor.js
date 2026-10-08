@@ -10,7 +10,6 @@
 
 	var namespace           = window.I18nly = window.I18nly || {};
 	var AjaxClient          = namespace.AjaxClient;
-	var UiText              = namespace.UiText;
 	var EntryBadges         = namespace.EntryBadges;
 	var EntryFilterBar      = namespace.EntryFilterBar;
 	var ModifiedRowsTracker = namespace.ModifiedRowsTracker;
@@ -34,7 +33,6 @@
 		constructor( config ) {
 			this.config       = config;
 			this.ajax         = new AjaxClient( config );
-			this.uiText       = new UiText( config );
 			this.rowsByElement = new WeakMap();
 			this.filterBar    = null;
 			this.tracker      = null;
@@ -359,7 +357,6 @@
 				this.filterBar = new EntryFilterBar( window.document );
 				this.tracker   = new ModifiedRowsTracker(
 					this.filterBar.container,
-					this.uiText,
 					function ( options ) {
 						self.applyFilters( options );
 					}

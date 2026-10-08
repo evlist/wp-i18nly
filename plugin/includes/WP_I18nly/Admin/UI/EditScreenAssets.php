@@ -27,19 +27,19 @@ class EditScreenAssets {
 	 */
 	private const SCRIPTS = array(
 		array(
-			'handle' => 'i18nly-ajax-client',
-			'path'   => 'assets/js/linguistic-resource/ajax-client.js',
-			'deps'   => array(),
-		),
-		array(
 			'handle' => 'i18nly-ui-text',
 			'path'   => 'assets/js/linguistic-resource/ui-text.js',
 			'deps'   => array( 'wp-i18n' ),
 		),
 		array(
+			'handle' => 'i18nly-ajax-client',
+			'path'   => 'assets/js/linguistic-resource/ajax-client.js',
+			'deps'   => array(),
+		),
+		array(
 			'handle' => 'i18nly-entry-badges',
 			'path'   => 'assets/js/linguistic-resource/entry-badges.js',
-			'deps'   => array(),
+			'deps'   => array( 'i18nly-ui-text' ),
 		),
 		array(
 			'handle' => 'i18nly-abstract-row',
@@ -54,12 +54,12 @@ class EditScreenAssets {
 		array(
 			'handle' => 'i18nly-modified-rows-tracker',
 			'path'   => 'assets/js/linguistic-resource/modified-rows-tracker.js',
-			'deps'   => array(),
+			'deps'   => array( 'i18nly-ui-text' ),
 		),
 		array(
 			'handle' => 'i18nly-abstract-editor',
 			'path'   => 'assets/js/linguistic-resource/abstract-editor.js',
-			'deps'   => array( 'i18nly-ajax-client', 'i18nly-ui-text', 'i18nly-entry-badges', 'i18nly-entry-filter-bar', 'i18nly-modified-rows-tracker' ),
+			'deps'   => array( 'i18nly-ajax-client', 'i18nly-entry-badges', 'i18nly-entry-filter-bar', 'i18nly-modified-rows-tracker' ),
 		),
 		array(
 			'handle' => 'i18nly-translation-row',
@@ -69,7 +69,7 @@ class EditScreenAssets {
 		array(
 			'handle' => 'i18nly-ai-error-dialog',
 			'path'   => 'assets/js/translation/ai-error-dialog.js',
-			'deps'   => array(),
+			'deps'   => array( 'i18nly-ui-text' ),
 		),
 		array(
 			'handle' => 'i18nly-deepl-usage-gauge',
@@ -79,12 +79,12 @@ class EditScreenAssets {
 		array(
 			'handle' => 'i18nly-ai-batch-translation',
 			'path'   => 'assets/js/translation/ai-batch-translation.js',
-			'deps'   => array( 'i18nly-ajax-client', 'i18nly-ai-error-dialog', 'i18nly-deepl-usage-gauge' ),
+			'deps'   => array( 'i18nly-ui-text', 'i18nly-ajax-client', 'i18nly-ai-error-dialog', 'i18nly-deepl-usage-gauge' ),
 		),
 		array(
 			'handle' => 'i18nly-translation-editor',
 			'path'   => 'assets/js/translation/translation-editor.js',
-			'deps'   => array( 'i18nly-abstract-editor', 'i18nly-translation-row', 'i18nly-ai-batch-translation', 'i18nly-ai-error-dialog', 'i18nly-entry-badges', 'i18nly-ajax-client' ),
+			'deps'   => array( 'i18nly-ui-text', 'i18nly-abstract-editor', 'i18nly-translation-row', 'i18nly-ai-batch-translation', 'i18nly-ai-error-dialog', 'i18nly-entry-badges', 'i18nly-ajax-client' ),
 		),
 		array(
 			'handle' => 'i18nly-translation-edit',
@@ -153,10 +153,6 @@ class EditScreenAssets {
 			'refreshNonce'      => wp_create_nonce( 'i18nly_get_translation_entries_table_' . (int) $translation_id ),
 			'tableContainerId'  => 'i18nly-source-entries-table',
 			'contentTypeHeader' => 'application/x-www-form-urlencoded; charset=UTF-8',
-			'i18n'              => array(
-				'showOnlyModifiedRowsLabel' => __( 'Show only these modified rows', 'i18nly' ),
-				'applyFiltersAndCloseLabel' => __( 'Apply filters and close', 'i18nly' ),
-			),
 		);
 	}
 }

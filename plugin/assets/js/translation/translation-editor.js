@@ -9,6 +9,7 @@
 	'use strict';
 
 	var namespace         = window.I18nly = window.I18nly || {};
+	var __                = namespace.i18n.__;
 	var AjaxClient        = namespace.AjaxClient;
 	var EntryBadges       = namespace.EntryBadges;
 	var AiErrorDialog     = namespace.AiErrorDialog;
@@ -86,7 +87,7 @@
 				function ( button ) {
 					if ( self.config.hasDeeplKey === false ) {
 						button.disabled = true;
-						button.title    = 'DeepL API key not configured';
+						button.title    = __( 'DeepL API key not configured', 'i18nly' );
 					}
 
 					button.addEventListener(
@@ -159,7 +160,7 @@
 
 					if ( ! payload || ! payload.success || ! payload.data ) {
 						AiErrorDialog.notify(
-							AjaxClient.getErrorMessage( payload, 'Translation failed.' ),
+							AjaxClient.getErrorMessage( payload, __( 'Translation failed.', 'i18nly' ) ),
 							AjaxClient.getSettingsLinkMeta( payload )
 						);
 						return;
@@ -171,7 +172,7 @@
 				function () {
 					button.disabled = false;
 					button.removeAttribute( 'aria-busy' );
-					AiErrorDialog.notify( 'Translation failed because the request could not be completed.' );
+					AiErrorDialog.notify( __( 'Translation failed because the request could not be completed.', 'i18nly' ) );
 				}
 			);
 		}

@@ -10,8 +10,8 @@
 'use strict';
 
 module.exports = [
-	'assets/js/linguistic-resource/ajax-client.js',
 	'assets/js/linguistic-resource/ui-text.js',
+	'assets/js/linguistic-resource/ajax-client.js',
 	'assets/js/linguistic-resource/entry-badges.js',
 	'assets/js/linguistic-resource/abstract-row.js',
 	'assets/js/linguistic-resource/entry-filter-bar.js',

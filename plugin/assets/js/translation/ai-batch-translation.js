@@ -9,6 +9,8 @@
 	'use strict';
 
 	var namespace       = window.I18nly = window.I18nly || {};
+	var __              = namespace.i18n.__;
+	var sprintf         = namespace.i18n.sprintf;
 	var AjaxClient      = namespace.AjaxClient;
 	var AiErrorDialog   = namespace.AiErrorDialog;
 	var DeepLUsageGauge = namespace.DeepLUsageGauge;
@@ -88,7 +90,7 @@
 		 */
 		start() {
 			this.progress = this.showProgressModal();
-			this.updateProgress( 0, this.batches.length, 'Processing batch 0 of ' + this.batches.length );
+			this.updateProgress( 0, this.batches.length, this.processingMessage( 0 ) );
 
 			this.runNextBatch();
 		}
@@ -120,13 +122,13 @@
 
 			content.className = 'i18nly-progress-content';
 			title.id          = 'i18nly-progress-title';
-			title.textContent = 'AI Translation in Progress';
+			title.textContent = __( 'AI Translation in Progress', 'i18nly' );
 			title.className   = 'i18nly-progress-title';
 
 			progressText.id          = 'i18nly-progress-text';
 			progressText.className   = 'i18nly-progress-text';
 			progressText.setAttribute( 'aria-live', 'polite' );
-			progressText.textContent = 'Processing batch 0 of ' + this.batches.length;
+			progressText.textContent = this.processingMessage( 0 );
 
 			progressBar.className = 'i18nly-progress-bar';
 			progressFill.id       = 'i18nly-progress-fill';
@@ -137,13 +139,13 @@
 
 			cancelButton.type        = 'button';
 			cancelButton.className   = 'button button-secondary i18nly-progress-cancel';
-			cancelButton.textContent = 'Cancel';
+			cancelButton.textContent = __( 'Cancel', 'i18nly' );
 			cancelButton.addEventListener( 'click', function () { self.cancel(); } );
 			actions.appendChild( cancelButton );
 
 			closeButton.type          = 'button';
 			closeButton.className     = 'button button-primary i18nly-progress-close';
-			closeButton.textContent   = 'Close';
+			closeButton.textContent   = __( 'Close', 'i18nly' );
 			closeButton.style.display = 'none';
 			closeButton.addEventListener( 'click', function () { self.closeModal(); } );
 			actions.appendChild( closeButton );
@@ -168,6 +170,21 @@
 		}
 
 		/**
+		 * Returns the progress message of a batch.
+		 *
+		 * @param {number} batchNumber Number of the batch being processed (0 before the first one).
+		 * @return {string}
+		 */
+		processingMessage( batchNumber ) {
+			return sprintf(
+				/* translators: 1: number of the batch being processed, 2: total number of batches. */
+				__( 'Processing batch %1$d of %2$d', 'i18nly' ),
+				batchNumber,
+				this.batches.length
+			);
+		}
+
+		/**
 		 * Updates the progress text and bar.
 		 *
 		 * @param {number} completed Completed batches.
@@ -179,7 +196,12 @@
 			var percentage = 0;
 
 			if ( this.progress && this.progress.progressText ) {
-				this.progress.progressText.textContent = message || ( 'Processed batch ' + completed + ' of ' + totalBatches );
+				this.progress.progressText.textContent = message || sprintf(
+						/* translators: 1: number of batches processed, 2: total number of batches. */
+						__( 'Processed batch %1$d of %2$d', 'i18nly' ),
+						completed,
+						totalBatches
+					);
 			}
 
 			if ( this.progress && this.progress.progressFill ) {
@@ -234,7 +256,7 @@
 			}
 
 			this.releaseBatchItems( this.activeBatchItems );
-			this.updateProgress( this.completedBatches, this.batches.length, 'Translation cancelled.' );
+			this.updateProgress( this.completedBatches, this.batches.length, __( 'Translation cancelled.', 'i18nly' ) );
 			window.setTimeout( this.closeModal.bind( this ), 150 );
 		}
 
@@ -244,7 +266,7 @@
 		 * @return {void}
 		 */
 		finish() {
-			this.updateProgress( this.batches.length, this.batches.length, 'Translation completed.' );
+			this.updateProgress( this.batches.length, this.batches.length, __( 'Translation completed.', 'i18nly' ) );
 			window.setTimeout( this.closeModal.bind( this ), 600 );
 		}
 
@@ -311,7 +333,13 @@
 						self.updateProgress(
 							self.completedBatches,
 							self.batches.length,
-							'Too many requests. Retrying batch ' + currentBatchNum + ' of ' + self.batches.length + ' in ' + Math.ceil( retryAfterMs / 1000 ) + 's...'
+							sprintf(
+								/* translators: 1: current batch number, 2: total number of batches, 3: seconds to wait. */
+								__( 'Too many requests. Retrying batch %1$d of %2$d in %3$ds...', 'i18nly' ),
+								currentBatchNum,
+								self.batches.length,
+								Math.ceil( retryAfterMs / 1000 )
+							)
 						);
 
 						return wait( retryAfterMs ).then(
@@ -456,7 +484,7 @@
 			this.batchIndex += 1;
 
 			if ( '' === this.batchAction || '' === this.batchNonce ) {
-				this.updateProgress( this.completedBatches, this.batches.length, 'Processing batch ' + currentBatchNum + ' of ' + this.batches.length );
+				this.updateProgress( this.completedBatches, this.batches.length, this.processingMessage( currentBatchNum ) );
 				return this.runBatchSequentially( currentBatch ).then(
 					function () {
 						self.completedBatches = currentBatchNum;
@@ -481,7 +509,7 @@
 				total_batches: this.batches.length
 			};
 
-			this.updateProgress( this.completedBatches, this.batches.length, 'Processing batch ' + currentBatchNum + ' of ' + this.batches.length );
+			this.updateProgress( this.completedBatches, this.batches.length, this.processingMessage( currentBatchNum ) );
 
 			return this.requestBatch( values, currentBatchNum ).then(
 				function ( response ) {
@@ -496,13 +524,13 @@
 					}
 
 					if ( response && 429 === response.status ) {
-						self.fail( 'Translation stopped after repeated rate-limit errors.' );
+						self.fail( __( 'Translation stopped after repeated rate-limit errors.', 'i18nly' ) );
 						return;
 					}
 
 					if ( ! payload || ! payload.success || ! payload.data || ! Array.isArray( payload.data.results ) ) {
 						self.fail(
-							AjaxClient.getErrorMessage( payload, 'Translation stopped because the batch response was invalid.' ),
+							AjaxClient.getErrorMessage( payload, __( 'Translation stopped because the batch response was invalid.', 'i18nly' ) ),
 							AjaxClient.getSettingsLinkMeta( payload )
 						);
 						return;
@@ -522,7 +550,7 @@
 				function () {
 					self.releaseBatchItems( self.activeBatchItems );
 					self.activeBatchItems = [];
-					self.fail( 'Translation stopped because the batch request failed.' );
+					self.fail( __( 'Translation stopped because the batch request failed.', 'i18nly' ) );
 				}
 			);
 		}

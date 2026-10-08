@@ -67,6 +67,10 @@ class AjaxPotGenerationTest extends TestCase {
 			$this->assertArrayHasKey( $definition['handle'], $scripts );
 			$this->assertSame( $definition['deps'], $scripts[ $definition['handle'] ]['deps'] );
 			$this->assertTrue( $scripts[ $definition['handle'] ]['in_footer'] );
+
+			// Every script gets its translation files, which WordPress looks for in the languages folder of the plugin.
+			$this->assertSame( 'i18nly', $GLOBALS['i18nly_test_script_translations'][ $definition['handle'] ][0] );
+			$this->assertStringEndsWith( '/languages', $GLOBALS['i18nly_test_script_translations'][ $definition['handle'] ][1] );
 		}
 
 		$this->assertContains( 'i18nly-translation-editor', $scripts['i18nly-translation-edit']['deps'] );

@@ -83,6 +83,36 @@ test( 'translates the selected rows in batches and applies the results', async (
 	env.close();
 } );
 
+test( 'shows the progress dialog translated', async () => {
+	const gate = deferred();
+	const env = await createEnvironment(
+		{
+			translations: {
+				'AI Translation in Progress': 'Traduction IA en cours',
+				'Processing batch %1$d of %2$d': 'Traitement du lot %1$d sur %2$d',
+				Cancel: 'Annuler'
+			},
+			handler: async ( params ) => {
+				await gate.promise;
+
+				return batchResponse( params );
+			}
+		}
+	);
+
+	env.selectRow( 14 );
+	env.runBulkAction( 'ai_translate_selected' );
+	await env.settle();
+
+	assert.equal( env.document.getElementById( 'i18nly-progress-title' ).textContent, 'Traduction IA en cours' );
+	assert.equal( env.document.getElementById( 'i18nly-progress-text' ).textContent, 'Traitement du lot 1 sur 1' );
+	assert.equal( env.document.querySelector( '.i18nly-progress-cancel' ).textContent, 'Annuler' );
+
+	gate.resolve();
+	await env.settle( 30 );
+	env.close();
+} );
+
 test( 'shows progress while a batch is pending', async () => {
 	const gate = deferred();
 	const env = await createEnvironment(

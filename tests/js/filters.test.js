@@ -262,7 +262,7 @@ test( 'a modified row that still matches does not trigger a notice', async () =>
 test( 'the notice uses the localized labels', async () => {
 	const env = await createEnvironment(
 		{
-			config: { i18n: { showOnlyModifiedRowsLabel: 'Seulement les lignes modifiées', applyFiltersAndCloseLabel: 'Appliquer' } }
+			translations: { 'Show only these modified rows': 'Seulement les lignes modifiées', 'Apply filters and close': 'Appliquer' }
 		}
 	);
 

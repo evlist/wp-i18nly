@@ -9,16 +9,17 @@
 	'use strict';
 
 	var namespace = window.I18nly = window.I18nly || {};
+	var __        = namespace.i18n.__;
 
 	var QUALITY_STATUS_META = {
-		draft: { className: 'i18nly-entry-status--draft', label: 'Draft' },
-		suspect: { className: 'i18nly-entry-status--suspect', label: 'Suspect' },
-		validated: { className: 'i18nly-entry-status--validated', label: 'Validated' }
+		draft: { className: 'i18nly-entry-status--draft', get label() { return __( 'Draft', 'i18nly' ); } },
+		suspect: { className: 'i18nly-entry-status--suspect', get label() { return __( 'Suspect', 'i18nly' ); } },
+		validated: { className: 'i18nly-entry-status--validated', get label() { return __( 'Validated', 'i18nly' ); } }
 	};
 
 	var PROVENANCE_LABELS = {
-		ai: 'AI',
-		manual: 'Manual'
+		get ai() { return __( 'AI', 'i18nly' ); },
+		get manual() { return __( 'Manual', 'i18nly' ); }
 	};
 
 	/**

@@ -24,10 +24,6 @@ const defaultConfig = {
 	refreshNonce: 'refresh-nonce',
 	tableContainerId: 'i18nly-source-entries-table',
 	contentTypeHeader: 'application/x-www-form-urlencoded; charset=UTF-8',
-	i18n: {
-		showOnlyModifiedRowsLabel: 'Show only these modified rows',
-		applyFiltersAndCloseLabel: 'Apply filters and close'
-	},
 	translateAction: 'i18nly_ai_translate_entry',
 	translateNonce: 'translate-nonce',
 	translateBatchAction: 'i18nly_ai_translate_entry',
@@ -97,7 +93,18 @@ async function createEnvironment( options = {} ) {
 	const alerts = [];
 	const config = Object.assign( {}, defaultConfig, options.config || {} );
 
-	config.i18n = Object.assign( {}, defaultConfig.i18n, ( options.config && options.config.i18n ) || {} );
+	// Installs a wp.i18n that translates with a dictionary, as WordPress does with the script translations.
+	if ( options.translations ) {
+		const dictionary = options.translations;
+
+		window.wp = {
+			i18n: {
+				__: ( text ) => dictionary[ text ] || text,
+				_n: ( singular, plural, number ) => dictionary[ 1 === number ? singular : plural ] || ( 1 === number ? singular : plural ),
+				sprintf: ( format, ...values ) => String( format ).replace( /%(?:(\d+)\$)?[sd]/g, ( match, index ) => String( values[ index ? Number( index ) - 1 : 0 ] ) )
+			}
+		};
+	}
 
 	// Lets tests dispatch input events that the scripts see as user-initiated.
 	const originalAddEventListener = window.EventTarget.prototype.addEventListener;

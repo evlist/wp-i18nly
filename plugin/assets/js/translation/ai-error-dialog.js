@@ -9,6 +9,7 @@
 	'use strict';
 
 	var namespace = window.I18nly = window.I18nly || {};
+	var __        = namespace.i18n.__;
 
 	/**
 	 * Displays AI translation errors in a modal dialog.
@@ -34,7 +35,7 @@
 
 			anchor             = window.document.createElement( 'a' );
 			anchor.href        = linkMeta.url;
-			anchor.textContent = String( linkMeta.label || 'Settings > Translations' );
+			anchor.textContent = String( linkMeta.label || __( 'Settings > Translations', 'i18nly' ) );
 			paragraph.appendChild( anchor );
 
 			container.appendChild( paragraph );
@@ -78,7 +79,7 @@
 				title             = window.document.createElement( 'h2' );
 				title.id          = 'i18nly-ai-error-title';
 				title.className   = 'i18nly-progress-title';
-				title.textContent = 'AI Translation Error';
+				title.textContent = __( 'AI Translation Error', 'i18nly' );
 
 				messageNode           = window.document.createElement( 'p' );
 				messageNode.id        = 'i18nly-ai-error-message';
@@ -94,7 +95,7 @@
 				closeButton             = window.document.createElement( 'button' );
 				closeButton.type        = 'button';
 				closeButton.className   = 'button button-primary';
-				closeButton.textContent = 'Close';
+				closeButton.textContent = __( 'Close', 'i18nly' );
 				closeButton.addEventListener(
 					'click',
 					function () {

@@ -1047,6 +1047,24 @@ if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_set_script_translations' ) ) {
+	/**
+	 * Captures the script translations registered in tests.
+	 *
+	 * @param string $handle Script handle.
+	 * @param string $domain Text domain.
+	 * @param string $path Folder of the translation files.
+	 * @return bool
+	 */
+	function wp_set_script_translations( $handle, $domain = 'default', $path = '' ) {
+		global $i18nly_test_script_translations;
+
+		$i18nly_test_script_translations[ (string) $handle ] = array( (string) $domain, (string) $path );
+
+		return true;
+	}
+}
+
 if ( ! function_exists( 'wp_enqueue_style' ) ) {
 	/**
 	 * Captures enqueued styles in tests.

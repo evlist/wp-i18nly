@@ -214,6 +214,9 @@ class TranslationEditController {
 				(string) $asset_version,
 				true
 			);
+
+			// The strings of the scripts are translated by WordPress with the JSON files of the languages folder.
+			wp_set_script_translations( (string) $definition['handle'], 'i18nly', $this->get_languages_path() );
 		}
 
 		$config_json = wp_json_encode( call_user_func( $this->script_config_builder, $translation_id ) );
@@ -250,5 +253,14 @@ class TranslationEditController {
 		if ( is_object( $controller ) && method_exists( $controller, 'handle_get_translation_entries_table' ) ) {
 			$controller->handle_get_translation_entries_table();
 		}
+	}
+
+	/**
+	 * Returns the folder holding the translation files of the plugin.
+	 *
+	 * @return string
+	 */
+	private function get_languages_path() {
+		return dirname( __DIR__, 3 ) . '/languages';
 	}
 }

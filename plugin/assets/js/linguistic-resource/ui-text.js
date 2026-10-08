@@ -2,6 +2,12 @@
  * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
+ * Translation functions of the editor scripts.
+ *
+ * The strings are translated by WordPress (wp_set_script_translations()): the scripts call these
+ * functions like wp.i18n.__(), with the text domain as last argument, so that the strings can be
+ * extracted. When wp.i18n is not loaded the text is returned unchanged.
+ *
  * @package I18nly
  */
 
@@ -11,58 +17,69 @@
 	var namespace = window.I18nly = window.I18nly || {};
 
 	/**
-	 * Resolves localized UI strings handed over by PHP and formats plural messages.
+	 * Returns the wp.i18n function of that name, resolved at call time, or null.
+	 *
+	 * @param {string} name Function name.
+	 * @return {?Function}
 	 */
-	class UiText {
-		/**
-		 * @param {Object} config Editor configuration (i18n).
-		 */
-		constructor( config ) {
-			var wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+	function wpFunction( name ) {
+		var wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
 
-			this.strings = config && config.i18n ? config.i18n : {};
-			this.pluralize = wpI18n && 'function' === typeof wpI18n._n
-				? wpI18n._n
-				: function ( singular, plural, count ) {
-					return 1 === count ? singular : plural;
-				};
-			this.format = wpI18n && 'function' === typeof wpI18n.sprintf
-				? wpI18n.sprintf
-				: function ( message, count ) {
-					return String( message ).replace( '%d', String( count ) );
-				};
-		}
+		return wpI18n && 'function' === typeof wpI18n[name] ? wpI18n[name] : null;
+	}
 
+	namespace.i18n = {
 		/**
-		 * Returns a localized string, or the fallback when PHP provided none.
+		 * Translates a text.
 		 *
-		 * @param {string} key Message key.
-		 * @param {string} fallback Fallback message.
-		 * @return {string}
-		 */
-		get( key, fallback ) {
-			var value = this.strings[key];
-
-			if ( 'string' === typeof value && '' !== value ) {
-				return value;
-			}
-
-			return fallback;
-		}
-
-		/**
-		 * Formats a plural message containing a %d placeholder.
-		 *
-		 * @param {string} singular Singular message.
-		 * @param {string} plural Plural message.
-		 * @param {number} count Item count.
+		 * @param {string} text   Text.
 		 * @param {string} domain Text domain.
 		 * @return {string}
 		 */
-		formatPlural( singular, plural, count, domain ) {
-			return this.format( this.pluralize( singular, plural, count, domain ), count );
-		}
-	}
+		__: function ( text, domain ) {
+			var translate = wpFunction( '__' );
 
-	namespace.UiText = UiText;
+			return translate ? translate( text, domain ) : text;
+		},
+
+		/**
+		 * Translates a text depending on a number.
+		 *
+		 * @param {string} singular Singular text.
+		 * @param {string} plural   Plural text.
+		 * @param {number} number   Number.
+		 * @param {string} domain   Text domain.
+		 * @return {string}
+		 */
+		_n: function ( singular, plural, number, domain ) {
+			var translate = wpFunction( '_n' );
+
+			return translate ? translate( singular, plural, number, domain ) : ( 1 === number ? singular : plural );
+		},
+
+		/**
+		 * Replaces the placeholders (%s, %d, %1$s) of a text.
+		 *
+		 * @param {string} format Text with placeholders.
+		 * @return {string}
+		 */
+		sprintf: function ( format ) {
+			var format_function = wpFunction( 'sprintf' );
+			var values          = Array.prototype.slice.call( arguments, 1 );
+			var position        = 0;
+
+			if ( format_function ) {
+				return format_function.apply( null, [ format ].concat( values ) );
+			}
+
+			return String( format ).replace(
+				/%(?:(\d+)\$)?[sd]/g,
+				function ( match, index ) {
+					var value = index ? values[ Number( index ) - 1 ] : values[ position++ ];
+
+					return undefined === value ? match : String( value );
+				}
+			);
+		}
+	};
 } )( window );
