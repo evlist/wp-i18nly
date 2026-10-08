@@ -229,10 +229,12 @@ class FileLockThrottle {
 			$encoded = (string) (int) $state['last_ms'];
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- the state is written through the flock-locked handle opened by the caller.
 		ftruncate( $handle, 0 );
 		rewind( $handle );
 		fwrite( $handle, $encoded );
 		fflush( $handle );
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 	}
 
 	/**

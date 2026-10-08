@@ -410,6 +410,8 @@ Deliverables:
 
 #### H3: CI green (audit B4, part of I7)
 
+Status: code and metadata done, CI result to confirm. `FileLockThrottle::write_state()` carries the same justified `WordPress.WP.AlternativeFunctions` exemption as the rest of the flock-based class (the `fwrite` was the only call left outside it); `readme.txt` has `Stable tag` 0.1.1, `Tested up to` 7.1 (the value Plugin Check expects from the CI WordPress; the plugin has not been run on a real 7.1) and a refreshed description and changelog; `composer.json`/`composer.lock` require PHP 8.1 like the plugin header. `reuse lint` passes locally. Not done: JS tests in CI and phpstan (optional items below).
+
 Deliverables:
 
 - replace the direct `fwrite` in `Support/FileLockThrottle.php` (WP_Filesystem, or a justified and documented exception accepted by Plugin Check),
