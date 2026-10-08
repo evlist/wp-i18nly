@@ -523,6 +523,27 @@ class TranslationExportControllerTest extends TestCase {
 	}
 
 	/**
+	 * The result arguments are removed from the address, so that a reload does not repeat the action.
+	 *
+	 * @return void
+	 */
+	public function test_address_is_cleaned_after_the_action() {
+		global $current_screen;
+
+		$current_screen = (object) array( 'post_type' => 'i18nly_translation' );
+
+		ob_start();
+		( new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller() ) )->render_address_cleaner();
+		$output = ob_get_clean();
+
+		unset( $current_screen );
+
+		$this->assertStringContainsString( 'replaceState', $output );
+		$this->assertStringContainsString( 'i18nly_download', $output );
+		$this->assertStringContainsString( 'i18nly_install', $output );
+	}
+
+	/**
 	 * The edit screen starts the download in a hidden frame after the save, and only then.
 	 *
 	 * @return void

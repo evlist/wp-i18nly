@@ -183,7 +183,25 @@ class TranslationExportMetaBox {
 
 		$url = $this->controller->get_download_url( $post_id, TranslationExportController::CHOICE_INCLUDE === $choice );
 
+		// The address is forgotten at once: reloading the page must not download again.
 		echo '<script>( function () { var frame = document.createElement( "iframe" ); frame.style.display = "none"; frame.src = ' . wp_json_encode( esc_url_raw( $url ) ) . '; document.body.appendChild( frame ); } )();</script>';
+	}
+
+	/**
+	 * Removes the result arguments from the address shown by the browser, so that reloading the page does not repeat the action.
+	 *
+	 * @return void
+	 */
+	public function render_address_cleaner() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! is_object( $screen ) || self::POST_TYPE !== $screen->post_type ) {
+			return;
+		}
+
+		$names = array( TranslationExportController::DOWNLOAD_ARG, TranslationExportController::RESULT_ARG );
+
+		echo '<script>( function () { if ( ! window.history || ! window.history.replaceState ) { return; } var url = new URL( window.location.href ); ' . wp_json_encode( $names ) . '.forEach( function ( name ) { url.searchParams.delete( name ); } ); window.history.replaceState( null, "", url.toString() ); } )();</script>';
 	}
 
 	/**

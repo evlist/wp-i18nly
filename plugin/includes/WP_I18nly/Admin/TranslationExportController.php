@@ -139,6 +139,7 @@ class TranslationExportController {
 		add_filter( 'redirect_post_location', array( $this, 'filter_redirect_location' ), 20, 1 );
 		add_action( 'admin_notices', array( $meta_box, 'render_notice' ) );
 		add_action( 'admin_footer', array( $meta_box, 'render_download_trigger' ) );
+		add_action( 'admin_footer', array( $meta_box, 'render_address_cleaner' ), 20 );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $meta_box, 'register' ) );
 	}
 
