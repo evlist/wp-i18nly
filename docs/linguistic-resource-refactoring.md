@@ -438,6 +438,31 @@ Deliverables:
 - `MoExporter` on the gettext 5 `MoGenerator`; JSON (JED) exporter ported from `JedGenerator` (82 lines) with the `make-json` splitting rules by script; optional `.l10n.php` exporter ported from `PhpArrayGenerator`; plural forms taken from the plural data,
 - download/save action on the edit screen, tests against files produced by `msgfmt`/WP-CLI when available.
 
+##### H5 follow-up: removing the vendored wp-cli copy (if decided)
+
+Remove it only once the behavior gaps found by the comparison are ported or consciously dropped. Checklist of everything that references it (inventory made on 2026-10-08):
+
+Delete:
+
+- `plugin/third-party/wp-cli/` (`src/`, `SYNC-LOG.md`, `upstream-info.json`, `index.php`),
+- `scripts/sync-i18n-from-upstream.sh` (the update script; it only syncs this copy, nothing else calls it).
+
+Edit:
+
+- `plugin/REUSE.toml`: remove the `third-party/wp-cli/**` annotation (MIT, WP-CLI Contributors); keep the `third-party/vendor/**` one. Run the REUSE lint afterwards.
+- `.vscode/psalm-plugin.xml`: remove the `../plugin/third-party/wp-cli` directory entry. `.vscode` is managed by codespaces-grafting: follow its rules (local override rather than editing a managed file, keep the `.orig` in step).
+- `docs/IA.md`, section Third-Party Code: drop the reference-copy paragraph and the porting rule; keep a short note saying that the extractors were written on gettext 5 with wp-cli as inspiration (credit stays in the code comments of the ported parts).
+- `docs/AUDIT.md` addendum and this document (H5 decision text): mark as done and point to the removal commit.
+- Credits: if behavior or code is ported, keep the MIT notice of WP-CLI in the ported files (SPDX headers) and in `REUSE.toml` for those paths.
+
+Nothing to change (verified, do not touch):
+
+- Autoloader: there is no entry for the copy. `plugin/composer.json` only maps `WP_I18nly\\` to `includes/WP_I18nly/` and the vendor autoload does not list `WP_CLI\\I18n`; no `composer dump-autoload` is needed. If a classmap or PSR-4 entry is ever added for it, remove it too.
+- `i18nly.php`, `phpunit`, `phpcs` (`*/third-party/*` is already excluded), the Plugin Check option `--exclude-directories=third-party` (still needed for `third-party/vendor`).
+- WP-CLI as a development tool: the Dockerfile, bootstrap scripts, `.vscode/intelephense-stubs/wp-cli.php`, the `wpcheck` CI step and the optional locale filter of `scripts/generate-plural-specs.php` (see `scripts/plurals/README.md`) use the `wp` binary, not this copy.
+
+Validation after removal: `phpcs`, PHPUnit and JS suites green, REUSE lint green, `grep -rI "third-party/wp-cli\|i18n-command" .` returns nothing outside the git history.
+
 #### H6: Robustness and scale (audit I4, I5, I9)
 
 Deliverables:

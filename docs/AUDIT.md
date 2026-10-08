@@ -60,3 +60,6 @@ files reference them), while the plugin requires gettext 5.7, an incompatible AP
 on gettext 5 (`Build/`). Conclusion: B5 is not "reuse wp-cli" but "port the needed generators (MO is native in gettext 5; JED about 80
 lines; PHP array about 190 lines)". The copy stays as a reference; see `IA.md`, Third-Party Code. Open question for H5: delete the copy once the
 extractor gaps are ported, to avoid carrying 170 KB of unused code. Also noted: `PotGenerator` and `PotSourceImporter` repeat a `require_once` of the autoloader already loaded by `i18nly.php`.
+
+If the copy is removed, the full list of files to delete or edit (update script, `REUSE.toml`, `.vscode/psalm-plugin.xml`, docs) is in
+`docs/linguistic-resource-refactoring.md`, under "H5 follow-up". No autoloader entry exists for it.
