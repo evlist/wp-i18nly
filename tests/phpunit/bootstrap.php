@@ -27,6 +27,7 @@ $i18nly_test_available_languages    = array();
 $i18nly_test_available_translations = array();
 $i18nly_test_posts                  = array();
 $i18nly_test_post_meta              = array();
+$i18nly_test_registered_post_types   = array();
 $i18nly_test_last_redirect_url      = '';
 $i18nly_test_last_updated_post      = array();
 $i18nly_test_options                = array();
@@ -902,7 +903,9 @@ if ( ! function_exists( 'register_post_type' ) ) {
 	 * @return void
 	 */
 	function register_post_type( $post_type, array $args ) {
-		unset( $post_type, $args );
+		global $i18nly_test_registered_post_types;
+
+		$i18nly_test_registered_post_types[ $post_type ] = $args;
 	}
 }
 
@@ -1154,7 +1157,11 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 	 * @return mixed
 	 */
 	function wp_unslash( $value ) {
-		return $value;
+		if ( is_array( $value ) ) {
+			return array_map( 'wp_unslash', $value );
+		}
+
+		return is_string( $value ) ? stripslashes( $value ) : $value;
 	}
 }
 
@@ -1179,7 +1186,30 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	 * @return string
 	 */
 	function sanitize_text_field( $value ) {
-		return trim( (string) $value );
+		// Approximates the WordPress behavior: tags are stripped, whitespace runs collapsed, percent octets removed.
+		$text = trim( strip_tags( (string) $value ) );
+		$text = (string) preg_replace( '/[\r\n\t ]+/', ' ', $text );
+
+		return trim( (string) preg_replace( '/%[a-f0-9]{2}/i', '', $text ) );
+	}
+}
+
+if ( ! function_exists( 'wp_check_invalid_utf8' ) ) {
+	/**
+	 * Checks UTF-8 validity like WordPress.
+	 *
+	 * @param string $text Text.
+	 * @param bool   $strip Whether to strip invalid sequences instead of returning an empty string.
+	 * @return string
+	 */
+	function wp_check_invalid_utf8( $text, $strip = false ) {
+		$text = (string) $text;
+
+		if ( mb_check_encoding( $text, 'UTF-8' ) ) {
+			return $text;
+		}
+
+		return $strip ? (string) iconv( 'UTF-8', 'UTF-8//IGNORE', $text ) : '';
 	}
 }
 

@@ -10,6 +10,8 @@
 
 namespace WP_I18nly\AI;
 
+use WP_I18nly\Support\TranslationTextNormalizer;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -110,7 +112,7 @@ class TranslationAiAjaxHandler {
 		$translation_id  = absint( wp_unslash( $_POST['translation_id'] ) );
 		$source_entry_id = absint( wp_unslash( $_POST['source_entry_id'] ) );
 		$form_index      = absint( wp_unslash( $_POST['form_index'] ) );
-		$source_text     = sanitize_text_field( wp_unslash( $_POST['source_text'] ) );
+		$source_text     = TranslationTextNormalizer::normalize( filter_var( wp_unslash( $_POST['source_text'] ), FILTER_UNSAFE_RAW ) );
 		$witness_raw     = isset( $_POST['witness_n'] ) ? sanitize_text_field( wp_unslash( $_POST['witness_n'] ) ) : '';
 		$witness_raw     = trim( (string) $witness_raw );
 		$has_witness_n   = '' !== $witness_raw;
@@ -201,10 +203,9 @@ class TranslationAiAjaxHandler {
 			return;
 		}
 
-		$items_json = sanitize_textarea_field( wp_unslash( $_POST['items_json'] ) );
-		$items      = json_decode( $items_json, true );
+		$items = TranslationTextNormalizer::decode_json_array( filter_var( wp_unslash( $_POST['items_json'] ), FILTER_UNSAFE_RAW ) );
 
-		if ( ! is_array( $items ) || empty( $items ) ) {
+		if ( empty( $items ) ) {
 			wp_send_json_error( array( 'message' => 'Batch payload is empty.' ), 400 );
 			return;
 		}

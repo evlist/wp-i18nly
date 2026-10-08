@@ -10,6 +10,8 @@
 
 namespace WP_I18nly\Admin;
 
+use WP_I18nly\Support\TranslationTextNormalizer;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -59,6 +61,20 @@ class TranslationSaveHandler {
 	private $handle_duplicate_callback;
 
 	/**
+	 * Source slug validation callback.
+	 *
+	 * @var callable
+	 */
+	private $is_valid_source_slug_callback;
+
+	/**
+	 * Target language validation callback.
+	 *
+	 * @var callable
+	 */
+	private $is_valid_language_callback;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string   $post_type Translation post type.
@@ -67,6 +83,8 @@ class TranslationSaveHandler {
 	 * @param callable $persist_entries_callback Persist callback.
 	 * @param callable $find_duplicate_callback Duplicate lookup callback.
 	 * @param callable $handle_duplicate_callback Duplicate handling callback.
+	 * @param callable $is_valid_source_slug_callback Returns whether a posted source slug is an installed plugin.
+	 * @param callable $is_valid_language_callback Returns whether a posted language is a supported target language.
 	 */
 	public function __construct(
 		$post_type,
@@ -74,7 +92,9 @@ class TranslationSaveHandler {
 		$meta_target_language,
 		$persist_entries_callback,
 		$find_duplicate_callback,
-		$handle_duplicate_callback
+		$handle_duplicate_callback,
+		$is_valid_source_slug_callback,
+		$is_valid_language_callback
 	) {
 		$this->post_type                 = (string) $post_type;
 		$this->meta_source_slug          = (string) $meta_source_slug;
@@ -82,6 +102,9 @@ class TranslationSaveHandler {
 		$this->persist_entries_callback  = $persist_entries_callback;
 		$this->find_duplicate_callback   = $find_duplicate_callback;
 		$this->handle_duplicate_callback = $handle_duplicate_callback;
+
+		$this->is_valid_source_slug_callback = $is_valid_source_slug_callback;
+		$this->is_valid_language_callback    = $is_valid_language_callback;
 	}
 
 	/**
@@ -119,11 +142,19 @@ class TranslationSaveHandler {
 		$source_slug = $existing_source;
 		if ( ! $is_locked && isset( $_POST['i18nly_plugin_selector'] ) ) {
 			$source_slug = sanitize_text_field( wp_unslash( $_POST['i18nly_plugin_selector'] ) );
+
+			if ( ! call_user_func( $this->is_valid_source_slug_callback, $source_slug ) ) {
+				$source_slug = '';
+			}
 		}
 
 		$target_language = $existing_language;
 		if ( ! $is_locked && isset( $_POST['i18nly_target_language_selector'] ) ) {
 			$target_language = sanitize_text_field( wp_unslash( $_POST['i18nly_target_language_selector'] ) );
+
+			if ( ! call_user_func( $this->is_valid_language_callback, $target_language ) ) {
+				$target_language = '';
+			}
 		}
 
 		if ( ! $is_locked && '' !== $source_slug && '' !== $target_language ) {
@@ -140,16 +171,11 @@ class TranslationSaveHandler {
 
 		if ( '' !== $source_slug ) {
 			$entries_payload = array();
-			$payload_json    = filter_input( INPUT_POST, 'i18nly_translation_entries_payload', FILTER_UNSAFE_RAW );
 
-			if ( ! is_string( $payload_json ) && isset( $_POST['i18nly_translation_entries_payload'] ) ) {
-				$payload_json = sanitize_textarea_field( wp_unslash( $_POST['i18nly_translation_entries_payload'] ) );
-			}
+			if ( isset( $_POST['i18nly_translation_entries_payload'] ) ) {
+				$decoded_payload = TranslationTextNormalizer::decode_json_array( filter_var( wp_unslash( $_POST['i18nly_translation_entries_payload'] ), FILTER_UNSAFE_RAW ) );
 
-			if ( is_string( $payload_json ) && '' !== $payload_json ) {
-				$decoded_payload = json_decode( wp_unslash( $payload_json ), true );
-
-				if ( is_array( $decoded_payload ) ) {
+				if ( null !== $decoded_payload ) {
 					$entries_payload = $decoded_payload;
 				}
 			}
@@ -212,7 +238,7 @@ class TranslationSaveHandler {
 
 			foreach ( $forms as $form_index => $form_translation ) {
 				$normalized_index                      = absint( $form_index );
-				$normalized_forms[ $normalized_index ] = sanitize_text_field( (string) $form_translation );
+				$normalized_forms[ $normalized_index ] = TranslationTextNormalizer::normalize( $form_translation );
 
 				if ( array_key_exists( $normalized_index, $statuses ) ) {
 					$normalized_statuses[ $normalized_index ] = sanitize_key( (string) $statuses[ $normalized_index ] );

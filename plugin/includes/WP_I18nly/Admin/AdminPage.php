@@ -212,6 +212,18 @@ class AdminPage {
 			},
 			function ( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
 				$this->get_duplicate_guard()->handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language );
+			},
+			function ( $source_slug ) {
+				return array_key_exists( (string) $source_slug, $this->get_plugin_options() );
+			},
+			function ( $target_language ) {
+				foreach ( $this->get_target_language_options() as $option ) {
+					if ( (string) $option['value'] === (string) $target_language ) {
+						return true;
+					}
+				}
+
+				return false;
 			}
 		);
 	}

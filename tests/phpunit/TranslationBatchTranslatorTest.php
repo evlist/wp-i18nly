@@ -468,4 +468,46 @@ class TranslationBatchTranslatorTest extends TestCase {
 		$this->assertStringStartsWith( 'en_US>de_DE:%s items|Software UI message.', $result['results'][1]['translation'] );
 		$this->assertSame( 'draft', $result['results'][0]['review_token'] );
 	}
+
+	/**
+	 * The source text reaches the provider as it is: markup, line breaks and spacing are not altered.
+	 *
+	 * @return void
+	 */
+	public function test_source_text_is_sent_to_the_provider_unaltered() {
+		$sent       = array();
+		$source     = "Click <a href=\"/x\">here</a>\nto  <b>save</b> 100% of %s";
+		$translator = $this->build(
+			array(
+				'batch' => static function ( array $items ) use ( &$sent ) {
+					$sent = $items;
+
+					return array(
+						'success' => true,
+						'items'   => array(
+							array(
+								'success'      => true,
+								'translation'  => 'x',
+								'review_token' => 'draft_ai',
+							),
+						),
+					);
+				},
+			)
+		);
+
+		$translator->translate(
+			42,
+			'fr_FR',
+			array(
+				array(
+					'source_entry_id' => 7,
+					'form_index'      => 0,
+					'source_text'     => $source,
+				),
+			)
+		);
+
+		$this->assertSame( $source, $sent[0]['text'] );
+	}
 }

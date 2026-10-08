@@ -51,18 +51,18 @@ class PluginSourceFiles {
 	public function resolve_main_file( $source_slug ) {
 		$source_slug = ltrim( (string) $source_slug, '/\\' );
 
-		if ( '' === $source_slug ) {
+		if ( ! $this->is_safe_relative_path( $source_slug ) ) {
 			return '';
 		}
 
 		$candidates = array();
 
 		if ( '' !== $this->plugins_root ) {
-			$candidates[] = rtrim( $this->plugins_root, '/\\' ) . '/' . $source_slug;
+			$candidates[] = array( rtrim( $this->plugins_root, '/\\' ), $source_slug );
 		}
 
 		if ( defined( 'WP_PLUGIN_DIR' ) ) {
-			$candidates[] = rtrim( (string) WP_PLUGIN_DIR, '/\\' ) . '/' . $source_slug;
+			$candidates[] = array( rtrim( (string) WP_PLUGIN_DIR, '/\\' ), $source_slug );
 		}
 
 		if ( defined( 'I18NLY_PLUGIN_FILE' ) ) {
@@ -72,17 +72,71 @@ class PluginSourceFiles {
 			$plugin_basename  = basename( $plugin_directory );
 
 			if ( '' !== $slug_directory && $slug_directory === $plugin_basename ) {
-				$candidates[] = $plugin_directory . '/' . basename( $source_slug );
+				$candidates[] = array( $plugin_directory, basename( $source_slug ) );
 			}
 		}
 
 		foreach ( $candidates as $candidate ) {
-			if ( is_readable( $candidate ) ) {
-				return $candidate;
+			$resolved = $this->resolve_inside_root( $candidate[0], $candidate[1] );
+
+			if ( '' !== $resolved ) {
+				return $resolved;
 			}
 		}
 
 		return '';
+	}
+
+	/**
+	 * Tells whether a source slug is a plain relative path: no empty, dot or parent segments, no NUL, no drive.
+	 *
+	 * @param string $source_slug Source slug without leading separators.
+	 * @return bool
+	 */
+	private function is_safe_relative_path( $source_slug ) {
+		if ( '' === $source_slug || false !== strpos( $source_slug, "\0" ) || false !== strpos( $source_slug, ':' ) ) {
+			return false;
+		}
+
+		foreach ( preg_split( '#[/\\\\]#', $source_slug ) as $segment ) {
+			if ( '' === $segment || '.' === $segment || '..' === $segment ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Returns the readable file at a relative path under a root, or an empty string when it is missing or outside the root.
+	 *
+	 * Symbolic links are resolved before checking, so a link cannot lead out of the root.
+	 *
+	 * @param string $root Root directory.
+	 * @param string $relative_path Safe relative path.
+	 * @return string
+	 */
+	private function resolve_inside_root( $root, $relative_path ) {
+		$candidate = $root . '/' . $relative_path;
+
+		if ( ! is_readable( $candidate ) ) {
+			return '';
+		}
+
+		$real_root      = realpath( $root );
+		$real_candidate = realpath( $candidate );
+
+		if ( false === $real_root || false === $real_candidate ) {
+			return '';
+		}
+
+		$real_root = rtrim( $real_root, '/\\' ) . DIRECTORY_SEPARATOR;
+
+		if ( 0 !== strpos( $real_candidate, $real_root ) ) {
+			return '';
+		}
+
+		return $candidate;
 	}
 
 	/**

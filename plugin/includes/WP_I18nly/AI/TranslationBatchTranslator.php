@@ -10,6 +10,8 @@
 
 namespace WP_I18nly\AI;
 
+use WP_I18nly\Support\TranslationTextNormalizer;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -146,7 +148,7 @@ class TranslationBatchTranslator {
 
 			$source_entry_id = isset( $item['source_entry_id'] ) ? absint( $item['source_entry_id'] ) : 0;
 			$form_index      = isset( $item['form_index'] ) ? absint( $item['form_index'] ) : 0;
-			$source_text     = isset( $item['source_text'] ) ? sanitize_text_field( (string) $item['source_text'] ) : '';
+			$source_text     = isset( $item['source_text'] ) ? TranslationTextNormalizer::normalize( $item['source_text'] ) : '';
 			$witness_n       = null;
 
 			if ( isset( $item['witness_n'] ) && '' !== trim( (string) $item['witness_n'] ) ) {

@@ -53,7 +53,10 @@ class AdminRegistration {
 				'show_ui'      => true,
 				'show_in_menu' => false,
 				'supports'     => array( 'title' ),
-				'map_meta_cap' => true,
+				// Own capability type: the default "post" type would let Contributors and Authors edit translations.
+				'capability_type' => array( 'i18nly_translation', 'i18nly_translations' ),
+				'capabilities'    => self::get_capabilities(),
+				'map_meta_cap'    => true,
 			)
 		);
 	}
@@ -91,5 +94,30 @@ class AdminRegistration {
 			'manage_options',
 			$new_screen_slug
 		);
+	}
+
+	/**
+	 * Returns the capabilities of the translation post type: all of them require manage_options.
+	 *
+	 * The meta capabilities (edit_post, delete_post, read_post) are mapped by WordPress to these primitive ones.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function get_capabilities() {
+		$primitives = array(
+			'edit_posts',
+			'edit_others_posts',
+			'edit_private_posts',
+			'edit_published_posts',
+			'publish_posts',
+			'read_private_posts',
+			'delete_posts',
+			'delete_private_posts',
+			'delete_published_posts',
+			'delete_others_posts',
+			'create_posts',
+		);
+
+		return array_fill_keys( $primitives, 'manage_options' );
 	}
 }

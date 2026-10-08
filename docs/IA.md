@@ -525,8 +525,8 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 are defined in
 `docs/linguistic-resource-refactoring.md` and come before the glossary UI:
 
-1. H1 input validation and capabilities (source slug traversal, CPT capabilities),
-2. H2 raw storage of translations (no `sanitize_text_field` on translations),
+1. H1 input validation and capabilities (source slug traversal, CPT capabilities): done,
+2. H2 raw storage of translations (no `sanitize_text_field` on translations): done,
 3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI),
 4. H4 uninstall, activation and schema migrations,
 5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code,

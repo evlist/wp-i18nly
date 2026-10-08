@@ -379,6 +379,8 @@ Recommended order: H1, H2, H3, H4, H5, H6, H7, then slices 5 and 6.
 
 #### H1: Input validation and capabilities (audit B1, B2)
 
+Status: done. `PluginSourceFiles::resolve_main_file()` rejects empty, `.`/`..`, NUL and `:` segments and checks with `realpath()` that the file stays under its root (symbolic links included); `TranslationSaveHandler` drops a source slug that is not an installed plugin and a language that is not a supported target language; the post type has its own capability type and every primitive capability maps to `manage_options` (`AdminRegistration::get_capabilities()`), which the `edit_post` checks of the AJAX handlers inherit. Tests: `PluginSourceFilesTest`, `TranslationSaveHandlerTest`, `AdminRegistrationTest`. Translations already saved with a bad slug are harmless thanks to the read-side check, but are not cleaned.
+
 Goal:
 
 - no user input can select a path or a user right outside the intended scope.
@@ -393,6 +395,8 @@ Deliverables:
 Validation: security tests green; manual check as Contributor, Author and Administrator.
 
 #### H2: Raw storage of translations (audit B3)
+
+Status: done. `Support\TranslationTextNormalizer` replaces `sanitize_text_field()`/`sanitize_textarea_field()` for translations, source texts sent to DeepL and the JSON payloads (it only removes invalid UTF-8 and control characters, and normalizes line breaks to `\n`). A double `wp_unslash()` of the entries payload, which corrupted backslashes and quotes, was removed. The PHPUnit stubs of `wp_unslash()` and `sanitize_text_field()` now behave like WordPress's, which is what had hidden these bugs. Output stays escaped (`esc_html` in the list table). Not done: size limits on payloads (see H6).
 
 Goal:
 
