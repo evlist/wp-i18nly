@@ -36,9 +36,19 @@ class TranslationExportController {
 	public const ACTION = 'i18nly_export_translation';
 
 	/**
-	 * Admin-post action installing the files in the languages directory.
+	 * Name of the button field telling what to do after saving: "install" or "download".
 	 */
-	public const INSTALL_ACTION = 'i18nly_install_translation';
+	public const AFTER_SAVE_FIELD = 'i18nly_after_save';
+
+	/**
+	 * Name of the field holding the choice about doubtful translations.
+	 */
+	public const CHOICE_FIELD = 'i18nly_unvalidated';
+
+	/**
+	 * Query argument asking the edit screen to start the download.
+	 */
+	public const DOWNLOAD_ARG = 'i18nly_download';
 
 	/**
 	 * Value of the choice field to include doubtful translations.
@@ -88,12 +98,21 @@ class TranslationExportController {
 	private $repository;
 
 	/**
+	 * Installer of the files.
+	 *
+	 * @var TranslationInstaller|null
+	 */
+	private $installer;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TranslationResourceRepository|null $repository Optional repository.
+	 * @param TranslationInstaller|null          $installer Optional installer of the files.
 	 */
-	public function __construct( TranslationResourceRepository $repository = null ) {
+	public function __construct( TranslationResourceRepository $repository = null, TranslationInstaller $installer = null ) {
 		$this->repository = $repository;
+		$this->installer  = $installer;
 	}
 
 	/**
@@ -115,10 +134,19 @@ class TranslationExportController {
 		$meta_box = new TranslationExportMetaBox( $this );
 
 		add_action( 'admin_post_' . self::ACTION, array( $this, 'handle_export' ) );
-		add_action( 'admin_post_' . self::INSTALL_ACTION, array( $this, 'handle_install' ) );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'handle_save_and_export' ), 20, 1 );
+		add_filter( 'redirect_post_location', array( $this, 'filter_redirect_location' ), 20, 1 );
 		add_action( 'admin_notices', array( $meta_box, 'render_notice' ) );
+		add_action( 'admin_footer', array( $meta_box, 'render_download_trigger' ) );
 		add_action( 'add_meta_boxes_' . self::POST_TYPE, array( $meta_box, 'register' ) );
 	}
+
+	/**
+	 * Arguments to add to the address the browser is sent to after the save.
+	 *
+	 * @var array<string, string>
+	 */
+	private $redirect_arguments = array();
 
 	/**
 	 * Returns the source and language of a translation.
@@ -131,13 +159,34 @@ class TranslationExportController {
 	}
 
 	/**
-	 * Handles the download request.
+	 * Returns the signed address that downloads the archive of a translation.
+	 *
+	 * @param int  $translation_id Translation ID.
+	 * @param bool $include_unvalidated Whether to include the translations that are not validated.
+	 * @return string
+	 */
+	public function get_download_url( $translation_id, $include_unvalidated ) {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'action'         => self::ACTION,
+					'translation_id' => (int) $translation_id,
+					'unvalidated'    => $include_unvalidated ? self::CHOICE_INCLUDE : self::CHOICE_EXCLUDE,
+				),
+				admin_url( 'admin-post.php' )
+			),
+			self::get_nonce_action( $translation_id )
+		);
+	}
+
+	/**
+	 * Handles the download request: the browser is sent here after the translation was saved.
 	 *
 	 * @return void
 	 */
 	public function handle_export() {
-		$translation_id = isset( $_POST['translation_id'] ) ? absint( $_POST['translation_id'] ) : 0;
-		$nonce          = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		$translation_id = isset( $_GET['translation_id'] ) ? absint( $_GET['translation_id'] ) : 0;
+		$nonce          = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 
 		if ( $translation_id <= 0 || ! current_user_can( 'edit_post', $translation_id ) ) {
 			wp_die( esc_html__( 'You are not allowed to perform this action.', 'i18nly' ), 403 );
@@ -147,44 +196,62 @@ class TranslationExportController {
 			wp_die( esc_html__( 'Invalid request.', 'i18nly' ), 400 );
 		}
 
-		$format  = isset( $_POST['format'] ) ? sanitize_key( wp_unslash( $_POST['format'] ) ) : '';
-		$choice  = isset( $_POST['unvalidated'] ) ? sanitize_key( wp_unslash( $_POST['unvalidated'] ) ) : '';
-		$include = $this->resolve_choice( $translation_id, $choice );
-
-		if ( null === $include ) {
-			$this->redirect_to_edit_screen( $translation_id, self::CONFIRMATION_REQUIRED );
-		}
-
-		$file = $this->build_file( $translation_id, $format, $include );
+		$choice = isset( $_GET['unvalidated'] ) ? sanitize_key( wp_unslash( $_GET['unvalidated'] ) ) : '';
+		$file   = $this->build_file( $translation_id, 'bundle', self::CHOICE_INCLUDE === $choice );
 
 		if ( null === $file ) {
-			$this->redirect_to_edit_screen( $translation_id, 'not_exportable' );
+			wp_die( esc_html__( 'There is nothing to export: no string is translated, or the translated ones were left out.', 'i18nly' ), 400 );
 		}
 
 		$this->send_file( $file );
 	}
 
 	/**
-	 * Handles the request installing the files in the languages directory.
+	 * Runs after the translation was saved by one of the "Save and ..." buttons: installs the files, or asks the edit screen to start the download.
 	 *
+	 * Runs after the entries were saved (priority 20), inside the request that saves the post, so the
+	 * nonce and the capability checked are those of the save.
+	 *
+	 * @param int $post_id Translation post ID.
 	 * @return void
 	 */
-	public function handle_install() {
-		$translation_id = isset( $_POST['translation_id'] ) ? absint( $_POST['translation_id'] ) : 0;
-		$nonce          = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+	public function handle_save_and_export( $post_id ) {
+		$after = isset( $_POST[ self::AFTER_SAVE_FIELD ] ) ? sanitize_key( wp_unslash( $_POST[ self::AFTER_SAVE_FIELD ] ) ) : '';
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
 
-		if ( $translation_id <= 0 || ! current_user_can( 'edit_post', $translation_id ) || ! current_user_can( 'install_languages' ) ) {
-			wp_die( esc_html__( 'You are not allowed to perform this action.', 'i18nly' ), 403 );
+		if ( ! in_array( $after, array( 'install', 'download' ), true ) || wp_is_post_autosave( (int) $post_id ) || wp_is_post_revision( (int) $post_id ) ) {
+			return;
 		}
 
-		if ( ! wp_verify_nonce( $nonce, self::get_nonce_action( $translation_id ) ) ) {
-			wp_die( esc_html__( 'Invalid request.', 'i18nly' ), 400 );
+		if ( ! wp_verify_nonce( $nonce, 'update-post_' . (int) $post_id ) || ! current_user_can( 'edit_post', (int) $post_id ) ) {
+			return;
 		}
 
-		$choice  = isset( $_POST['unvalidated'] ) ? sanitize_key( wp_unslash( $_POST['unvalidated'] ) ) : '';
-		$include = $this->resolve_choice( $translation_id, $choice );
+		if ( 'install' === $after && ! current_user_can( 'install_languages' ) ) {
+			$this->redirect_arguments = array( self::RESULT_ARG => 'forbidden' );
+			return;
+		}
 
-		$this->redirect_to_edit_screen( $translation_id, null === $include ? self::CONFIRMATION_REQUIRED : $this->install( $translation_id, $include ) );
+		$choice  = isset( $_POST[ self::CHOICE_FIELD ] ) ? sanitize_key( wp_unslash( $_POST[ self::CHOICE_FIELD ] ) ) : '';
+		$include = $this->resolve_choice( (int) $post_id, $choice );
+
+		if ( null === $include ) {
+			$this->redirect_arguments = array( self::RESULT_ARG => self::CONFIRMATION_REQUIRED );
+		} elseif ( 'install' === $after ) {
+			$this->redirect_arguments = array( self::RESULT_ARG => $this->install( (int) $post_id, $include ) );
+		} else {
+			$this->redirect_arguments = array( self::DOWNLOAD_ARG => $include ? self::CHOICE_INCLUDE : self::CHOICE_EXCLUDE );
+		}
+	}
+
+	/**
+	 * Adds the result of the export to the address the browser is sent to after the save.
+	 *
+	 * @param string $location Address.
+	 * @return string
+	 */
+	public function filter_redirect_location( $location ) {
+		return empty( $this->redirect_arguments ) ? $location : add_query_arg( $this->redirect_arguments, $location );
 	}
 
 	/**
@@ -204,18 +271,6 @@ class TranslationExportController {
 		}
 
 		return self::CHOICE_EXCLUDE === $choice ? false : null;
-	}
-
-	/**
-	 * Redirects to the edit screen of a translation with a result code, and stops.
-	 *
-	 * @param int    $translation_id Translation ID.
-	 * @param string $result Result code.
-	 * @return void
-	 */
-	private function redirect_to_edit_screen( $translation_id, $result ) {
-		wp_safe_redirect( add_query_arg( self::RESULT_ARG, $result, admin_url( 'post.php?post=' . (int) $translation_id . '&action=edit' ) ) );
-		exit;
 	}
 
 	/**
@@ -433,7 +488,7 @@ class TranslationExportController {
 			return 'not_exportable';
 		}
 
-		$installer = $installer instanceof TranslationInstaller ? $installer : new TranslationInstaller();
+		$installer = $installer instanceof TranslationInstaller ? $installer : ( $this->installer instanceof TranslationInstaller ? $this->installer : new TranslationInstaller() );
 
 		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) );
 	}

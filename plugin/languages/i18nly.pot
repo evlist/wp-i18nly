@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 22:13+0000\n"
+"POT-Creation-Date: 2026-10-08 22:22+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -122,8 +122,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:175
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:198
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:250
-#: includes/WP_I18nly/Admin/TranslationExportController.php:143
-#: includes/WP_I18nly/Admin/TranslationExportController.php:177
+#: includes/WP_I18nly/Admin/TranslationExportController.php:192
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:226
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:260
 msgid "You are not allowed to perform this action."
@@ -133,8 +132,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:179
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:202
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:254
-#: includes/WP_I18nly/Admin/TranslationExportController.php:147
-#: includes/WP_I18nly/Admin/TranslationExportController.php:181
+#: includes/WP_I18nly/Admin/TranslationExportController.php:196
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:234
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:268
 msgid "Invalid request."
@@ -356,6 +354,10 @@ msgstr ""
 #: includes/WP_I18nly/Support/AdminRegistration.php:31
 #: includes/WP_I18nly/Support/AdminRegistration.php:35
 msgid "Translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationExportController.php:203
+msgid "There is nothing to export: no string is translated, or the translated ones were left out."
 msgstr ""
 
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:52
@@ -587,80 +589,88 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:63
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:57
 msgid "Export"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:78
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:71
 msgid "Save the translation with a plugin and a language to enable the export."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:94
-msgid "Install on this site"
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:81
+msgid "Save and install on this site"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:96
-msgid "Download"
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:83
+msgid "Save and download"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:100
-msgid "Translate and save at least one string to enable these buttons."
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:102
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:87
 msgid "Download is not available: the PHP zip extension is missing on this server."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:105
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:90
+msgid "The buttons are enabled as soon as a string is translated. Both save the translation first."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:91
 msgid "Install makes the translation available on this site. Download gives a ZIP with all the files, to use on another site."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:106
-msgid "Only saved translations are exported. Strings without translation are left out, and so is a plural string unless all its forms are translated."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:92
+msgid "Strings without translation are left out, and so is a plural string unless all its forms are translated."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:107
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:93
 msgid "A language pack from WordPress.org may replace the installed files when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup."
 msgstr ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:140
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:115
 #, php-format
 msgid "%d entry has a translation that is not validated."
 msgid_plural "%d entries have a translation that is not validated."
 msgstr[0] ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:143
-msgid "Drafts, machine suggestions and suspect translations may be wrong. Choose what to do with them:"
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:118
+msgid "Drafts, machine suggestions and suspect translations may be wrong. Before saving and installing or downloading, choose what to do with them:"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:144
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:119
 msgid "Leave them out"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:145
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:120
 msgid "Include them (flagged fuzzy in the PO file)"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:181
-msgid "Translation installed in the languages directory."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:207
+msgid "Translation saved and installed in the languages directory."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:182
-msgid "The languages directory cannot be written: WordPress needs direct file access or file system credentials."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:208
+msgid "Translation saved, but the languages directory cannot be written: WordPress needs direct file access or file system credentials."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:183
-msgid "A translation file could not be written."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:209
+msgid "Translation saved, but a translation file could not be written."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:184
-msgid "Some translations are not validated: choose whether to include them or to leave them out, then try again."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:210
+msgid "Translation saved. Some translations are not validated: choose whether to include them or to leave them out, then use the button again."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:185
-msgid "There is nothing to export: no string is translated, or the translated ones were left out."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:211
+msgid "Translation saved, but you are not allowed to install languages."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:212
+msgid "Translation saved. There is nothing to export: no string is translated, or the translated ones were left out."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:217
+msgid "Translation saved. The download starts."
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:35

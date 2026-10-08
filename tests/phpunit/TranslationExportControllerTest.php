@@ -24,10 +24,11 @@ class TranslationExportControllerTest extends TestCase {
 	/**
 	 * Registers one translation into Polish and a repository returning two translated rows.
 	 *
-	 * @param bool $blank Whether the translations of the rows are empty.
+	 * @param bool                 $blank Whether the translations of the rows are empty.
+	 * @param TranslationInstaller $installer Optional installer.
 	 * @return TranslationExportController
 	 */
-	private function controller( $blank = false ) {
+	private function controller( $blank = false, TranslationInstaller $installer = null ) {
 		global $i18nly_test_plugins;
 
 		$i18nly_test_plugins = array(
@@ -121,7 +122,7 @@ class TranslationExportControllerTest extends TestCase {
 			}
 		};
 
-		return new TranslationExportController( $repository );
+		return new TranslationExportController( $repository, $installer );
 	}
 
 	/**
@@ -323,46 +324,6 @@ class TranslationExportControllerTest extends TestCase {
 	}
 
 	/**
-	 * The box has one Install and one Download button, enabled when a string is translated.
-	 *
-	 * @return void
-	 */
-	public function test_box_has_install_and_download_buttons() {
-		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller() );
-
-		ob_start();
-		$box->render( (object) array( 'ID' => 7 ) );
-		$html = ob_get_clean();
-
-		$this->assertStringContainsString( '>Install on this site</button>', $html );
-		$this->assertStringContainsString( '>Download</button>', $html );
-		$this->assertStringContainsString( 'value="bundle"', $html );
-		$this->assertStringNotContainsString( '<form', $html, 'a form cannot be nested in the form of the post' );
-		// Two radio buttons (a translation is not validated in the fixture) and two buttons.
-		$this->assertSame( 4, substr_count( $html, 'form="i18nly-export-form"' ) );
-		$this->assertStringNotContainsString( 'disabled="disabled"', $html );
-		$this->assertStringNotContainsString( 'Download MO', $html );
-		$this->assertStringNotContainsString( 'Download PO', $html );
-		$this->assertStringNotContainsString( 'JSON (ZIP)', $html );
-	}
-
-	/**
-	 * Both buttons are disabled, with the reason, while no string is translated.
-	 *
-	 * @return void
-	 */
-	public function test_box_disables_the_buttons_without_translated_string() {
-		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller( true ) );
-
-		ob_start();
-		$box->render( (object) array( 'ID' => 7 ) );
-		$html = ob_get_clean();
-
-		$this->assertSame( 2, substr_count( $html, 'disabled="disabled"' ) );
-		$this->assertStringContainsString( 'Translate and save at least one string to enable these buttons.', $html );
-	}
-
-	/**
 	 * Installing also writes the script files.
 	 *
 	 * @return void
@@ -376,27 +337,219 @@ class TranslationExportControllerTest extends TestCase {
 	}
 
 	/**
-	 * The form the buttons submit is printed apart, with its own nonce and the translation ID, only after the box was rendered.
+	 * Renders the box of a controller.
+	 *
+	 * @param TranslationExportController $controller Controller.
+	 * @return string
+	 */
+	private function render_box( TranslationExportController $controller ) {
+		ob_start();
+		( new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $controller ) )->render( (object) array( 'ID' => 7 ) );
+
+		return ob_get_clean();
+	}
+
+	/**
+	 * The box has two submit buttons of the post form, no form of its own, and no field named like the ones of WordPress.
 	 *
 	 * @return void
 	 */
-	public function test_form_of_the_box_is_printed_apart() {
+	public function test_box_has_the_save_and_install_and_save_and_download_buttons() {
+		$html = $this->render_box( $this->controller() );
+
+		$this->assertStringContainsString( 'name="i18nly_after_save" value="install"', $html );
+		$this->assertStringContainsString( 'name="i18nly_after_save" value="download"', $html );
+		$this->assertStringContainsString( '>Save and install on this site</button>', $html );
+		$this->assertStringContainsString( '>Save and download</button>', $html );
+		$this->assertStringNotContainsString( '<form', $html, 'a form cannot be nested in the form of the post' );
+		$this->assertStringNotContainsString( 'name="_wpnonce"', $html );
+		$this->assertStringNotContainsString( 'name="action"', $html );
+		$this->assertStringNotContainsString( ' required', $html, 'Save Draft must not be blocked by the choice' );
+		$this->assertStringNotContainsString( 'disabled="disabled"', $html );
+	}
+
+	/**
+	 * Both buttons start disabled while nothing is saved, and the script can enable them when text is typed.
+	 *
+	 * @return void
+	 */
+	public function test_buttons_start_disabled_without_saved_string() {
+		$html = $this->render_box( $this->controller( true ) );
+
+		$this->assertSame( 2, substr_count( $html, 'disabled="disabled"' ) );
+		$this->assertStringContainsString( 'data-saved="0"', $html );
+		$this->assertStringContainsString( '.i18nly-translation-input', $html );
+	}
+
+	/**
+	 * Runs the save hook of the controller for translation 7 with posted fields.
+	 *
+	 * @param TranslationExportController $controller Controller.
+	 * @param array<string, string>       $fields Fields posted besides the nonce.
+	 * @return string The address after the save.
+	 */
+	private function save( TranslationExportController $controller, array $fields ) {
+		$_POST = $fields + array( '_wpnonce' => 'nonce-update-post_7' );
+
+		$controller->handle_save_and_export( 7 );
+
+		$_POST = array();
+
+		return $controller->filter_redirect_location( 'https://example.test/wp-admin/post.php?post=7&action=edit&message=1' );
+	}
+
+	/**
+	 * "Save and install" installs the files after the save and reports the result on the screen.
+	 *
+	 * @return void
+	 */
+	public function test_save_and_install() {
+		i18nly_test_set_can_manage_options( true );
+
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+		$controller = $this->controller( false, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
+
+		$location = $this->save(
+			$controller,
+			array(
+				'i18nly_after_save'  => 'install',
+				'i18nly_unvalidated' => 'include',
+			)
+		);
+
+		$this->assertStringContainsString( 'i18nly_install=installed', $location );
+		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL.mo', $filesystem->files );
+		$this->assertStringContainsString( 'Cześć', $filesystem->files['/lang/plugins/sample-pl_PL.po'] );
+		$this->assertStringContainsString( 'Brouillon', $filesystem->files['/lang/plugins/sample-pl_PL.po'], 'the doubtful translation was included' );
+	}
+
+	/**
+	 * "Save and download" sends the screen to start the download, with the choice made.
+	 *
+	 * @return void
+	 */
+	public function test_save_and_download() {
+		i18nly_test_set_can_manage_options( true );
+
+		$location = $this->save(
+			$this->controller(),
+			array(
+				'i18nly_after_save'  => 'download',
+				'i18nly_unvalidated' => 'exclude',
+			)
+		);
+
+		$this->assertStringContainsString( 'i18nly_download=exclude', $location );
+		$this->assertStringNotContainsString( 'i18nly_install', $location );
+	}
+
+	/**
+	 * Without a choice about the doubtful translations the translation is saved and the user is asked to choose.
+	 *
+	 * @return void
+	 */
+	public function test_choice_is_asked_after_the_save() {
+		i18nly_test_set_can_manage_options( true );
+
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+		$location   = $this->save( $this->controller( false, new TranslationInstaller( $filesystem, '/lang/plugins' ) ), array( 'i18nly_after_save' => 'install' ) );
+
+		$this->assertStringContainsString( 'i18nly_install=confirmation_required', $location );
+		$this->assertSame( array(), $filesystem->files );
+	}
+
+	/**
+	 * Other saves, wrong nonces and users who cannot edit do nothing.
+	 *
+	 * @return void
+	 */
+	public function test_other_saves_do_nothing() {
+		i18nly_test_set_can_manage_options( true );
+
+		$this->assertStringNotContainsString( 'i18nly_', $this->save( $this->controller(), array() ), 'a plain save' );
+		$this->assertStringNotContainsString(
+			'i18nly_',
+			$this->save(
+				$this->controller(),
+				array(
+					'i18nly_after_save' => 'download',
+					'i18nly_unvalidated' => 'include',
+					'_wpnonce' => 'wrong',
+				)
+			),
+			'wrong nonce'
+		);
+		$this->assertStringNotContainsString(
+			'i18nly_',
+			$this->save(
+				$this->controller(),
+				array(
+					'i18nly_after_save' => 'format-disk',
+					'i18nly_unvalidated' => 'include',
+				)
+			),
+			'unknown action'
+		);
+
+		i18nly_test_set_can_manage_options( false );
+
+		$this->assertStringNotContainsString(
+			'i18nly_',
+			$this->save(
+				$this->controller(),
+				array(
+					'i18nly_after_save' => 'download',
+					'i18nly_unvalidated' => 'include',
+				)
+			),
+			'no capability'
+		);
+	}
+
+	/**
+	 * The download address carries the action, the translation, the choice and a nonce.
+	 *
+	 * @return void
+	 */
+	public function test_download_address_is_signed() {
+		$url = $this->controller()->get_download_url( 7, true );
+
+		$this->assertStringContainsString( 'action=i18nly_export_translation', $url );
+		$this->assertStringContainsString( 'translation_id=7', $url );
+		$this->assertStringContainsString( 'unvalidated=include', $url );
+		$this->assertStringContainsString( 'nonce-i18nly_translation_files_7', $url );
+	}
+
+	/**
+	 * The edit screen starts the download in a hidden frame after the save, and only then.
+	 *
+	 * @return void
+	 */
+	public function test_screen_starts_the_download_after_the_save() {
+		global $current_screen;
+
+		i18nly_test_set_can_manage_options( true );
+
 		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller() );
 
-		ob_start();
-		$box->render_form();
-		$this->assertSame( '', ob_get_clean(), 'nothing before the box is rendered' );
+		$current_screen = (object) array( 'post_type' => 'i18nly_translation' );
+		$_GET           = array( 'post' => '7' );
 
 		ob_start();
-		$box->render( (object) array( 'ID' => 7 ) );
-		ob_end_clean();
+		$box->render_download_trigger();
+		$this->assertSame( '', ob_get_clean(), 'no download requested' );
+
+		$_GET['i18nly_download'] = 'include';
 
 		ob_start();
-		$box->render_form();
-		$form = ob_get_clean();
+		$box->render_download_trigger();
+		$script = ob_get_clean();
 
-		$this->assertStringContainsString( '<form id="i18nly-export-form" method="post"', $form );
-		$this->assertStringContainsString( 'name="_wpnonce" value="nonce-i18nly_translation_files_7"', $form );
-		$this->assertStringContainsString( 'name="translation_id" value="7"', $form );
+		$_GET           = array();
+		$current_screen = null;
+
+		$this->assertStringContainsString( 'iframe', $script );
+		$this->assertStringContainsString( 'action=i18nly_export_translation', $script );
+		$this->assertStringContainsString( 'unvalidated=include', $script );
 	}
 }

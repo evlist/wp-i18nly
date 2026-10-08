@@ -1236,6 +1236,34 @@ if ( ! function_exists( 'submit_button' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_is_post_autosave' ) ) {
+	/**
+	 * Tells that no post is an autosave in tests.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	function wp_is_post_autosave( $post_id ) {
+		unset( $post_id );
+
+		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_is_post_revision' ) ) {
+	/**
+	 * Tells that no post is a revision in tests.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	function wp_is_post_revision( $post_id ) {
+		unset( $post_id );
+
+		return false;
+	}
+}
+
 if ( ! function_exists( '_n' ) ) {
 	/**
 	 * Returns the singular or the plural text.
@@ -2074,3 +2102,14 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 
 require_once __DIR__ . '/../../plugin/third-party/vendor/autoload.php';
 require_once __DIR__ . '/support/class-i18nly-test-inmemory-wpdb.php';
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	/**
+	 * Returns the screen a test put in the global, if any.
+	 *
+	 * @return object|null
+	 */
+	function get_current_screen() {
+		return $GLOBALS['current_screen'] ?? null;
+	}
+}
