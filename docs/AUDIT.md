@@ -46,3 +46,8 @@ Items marked *(to verify)* are hypotheses from code reading.
 - **Slice 5 (glossary editor UI)**: the generic editor is translation-centric (source → N target forms with plural data). Reusing it for glossaries (variants, `match_mode`) is possible but B3 (sanitisation) must be fixed first, otherwise glossary terms are corrupted the same way. Recommend splitting: 5a write a thin dedicated glossary screen using the existing storage; 5b generalise later if duplication proves real.
 - **Slice 6 (glossary ↔ translation links, QA, DeepL sync)**: DeepL glossaries only support exact term matching per language pair, and `partial` matches cannot be pushed; scope the sync to `exact` entries and do QA locally. Not before B5 (export), since QA checks need the final strings.
 - **Recommended order**: (1) B1+B2+B3 with tests, (2) B4 CI green, (3) I1+I2 lifecycle/migrations, (4) B5 export (PO/MO/JSON, evaluate reuse of vendored wp-cli code or removal of it), (5) I5/I4 robustness, (6) slice 5a, (7) slice 6 reduced to exact terms.
+
+## Slice mapping
+
+The findings are planned as slices H1-H7 in `docs/linguistic-resource-refactoring.md`:
+B1, B2 -> H1; B3 -> H2; B4 and I7 -> H3; I1, I2, I3 -> H4; B5 -> H5; I4, I5, I9 -> H6; I6, I8 and minor items -> H7.

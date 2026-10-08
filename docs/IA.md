@@ -515,16 +515,19 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 
 ## Open Items
 
-The most meaningful current open items are:
+The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 are defined in
+`docs/linguistic-resource-refactoring.md` and come before the glossary UI:
 
-1. finish reducing `AdminPage` to a thin composition facade (about 650 lines today, target under 400),
-2. build the glossary UI and usage on top of the backend: editor model and screen (slice 5), links to translations, QA and DeepL glossary synchronization (slice 6),
-3. define a real translation revision/history model if revision browsing becomes product-critical,
-4. clarify the long-term artifact build/save pipeline for final PO/MO/JSON generation,
-5. decide how to handle the restoration of a trashed translation (see Known Limitations),
-6. extend the source extractor: fully qualified PHP calls, and TypeScript with type syntax (see Known Limitations),
-7. run the JavaScript tests in the CI (see `tests/js/README.md`),
-8. optionally add better runtime observability for AI translation and throttling behavior.
+1. H1 input validation and capabilities (source slug traversal, CPT capabilities),
+2. H2 raw storage of translations (no `sanitize_text_field` on translations),
+3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI),
+4. H4 uninstall, activation and schema migrations,
+5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code,
+6. H6 concurrency, pagination, restoring a trashed translation,
+7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),
+8. slice 5a: dedicated glossary editor screen; slice 5b only if duplication is proven,
+9. slice 6: glossary links, local QA and DeepL sync restricted to exact entries,
+10. later: translation revision/history model, runtime observability for AI translation and throttling.
 
 ## Scope Rule for Future Updates
 

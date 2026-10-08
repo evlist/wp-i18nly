@@ -368,41 +368,132 @@ Validation:
 - focused repository and model tests,
 - no need for complete UX yet.
 
-### Slice 5: Add first glossary editor UI
+### Hardening slices H1-H7 (from the audit)
+
+Source: `docs/AUDIT.md` (2026-10-08). These slices come **before** slices 5 and 6: the audit found
+security, data integrity, CI and product-completeness problems that slices 5 and 6 would inherit
+(the glossary editor reuses the same save path, sanitisation and capabilities). Finding identifiers
+(B1..B5, I1..I9) refer to the audit.
+
+Recommended order: H1, H2, H3, H4, H5, H6, H7, then slices 5 and 6.
+
+#### H1: Input validation and capabilities (audit B1, B2)
 
 Goal:
 
-- prove the JS abstraction with a second concrete editor.
+- no user input can select a path or a user right outside the intended scope.
 
 Deliverables:
 
-- `GlossaryEditor`,
-- glossary row implementation,
-- first dedicated glossary admin screen or translation-side glossary block,
-- basic save/load round-trip.
+- validate `source_slug` on save and in `PluginSourceFiles::resolve_main_file()` (must be a key of `get_plugins()` or, as a fallback, contain no `..` segment and stay under `WP_PLUGIN_DIR` after `realpath()`),
+- validate the target language against the known locale list,
+- register the CPT with its own `capability_type`/`capabilities` (for example `manage_options` based, mapped with `map_meta_cap`), and apply the same capability check to every AJAX handler,
+- regression tests: traversal slugs rejected, a Contributor cannot create/edit a translation nor call the AJAX endpoints.
+
+Validation: security tests green; manual check as Contributor, Author and Administrator.
+
+#### H2: Raw storage of translations (audit B3)
+
+Goal:
+
+- store exactly what the translator typed.
+
+Deliverables:
+
+- remove `sanitize_text_field()`/`sanitize_textarea_field()` from translation forms, source texts sent to DeepL and the entries payload; replace them with `wp_unslash()` + JSON validation + length limits + `wp_check_invalid_utf8()`,
+- escape at output (already required by `esc_*`), sanitise only identifiers,
+- tests: HTML, newlines, tabs, `%1$s`, trailing spaces and multibyte text round-trip unchanged through save, load and AI batch.
+
+#### H3: CI green (audit B4, part of I7)
+
+Deliverables:
+
+- replace the direct `fwrite` in `Support/FileLockThrottle.php` (WP_Filesystem, or a justified and documented exception accepted by Plugin Check),
+- align `Tested up to`, `Stable tag`, `Requires PHP` (header, `readme.txt`, `composer.json`) and refresh `readme.txt`,
+- confirm the REUSE lint step runs again,
+- optionally add the JS tests to the CI (see `tests/js/README.md`) and a phpstan baseline.
+
+Validation: the CI workflow is green on `main`.
+
+#### H4: Plugin lifecycle and schema migrations (audit I1, I2, I3)
+
+Note: this revises the working assumption "No legacy migration" above. It is valid while there is no released version; it stops being valid at the first public release.
+
+Deliverables:
+
+- `uninstall.php` (custom tables, options, CPT posts, DeepL settings) with an opt-in setting to keep data,
+- activation hook creating the schema, versioned migration runner based on `i18nly_source_schema_version`,
+- allow the DeepL key to be supplied by a constant in `wp-config.php`.
+
+#### H5: Export pipeline (audit B5)
+
+Goal:
+
+- produce usable PO, MO and JSON (JED) files from a translation.
+
+Deliverables:
+
+- decision record: reuse the vendored `plugin/third-party/wp-cli` i18n code (and possibly replace the homemade extractors) or delete it from the repository,
+- `PoExporter`, `MoExporter` and JSON per-script exporter (using `gettext/gettext` already vendored), with plural forms taken from the plural data,
+- download/save action on the edit screen, tests against files produced by `msgfmt`/WP-CLI when available.
+
+#### H6: Robustness and scale (audit I4, I5, I9)
+
+Deliverables:
+
+- optimistic concurrency (revision counter or `updated_at` check) on save,
+- pagination instead of the hard 500-row cap, and batch loading instead of per-row queries,
+- decision about restoring a trashed translation (see Known Limitations in `IA.md`).
+
+#### H7: Quality backlog (audit I6, I8 and minor items)
+
+Deliverables:
+
+- internationalisation of the plugin JS (`wp_set_script_translations`) and a `languages/` directory,
+- extractor gaps (fully qualified calls, typed TypeScript) with tests that check correctness, not only current output,
+- finish slimming `AdminPage` (target under 400 lines), document the regeneration of `Plurals/Languages/Lang*.php`.
+
+### Slice 5: Add first glossary editor UI
+
+Prerequisites: H1 and H2 (the glossary save path must be authorised and must not alter terms).
+
+Revised by the audit: the generic editor is translation-centric (source text, N target forms driven by plural data). A glossary has variants ranked by `form_index` and a `match_mode`. Do not force the generic editor to fit before the need is proven.
+
+Slice 5a (first):
+
+- a dedicated glossary admin screen on top of `GlossaryResourceRepository`: list, create, edit terms with ordered variants and `exact`/`partial` match mode,
+- its own small `GlossaryEditor` JS class extending `AbstractLinguisticResourceEditor` only for what is really shared (payload, dirty state, save round-trip),
+- `GlossaryEditorModel` (deferred from slice 4),
+- capabilities and raw storage as defined by H1 and H2.
+
+Slice 5b (only if duplication between the two editors proves real):
+
+- factor the common row/target behavior upward and add the missing `AbstractLinguisticResourceTarget` JS counterpart.
 
 Validation:
 
-- glossary CRUD works,
-- translation UX remains stable.
+- glossary CRUD works, terms round-trip unchanged,
+- translation UX remains stable (jsdom suite and golden tests green).
 
 ### Slice 6: Connect glossary resources to translations
 
-Goal:
+Prerequisites: slice 5a and H5 (QA checks need the final strings and the export path).
 
-- support attachment or reuse of glossaries from translation workflows.
+Revised by the audit: DeepL glossaries support exact term pairs per language pair only. Scope accordingly.
 
 Deliverables:
 
-- resource links,
+- resource links (the `_links` table, with a migration from H4),
 - ordering rules,
-- first compilation model for provider sync,
-- first QA usage of glossary resources in translation editing.
+- compilation model for provider sync limited to `exact` entries (`partial` entries are used locally only),
+- QA usage of glossary resources in translation editing, computed locally (term present or absent in the translation, variant suggestions),
+- DeepL glossary synchronisation as a separate, later sub-slice (6b) once local QA works.
 
 Validation:
 
 - linked glossary resolution is deterministic,
-- translation editor can consume glossary-derived guidance.
+- translation editor can consume glossary-derived guidance,
+- `partial` entries are never sent to DeepL.
 
 ## Recommended Deletions
 
