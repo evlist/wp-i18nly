@@ -519,6 +519,7 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - The plural header comes from `Plurals\PluralFormsRegistry` (GlotPress data), never from gettext's own language database.
 - The MO generator is used with `includeHeaders( true )`: without the headers the MO has no `Plural-Forms`.
 - `Export\TranslationInstaller` writes the MO and PO files into `WP_LANG_DIR/plugins/` through `WP_Filesystem` (backing up a file it did not write).
+- `Export\ScriptTranslationsBuilder` builds the Jed JSON files WordPress loads for scripts, one per referenced JavaScript file (`{domain}-{locale}-{md5(path)}.json`), from the source references stored in `references_json`.
 - Doubtful translations (status other than `validated`): the administrator must choose to include or leave them out at each download or install; the server refuses a request without a choice; included entries are flagged `fuzzy` in the PO file.
 - Not exported: empty translations; in MO, plural entries with an empty form.
 
@@ -545,7 +546,7 @@ The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 ar
 2. H2 raw storage of translations (no `sanitize_text_field` on translations): done,
 3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI): code done, JS tests in CI not done,
 4. H4 uninstall, activation and schema migrations: done,
-5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download (H5a), direct installation (H5c) and extractor comparison (H5d) done; JSON open,
+5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download (H5a), JSON files of the scripts (H5b), direct installation (H5c) and extractor comparison (H5d) done; `.l10n.php` optional and open,
 6. H6 concurrency, pagination, restoring a trashed translation,
 7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),
 8. slice 5a: dedicated glossary editor screen; slice 5b only if duplication is proven,

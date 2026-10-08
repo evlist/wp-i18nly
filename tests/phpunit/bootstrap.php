@@ -1217,6 +1217,18 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_tempnam' ) ) {
+	/**
+	 * Creates a temporary file in tests.
+	 *
+	 * @param string $filename Base name.
+	 * @return string
+	 */
+	function wp_tempnam( $filename = '' ) {
+		return (string) tempnam( sys_get_temp_dir(), (string) $filename );
+	}
+}
+
 if ( ! function_exists( 'sanitize_file_name' ) ) {
 	/**
 	 * Sanitizes a file name in tests.

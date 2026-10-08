@@ -215,7 +215,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 		$max_rows = max( 1, (int) $limit );
 
 		$query = $this->wpdb->prepare(
-			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.target_text AS translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.resource_id = %d WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
+			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.references_json, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.target_text AS translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.resource_id = %d WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
 			$resources_table,
 			$targets_table,
@@ -243,6 +243,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 					'msgid'              => isset( $row['msgid'] ) ? (string) $row['msgid'] : '',
 					'msgid_plural'       => isset( $row['msgid_plural'] ) ? (string) $row['msgid_plural'] : '',
 					'translator_comment' => isset( $row['translator_comment'] ) ? (string) $row['translator_comment'] : '',
+					'references'         => $this->decode_references( isset( $row['references_json'] ) ? $row['references_json'] : '' ),
 					'source_status'      => isset( $row['source_status'] ) ? (string) $row['source_status'] : '',
 					'last_seen_at_gmt'   => isset( $row['last_seen_at_gmt'] ) ? (string) $row['last_seen_at_gmt'] : '',
 					'updated_at_gmt'     => isset( $row['updated_at_gmt'] ) ? (string) $row['updated_at_gmt'] : '',
@@ -366,5 +367,28 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 		);
 
 		return false !== $result;
+	}
+
+	/**
+	 * Decodes the source references stored as JSON: file path => line numbers.
+	 *
+	 * @param mixed $references_json Stored JSON.
+	 * @return array<string, int[]>
+	 */
+	private function decode_references( $references_json ) {
+		$decoded    = is_string( $references_json ) && '' !== $references_json ? json_decode( $references_json, true ) : null;
+		$references = array();
+
+		if ( ! is_array( $decoded ) ) {
+			return $references;
+		}
+
+		foreach ( $decoded as $file => $lines ) {
+			if ( is_string( $file ) && '' !== $file ) {
+				$references[ $file ] = array_values( array_map( 'intval', (array) $lines ) );
+			}
+		}
+
+		return $references;
 	}
 }

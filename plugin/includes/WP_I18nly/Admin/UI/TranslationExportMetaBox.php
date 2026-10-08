@@ -78,12 +78,18 @@ class TranslationExportMetaBox {
 		$this->render_button( TranslationExportController::ACTION, __( 'Download MO', 'i18nly' ), 'mo' );
 		echo ' ';
 		$this->render_button( TranslationExportController::ACTION, __( 'Download PO', 'i18nly' ), 'po' );
+
+		if ( $this->controller->has_script_files( $translation_id ) ) {
+			echo ' ';
+			$this->render_button( TranslationExportController::ACTION, __( 'Download JSON (ZIP)', 'i18nly' ), 'json' );
+		}
+
 		echo '</p>';
 		echo '<p>';
 		$this->render_button( TranslationExportController::INSTALL_ACTION, __( 'Install on this site', 'i18nly' ), '', true );
 		echo '</p>';
 		echo '<p class="description">' . esc_html__( 'Install writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup.', 'i18nly' ) . '</p>';
-		echo '<p class="description">' . esc_html__( 'Entries without translation are left out. In the MO file, plural entries are left out unless all their forms are translated.', 'i18nly' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Entries without translation are left out. In the MO and JSON files, plural entries are left out unless all their forms are translated. The JSON files are the translations of the JavaScript files of the plugin; install them on the site, or unpack the ZIP into wp-content/languages/plugins/.', 'i18nly' ) . '</p>';
 		echo '</form>';
 	}
 

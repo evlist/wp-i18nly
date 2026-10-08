@@ -33,6 +33,11 @@ class TranslationFileExporter {
 			'extension' => 'mo',
 			'mime'      => 'application/x-gettext-translation',
 		),
+		// The JSON files of the scripts, packed into one archive.
+		'json' => array(
+			'extension' => 'zip',
+			'mime'      => 'application/zip',
+		),
 	);
 
 	/**
@@ -54,7 +59,9 @@ class TranslationFileExporter {
 	 * @return string
 	 */
 	public static function get_file_name( $text_domain, $locale, $format ) {
-		return sanitize_file_name( $text_domain . '-' . $locale . '.' . self::FORMATS[ $format ]['extension'] );
+		$suffix = 'json' === $format ? '-json' : '';
+
+		return sanitize_file_name( $text_domain . '-' . $locale . $suffix . '.' . self::FORMATS[ $format ]['extension'] );
 	}
 
 	/**
@@ -76,7 +83,7 @@ class TranslationFileExporter {
 	 * @throws \InvalidArgumentException When the format is not supported.
 	 */
 	public function generate( $translations, $format ) {
-		if ( ! self::is_supported_format( $format ) ) {
+		if ( ! self::is_supported_format( $format ) || 'json' === $format ) {
 			throw new \InvalidArgumentException( 'Unsupported export format.' );
 		}
 
@@ -86,5 +93,50 @@ class TranslationFileExporter {
 
 		// The headers carry Plural-Forms, which WordPress needs to pick the right plural form.
 		return ( new MoGenerator() )->includeHeaders( true )->generateString( $translations );
+	}
+
+	/**
+	 * Tells whether archives can be created on this server.
+	 *
+	 * @return bool
+	 */
+	public static function can_create_archives() {
+		return class_exists( '\\ZipArchive' );
+	}
+
+	/**
+	 * Packs files into a ZIP archive.
+	 *
+	 * @param array<string, string> $files Contents indexed by file name.
+	 * @return string|null Archive contents, or null when archives are not available or cannot be created.
+	 */
+	public function zip( array $files ) {
+		if ( ! self::can_create_archives() || empty( $files ) ) {
+			return null;
+		}
+
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$archive_path = wp_tempnam( 'i18nly-export' );
+		$archive      = new \ZipArchive();
+
+		if ( ! is_string( $archive_path ) || true !== $archive->open( $archive_path, \ZipArchive::OVERWRITE ) ) {
+			return null;
+		}
+
+		foreach ( $files as $name => $contents ) {
+			$archive->addFromString( (string) $name, (string) $contents );
+		}
+
+		$closed = $archive->close();
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- reading a temporary file created above.
+		$data = $closed ? file_get_contents( $archive_path ) : false;
+		// phpcs:enable WordPress.WP.AlternativeFunctions
+
+		wp_delete_file( $archive_path );
+
+		return is_string( $data ) ? $data : null;
 	}
 }

@@ -58,13 +58,14 @@ class TranslationInstaller {
 	/**
 	 * Installs the files.
 	 *
-	 * @param string $text_domain Text domain.
-	 * @param string $locale Locale.
-	 * @param string $mo_contents MO file contents.
-	 * @param string $po_contents PO file contents.
+	 * @param string                $text_domain Text domain.
+	 * @param string                $locale Locale.
+	 * @param string                $mo_contents MO file contents.
+	 * @param string                $po_contents PO file contents.
+	 * @param array<string, string> $extra_files Other files (the JSON files of the scripts), contents indexed by file name.
 	 * @return string One of the class constants.
 	 */
-	public function install( $text_domain, $locale, $mo_contents, $po_contents ) {
+	public function install( $text_domain, $locale, $mo_contents, $po_contents, array $extra_files = array() ) {
 		$filesystem = $this->get_filesystem();
 		$directory  = $this->get_directory();
 
@@ -79,7 +80,7 @@ class TranslationInstaller {
 		$files = array(
 			TranslationFileExporter::get_file_name( $text_domain, $locale, 'mo' ) => $mo_contents,
 			TranslationFileExporter::get_file_name( $text_domain, $locale, 'po' ) => $po_contents,
-		);
+		) + $extra_files;
 
 		foreach ( $files as $name => $contents ) {
 			$path = rtrim( $directory, '/\\' ) . '/' . $name;

@@ -72,6 +72,10 @@ class TranslationExportControllerTest extends TestCase {
 						'msgctxt'      => '',
 						'msgid'        => 'Hello',
 						'msgid_plural' => '',
+						'references'   => array(
+							'includes/a.php'  => array( 4 ),
+							'assets/js/app.js' => array( 7 ),
+						),
 						'translations' => array(
 							array(
 								'form_index'  => 0,
@@ -84,6 +88,7 @@ class TranslationExportControllerTest extends TestCase {
 						'msgctxt'      => '',
 						'msgid'        => 'Draft text',
 						'msgid_plural' => '',
+						'references'   => array( 'assets/js/app.js' => array( 9 ) ),
 						'translations' => array(
 							array(
 								'form_index'  => 0,
@@ -229,5 +234,50 @@ class TranslationExportControllerTest extends TestCase {
 			'exclude'        => array( 'exclude', false ),
 			'include'        => array( 'include', true ),
 		);
+	}
+
+	/**
+	 * Script files are built from the references, honoring the choice about doubtful translations.
+	 *
+	 * @return void
+	 */
+	public function test_builds_script_files_from_references() {
+		$controller = $this->controller();
+		$name       = 'sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json';
+
+		$validated = json_decode( $controller->build_script_files( 7 )[ $name ], true );
+		$all       = json_decode( $controller->build_script_files( 7, true )[ $name ], true );
+
+		$this->assertArrayHasKey( 'Hello', $validated['locale_data']['sample'] );
+		$this->assertArrayNotHasKey( 'Draft text', $validated['locale_data']['sample'] );
+		$this->assertArrayHasKey( 'Draft text', $all['locale_data']['sample'] );
+		$this->assertTrue( $controller->has_script_files( 7 ) );
+		$this->assertSame( array(), $controller->build_script_files( 8 ) );
+	}
+
+	/**
+	 * The JSON export is an archive with the script files.
+	 *
+	 * @return void
+	 */
+	public function test_json_export_is_a_zip_archive() {
+		$file = $this->controller()->build_file( 7, 'json', true );
+
+		$this->assertSame( 'sample-pl_PL-json.zip', $file['name'] );
+		$this->assertSame( 'application/zip', $file['mime'] );
+		$this->assertSame( 'PK', substr( $file['contents'], 0, 2 ) );
+	}
+
+	/**
+	 * Installing also writes the script files.
+	 *
+	 * @return void
+	 */
+	public function test_install_writes_the_script_files() {
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+
+		$this->controller()->install( 7, true, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
+
+		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json', $filesystem->files );
 	}
 }

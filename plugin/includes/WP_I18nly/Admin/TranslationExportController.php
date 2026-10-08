@@ -11,6 +11,7 @@
 namespace WP_I18nly\Admin;
 
 use WP_I18nly\Admin\UI\TranslationExportMetaBox;
+use WP_I18nly\Export\ScriptTranslationsBuilder;
 use WP_I18nly\Export\TranslationCatalogBuilder;
 use WP_I18nly\Export\TranslationFileExporter;
 use WP_I18nly\Export\TranslationInstaller;
@@ -275,6 +276,19 @@ class TranslationExportController {
 		$spec        = PluralFormsRegistry::get_spec_for_locale( $locale );
 		$headers     = $metadata->build_pot_header_overrides( $source_slug, $text_domain );
 
+		if ( 'json' === $format ) {
+			$scripts = $this->build_script_files( $translation_id, $include_unvalidated );
+			$archive = ( new TranslationFileExporter() )->zip( $scripts );
+
+			return null === $archive ? null : array(
+				'text_domain' => $text_domain,
+				'locale'      => $locale,
+				'name'        => TranslationFileExporter::get_file_name( $text_domain, $locale, 'json' ),
+				'mime'        => TranslationFileExporter::get_mime_type( 'json' ),
+				'contents'    => $archive,
+			);
+		}
+
 		$headers['X-Generator'] = 'I18nly ' . ( defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '' );
 
 		$catalog = ( new TranslationCatalogBuilder() )->build(
@@ -302,6 +316,44 @@ class TranslationExportController {
 	}
 
 	/**
+	 * Builds the JSON files of the scripts of a translation.
+	 *
+	 * @param int  $translation_id Translation ID.
+	 * @param bool $include_unvalidated Whether to include the translations that are not validated.
+	 * @return array<string, string> Contents indexed by file name.
+	 */
+	public function build_script_files( $translation_id, $include_unvalidated = false ) {
+		$translation = $this->get_translation( $translation_id );
+
+		if ( null === $translation || '' === $translation['source_slug'] || '' === $translation['target_language'] ) {
+			return array();
+		}
+
+		$locale = $translation['target_language'];
+		$spec   = PluralFormsRegistry::get_spec_for_locale( $locale );
+
+		return ( new ScriptTranslationsBuilder() )->build(
+			$this->get_rows( $translation_id, $translation['source_slug'], $locale ),
+			$locale,
+			( new PluginMetadataProvider() )->resolve_text_domain( $translation['source_slug'] ),
+			(int) $spec['nplurals'],
+			(string) $spec['plural_expression'],
+			(bool) $include_unvalidated,
+			'I18nly ' . ( defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '' )
+		);
+	}
+
+	/**
+	 * Tells whether some script of the plugin has translated strings (whatever their status), so that a JSON archive is worth offering.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return bool
+	 */
+	public function has_script_files( $translation_id ) {
+		return TranslationFileExporter::can_create_archives() && array() !== $this->build_script_files( $translation_id, true );
+	}
+
+	/**
 	 * Installs the files of a translation.
 	 *
 	 * @param int                       $translation_id Translation ID.
@@ -319,7 +371,7 @@ class TranslationExportController {
 
 		$installer = $installer instanceof TranslationInstaller ? $installer : new TranslationInstaller();
 
-		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'] );
+		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) );
 	}
 
 	/**

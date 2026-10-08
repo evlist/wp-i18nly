@@ -34,6 +34,7 @@ class SourceWpdbRepositoryTest extends TestCase {
 				'msgid'              => 'Hello world',
 				'msgid_plural'       => '',
 				'translator_comment' => '',
+				'references_json'    => '{"assets/js/app.js":[3,10],"includes/a.php":[7]}',
 				'status'             => 'active',
 				'last_seen_at_gmt'   => '2026-05-10 10:00:00',
 				'updated_at_gmt'     => '2026-05-10 10:00:00',
@@ -57,6 +58,13 @@ class SourceWpdbRepositoryTest extends TestCase {
 
 		$this->assertCount( 1, $rows );
 		$this->assertSame( 'Hello world', $rows[0]['msgid'] );
+		$this->assertSame(
+			array(
+				'assets/js/app.js' => array( 3, 10 ),
+				'includes/a.php'   => array( 7 ),
+			),
+			$rows[0]['references']
+		);
 		$this->assertCount( 1, $rows[0]['translations'] );
 		$this->assertSame( 'Bonjour le monde', $rows[0]['translations'][0]['translation'] );
 		$this->assertSame( 'translated', $rows[0]['translations'][0]['status'] );
@@ -664,6 +672,7 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 			'msgid'                      => isset( $entry['msgid'] ) ? (string) $entry['msgid'] : '',
 			'msgid_plural'               => isset( $entry['msgid_plural'] ) ? (string) $entry['msgid_plural'] : '',
 			'translator_comment'         => isset( $entry['translator_comment'] ) ? (string) $entry['translator_comment'] : '',
+			'references_json'            => isset( $entry['references_json'] ) ? (string) $entry['references_json'] : '',
 			'source_status'              => isset( $entry['status'] ) ? (string) $entry['status'] : 'active',
 			'last_seen_at_gmt'           => isset( $entry['last_seen_at_gmt'] ) ? (string) $entry['last_seen_at_gmt'] : '',
 			'updated_at_gmt'             => isset( $entry['updated_at_gmt'] ) ? (string) $entry['updated_at_gmt'] : '',
