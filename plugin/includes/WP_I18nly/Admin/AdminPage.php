@@ -20,8 +20,7 @@ use WP_I18nly\Support\TranslationRepository;
 use WP_I18nly\Support\PluginMetadataProvider;
 use WP_I18nly\Support\LanguageOptionsProvider;
 use WP_I18nly\Support\TranslationEntriesPersister;
-use WP_I18nly\LinguisticResources\TranslationEditorModel;
-use WP_I18nly\LinguisticResources\TranslationResourceRepository;
+use WP_I18nly\LinguisticResources\TranslationEditorRowsProvider;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -536,63 +535,21 @@ class AdminPage {
 	 * @return array<int, array<string, mixed>>
 	 */
 	protected function get_translation_source_entries( $translation_id, $source_slug ) {
-		$repository  = new TranslationResourceRepository();
-		$now_gmt     = gmdate( 'Y-m-d H:i:s' );
 		$translation = $this->get_translation( $translation_id );
 		$locale      = is_array( $translation ) && isset( $translation['target_language'] )
 			? (string) $translation['target_language']
 			: '';
-		$form_count  = \WP_I18nly\Plurals\PluralFormsRegistry::get_plural_forms_count_for_locale( $locale );
 
-		$repository->ensure_translation_targets( (int) $translation_id, (string) $source_slug, $locale, $now_gmt, $form_count );
-		$entries       = $repository->list_translation_rows( (int) $translation_id, (string) $source_slug, 500, $form_count );
-		$forms         = \WP_I18nly\Plurals\PluralFormsRegistry::get_forms_for_locale( $locale );
-		$form_labels   = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_labels_for_locale( $locale );
-		$form_markers  = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_markers_for_locale( $locale );
-		$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
-
-		$model = $this->create_translation_editor_model(
-			(int) $repository->get_translation_resource_id( (int) $translation_id ),
-			(int) $translation_id,
-			(string) $source_slug,
-			$locale,
-			is_array( $entries ) ? $entries : array(),
-			is_array( $forms ) ? $forms : array(),
-			is_array( $form_labels ) ? $form_labels : array(),
-			is_array( $form_markers ) ? $form_markers : array(),
-			is_array( $form_tooltips ) ? $form_tooltips : array()
-		);
-
-		return $model->to_rows();
+		return $this->get_editor_rows_provider()->get_rows( (int) $translation_id, (string) $source_slug, $locale );
 	}
 
 	/**
-	 * Creates a translation editor model from repository rows.
+	 * Returns the translation editor rows provider.
 	 *
-	 * @param int                              $resource_id Storage resource ID.
-	 * @param int                              $translation_id Translation post ID.
-	 * @param string                           $source_slug Source slug.
-	 * @param string                           $target_locale Target locale.
-	 * @param array<int, array<string, mixed>> $entries Repository rows.
-	 * @param array<int, array<string, mixed>> $forms Ordered forms metadata.
-	 * @param array<int, string>               $form_labels Labels by form index.
-	 * @param array<int, string>               $form_markers Markers by form index.
-	 * @param array<int, string>               $form_tooltips Tooltips by form index.
-	 * @return TranslationEditorModel
+	 * @return TranslationEditorRowsProvider
 	 */
-	protected function create_translation_editor_model( $resource_id, $translation_id, $source_slug, $target_locale, array $entries, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
-		return TranslationEditorModel::from_repository_rows(
-			(int) $resource_id,
-			(int) $translation_id,
-			(string) $source_slug,
-			self::SOURCE_LOCALE,
-			(string) $target_locale,
-			$entries,
-			$forms,
-			$form_labels,
-			$form_markers,
-			$form_tooltips
-		);
+	protected function get_editor_rows_provider() {
+		return new TranslationEditorRowsProvider( null, self::SOURCE_LOCALE );
 	}
 
 	/**

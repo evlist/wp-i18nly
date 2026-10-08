@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (155 tests, 685 assertions)`,
+- PHPUnit status: `OK (164 tests, 708 assertions)`,
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -276,13 +276,17 @@ Implemented extraction work includes dedicated collaborators such as:
 - `TranslationSettingsPage`,
 - `TranslationMetaBoxRenderer`,
 - `TranslationEntriesListTable`,
-- `AiTranslationManager`.
+- `AiTranslationManager`,
+- `TranslationFilterQuery` (entries filter query handling),
+- `DeepLUsageWidgets` (dashboard widget and edit-screen gauge),
+- `TranslationDuplicateGuard` (duplicate translation detection),
+- `LinguisticResources\TranslationEditorRowsProvider` (editor rows assembly).
 
 Current architectural assessment:
 
 - this decomposition direction is valid,
-- `AdminPage` still remains too broad and acts as a large composition/root class,
-- reducing `AdminPage` to a thinner facade is still an open refactoring target.
+- `AdminPage` is now under the 700-line file limit (about 650 lines) but still above the 400-line recommendation and still acts as a large composition root,
+- reducing `AdminPage` to a thinner facade is still an open refactoring target; the remaining weight is mostly public hook callbacks and protected factory methods that tests override.
 
 For new code, keep responsibilities separated across:
 
@@ -420,7 +424,7 @@ Any decision should also settle whether a trashed translation should keep blocki
 
 The most meaningful current open items are:
 
-1. finish reducing `AdminPage` to a thin composition facade,
+1. finish reducing `AdminPage` to a thin composition facade (about 650 lines today, target under 400),
 2. decide and implement the first glossary slice,
 3. introduce the linguistic-resource refactoring only when it supports a concrete glossary/translation slice,
 4. define a real translation revision/history model if revision browsing becomes product-critical,
