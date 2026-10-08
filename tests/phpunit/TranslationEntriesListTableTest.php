@@ -139,6 +139,46 @@ class TranslationEntriesListTableTest extends TestCase {
 	}
 
 	/**
+	 * Glossary terms found in the source text are listed with their translation, flagged when it is not used, and escaped.
+	 *
+	 * @return void
+	 */
+	public function test_source_cell_lists_the_glossary_terms() {
+		$item = array(
+			'msgid'            => 'Your cart',
+			'glossary_matches' => array(
+				array(
+					'glossary'   => 'shop',
+					'term'       => 'cart <b>',
+					'mode'       => 'partial',
+					'preferred'  => 'panier',
+					'alternates' => array( 'caddie', 'chariot' ),
+					'note'       => 'Shop "basket"',
+					'qa'         => 'missing',
+				),
+				array(
+					'glossary'   => 'shop',
+					'term'       => 'Your',
+					'mode'       => 'partial',
+					'preferred'  => 'Votre',
+					'alternates' => array(),
+					'note'       => '',
+					'qa'         => 'ok',
+				),
+			),
+		);
+
+		$html = ( new \WP_I18nly\Admin\UI\TranslationEntriesListTable( array() ) )->column_msgid( $item );
+
+		$this->assertStringContainsString( 'i18nly-glossary-hint--missing', $html );
+		$this->assertStringContainsString( '<strong>cart &lt;b&gt;</strong> &rarr; panier', $html );
+		$this->assertStringContainsString( '(caddie | chariot)', $html );
+		$this->assertStringContainsString( 'Not used in the translation', $html );
+		$this->assertStringContainsString( 'i18nly-glossary-hint--ok', $html );
+		$this->assertStringContainsString( 'Shop &quot;basket&quot;', $html );
+	}
+
+	/**
 	 * Uses source plural presence to decide stacked translation rendering.
 	 *
 	 * @return void

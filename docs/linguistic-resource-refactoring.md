@@ -570,6 +570,21 @@ Validation:
 
 ### Slice 6: Connect glossary resources to translations
 
+Status: 6a (links) and the local QA are done (2026-10-08); the DeepL synchronization (6b) is not started.
+
+Done:
+
+- **Links.** A translation uses the glossaries chosen in the "Glossaries" box of its edit screen (`Admin\Glossary\TranslationGlossaryBox`, saved with the post, nonce and `edit_post`). Only glossaries whose target language is the one of the translation can be linked. The links are the list of glossary IDs in the post meta `_i18nly_glossary_ids` (`Glossary\TranslationGlossaries`); no `_links` table was needed because a translation is a post, so there is no migration. A link to a deleted glossary is ignored.
+- **Ordering rule.** The linked glossaries are used in the order of their identifier; when a term (ignoring case and spacing) is in several of them, the first wins; an exact term and a partial term with the same text are different terms. The order does not depend on the order of the links, so the result is deterministic.
+- **Matching (`Glossary\GlossaryMatcher`, pure).** An exact term matches a source text (singular or plural) that is the term and nothing else; a partial term matches the term as whole words inside the text (Unicode aware, case and spacing ignored, characters of the term taken literally).
+- **Local QA.** For every matching term, each non-empty translated form must contain the preferred translation or an alternative (case ignored): the result is `pending` (nothing translated yet), `ok` or `missing`. The editor shows under the source string the terms found with their translations, the alternatives and the note, and flags a term not used in the translation (`TranslationEditorRowsProvider` adds `glossary_matches` to the rows, `TranslationEntriesListTable` renders them).
+
+Limits: the check is made when the table is loaded, not while typing (no JavaScript yet); it checks that an accepted translation appears, not grammar or inflection (a plural or conjugated form of the translation will be flagged); an `exact` term only matches the whole source text; no check for words that must *not* be used.
+
+Open: 6b DeepL glossary synchronization (exact terms only, see below); live check while typing; the use of the terms to guide the AI translation otherwise.
+
+Original plan:
+
 Prerequisites: slice 5a and H5 (QA checks need the final strings and the export path).
 
 Revised by the audit: DeepL glossaries support exact term pairs per language pair only. Scope accordingly.

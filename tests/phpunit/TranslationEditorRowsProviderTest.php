@@ -40,6 +40,56 @@ class TranslationEditorRowsProviderTest extends TestCase {
 	}
 
 	/**
+	 * Rows get the glossary terms found in their source text, with the check of their translations.
+	 *
+	 * @return void
+	 */
+	public function test_get_rows_adds_the_glossary_matches() {
+		$repository = new I18nly_Test_Recording_Rows_Repository();
+		$glossaries = new class() extends \WP_I18nly\Glossary\TranslationGlossaries {
+			/**
+			 * Returns a matcher with one partial term.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $target_locale Locale.
+			 * @return \WP_I18nly\Glossary\GlossaryMatcher
+			 */
+			public function build_matcher( $translation_id, $target_locale ) {
+				return new \WP_I18nly\Glossary\GlossaryMatcher(
+					array(
+						array(
+							'glossary'   => 'fruits',
+							'term'       => 'apple',
+							'mode'       => 'partial',
+							'preferred'  => 'pomme',
+							'alternates' => array(),
+							'note'       => '',
+						),
+					)
+				);
+			}
+		};
+		$provider   = new \WP_I18nly\LinguisticResources\TranslationEditorRowsProvider( $repository, 'en_US', $glossaries );
+
+		$rows = $provider->get_rows( 42, 'akismet/akismet.php', 'fr_FR' );
+
+		$this->assertCount( 1, $rows[0]['glossary_matches'] );
+		$this->assertSame( 'pomme', $rows[0]['glossary_matches'][0]['preferred'] );
+		$this->assertSame( 'pending', $rows[0]['glossary_matches'][0]['qa'] );
+	}
+
+	/**
+	 * Rows get no glossary key when no glossary is linked.
+	 *
+	 * @return void
+	 */
+	public function test_get_rows_without_linked_glossary_has_no_matches() {
+		$provider = new \WP_I18nly\LinguisticResources\TranslationEditorRowsProvider( new I18nly_Test_Recording_Rows_Repository(), 'en_US' );
+
+		$this->assertArrayNotHasKey( 'glossary_matches', $provider->get_rows( 42, 'akismet/akismet.php', 'fr_FR' )[0] );
+	}
+
+	/**
 	 * Returns no rows when the repository returns none.
 	 *
 	 * @return void

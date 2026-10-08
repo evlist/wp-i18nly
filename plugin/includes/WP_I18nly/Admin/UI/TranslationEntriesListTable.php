@@ -120,15 +120,56 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$comment    = isset( $item['translator_comment'] ) ? trim( (string) $item['translator_comment'] ) : '';
 		$source     = $this->render_stacked_text_pair( $singular, $plural, $has_plural );
 
-		if ( '' === $comment ) {
-			return $source;
+		if ( '' !== $comment ) {
+			$source = sprintf(
+				'%1$s<p class="i18nly-translator-comment">%2$s</p>',
+				$source,
+				esc_html( $comment )
+			);
 		}
 
-		return sprintf(
-			'%1$s<p class="i18nly-translator-comment">%2$s</p>',
-			$source,
-			esc_html( $comment )
-		);
+		return $source . $this->render_glossary_hints( isset( $item['glossary_matches'] ) && is_array( $item['glossary_matches'] ) ? $item['glossary_matches'] : array() );
+	}
+
+	/**
+	 * Renders the glossary terms found in a source text, with the translation to use.
+	 *
+	 * A term whose translation is not used by a translated text is flagged.
+	 *
+	 * @param array<int, array<string, mixed>> $matches Matches as built by GlossaryMatcher.
+	 * @return string
+	 */
+	private function render_glossary_hints( array $matches ) {
+		if ( empty( $matches ) ) {
+			return '';
+		}
+
+		$html = '<ul class="i18nly-glossary-hints">';
+
+		foreach ( $matches as $match ) {
+			$alternates = isset( $match['alternates'] ) && is_array( $match['alternates'] ) ? $match['alternates'] : array();
+			$state      = isset( $match['qa'] ) ? (string) $match['qa'] : 'pending';
+			$flag       = '';
+
+			if ( 'missing' === $state ) {
+				$flag = ' <span class="i18nly-glossary-flag">' . esc_html__( 'Not used in the translation', 'i18nly' ) . '</span>';
+			} elseif ( 'ok' === $state ) {
+				$flag = ' <span class="i18nly-glossary-flag" aria-label="' . esc_attr__( 'Used in the translation', 'i18nly' ) . '">&#10003;</span>';
+			}
+
+			$html .= sprintf(
+				'<li class="i18nly-glossary-hint i18nly-glossary-hint--%1$s" title="%2$s"><strong>%3$s</strong> &rarr; %4$s%5$s%6$s%7$s</li>',
+				esc_attr( $state ),
+				esc_attr( isset( $match['glossary'] ) ? (string) $match['glossary'] : '' ),
+				esc_html( isset( $match['term'] ) ? (string) $match['term'] : '' ),
+				esc_html( isset( $match['preferred'] ) ? (string) $match['preferred'] : '' ),
+				empty( $alternates ) ? '' : ' <span class="i18nly-glossary-alternates">(' . esc_html( implode( ' | ', array_map( 'strval', $alternates ) ) ) . ')</span>',
+				isset( $match['note'] ) && '' !== trim( (string) $match['note'] ) ? ' <em class="i18nly-glossary-note">' . esc_html( (string) $match['note'] ) . '</em>' : '',
+				$flag
+			);
+		}
+
+		return $html . '</ul>';
 	}
 
 	/**

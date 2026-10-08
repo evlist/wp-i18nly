@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 21:35+0000\n"
+"POT-Creation-Date: 2026-10-08 21:40+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -114,6 +114,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:97
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:98
 #: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:113
+#: includes/WP_I18nly/Admin/Glossary/TranslationGlossaryBox.php:82
 msgid "Glossaries"
 msgstr ""
 
@@ -303,6 +304,22 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: includes/WP_I18nly/Admin/Glossary/TranslationGlossaryBox.php:96
+msgid "Save the translation with a language to choose its glossaries."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/TranslationGlossaryBox.php:106
+msgid "No glossary exists for this language yet."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/TranslationGlossaryBox.php:108
+msgid "Terms of the selected glossaries are shown next to the source strings, and the translations are checked against them. When a term is in several glossaries, the first one by identifier is used."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/Glossary/TranslationGlossaryBox.php:115
+msgid "Manage the glossaries"
+msgstr ""
+
 #. translators: %d: number of entries displayed.
 #: includes/WP_I18nly/Admin/TranslationAjaxController.php:194
 #, php-format
@@ -333,8 +350,8 @@ msgstr ""
 
 #: includes/WP_I18nly/Admin/TranslationEditController.php:127
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:63
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:173
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:213
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:214
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:254
 #: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:129
 #: includes/WP_I18nly/Support/AdminRegistration.php:31
 #: includes/WP_I18nly/Support/AdminRegistration.php:35
@@ -546,23 +563,31 @@ msgstr ""
 msgid "Select translation entry %d"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:337
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:155
+msgid "Not used in the translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:157
+msgid "Used in the translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:378
 msgid "Translate with AI"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:449
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:490
 msgid "No translation entries available yet."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:466
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:507
 msgid "Select bulk action"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:468
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:509
 msgid "Bulk actions"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:475
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:516
 msgid "Apply"
 msgstr ""
 

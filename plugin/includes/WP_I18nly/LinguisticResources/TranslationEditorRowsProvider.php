@@ -10,6 +10,7 @@
 
 namespace WP_I18nly\LinguisticResources;
 
+use WP_I18nly\Glossary\TranslationGlossaries;
 use WP_I18nly\Plurals\PluralFormsRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -38,14 +39,23 @@ class TranslationEditorRowsProvider {
 	private $source_locale;
 
 	/**
+	 * Glossaries linked to translations.
+	 *
+	 * @var TranslationGlossaries|null
+	 */
+	private $glossaries;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TranslationResourceRepository|null $repository Optional repository.
 	 * @param string                             $source_locale Source locale.
+	 * @param TranslationGlossaries|null         $glossaries Optional glossaries of translations.
 	 */
-	public function __construct( TranslationResourceRepository $repository = null, $source_locale = 'en_US' ) {
+	public function __construct( TranslationResourceRepository $repository = null, $source_locale = 'en_US', TranslationGlossaries $glossaries = null ) {
 		$this->repository    = $repository;
 		$this->source_locale = (string) $source_locale;
+		$this->glossaries    = $glossaries;
 	}
 
 	/**
@@ -83,6 +93,43 @@ class TranslationEditorRowsProvider {
 			is_array( $form_tooltips ) ? $form_tooltips : array()
 		);
 
-		return $model->to_rows();
+		return $this->add_glossary_matches( $model->to_rows(), (int) $translation_id, (string) $target_locale );
+	}
+
+	/**
+	 * Adds to every row the terms of the linked glossaries found in its source text, with the result of the check of its translations.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Editor rows.
+	 * @param int                              $translation_id Translation post ID.
+	 * @param string                           $target_locale Target locale.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function add_glossary_matches( array $rows, $translation_id, $target_locale ) {
+		$glossaries = $this->glossaries instanceof TranslationGlossaries ? $this->glossaries : new TranslationGlossaries();
+		$matcher    = $glossaries->build_matcher( $translation_id, $target_locale );
+
+		if ( 0 === $matcher->count() ) {
+			return $rows;
+		}
+
+		foreach ( $rows as $index => $row ) {
+			$texts = array();
+
+			foreach ( isset( $row['translations'] ) && is_array( $row['translations'] ) ? $row['translations'] : array() as $form ) {
+				$texts[] = isset( $form['translation'] ) ? (string) $form['translation'] : '';
+			}
+
+			$matches = $matcher->match_entry(
+				isset( $row['msgid'] ) ? (string) $row['msgid'] : '',
+				isset( $row['msgid_plural'] ) ? (string) $row['msgid_plural'] : '',
+				$texts
+			);
+
+			if ( ! empty( $matches ) ) {
+				$rows[ $index ]['glossary_matches'] = $matches;
+			}
+		}
+
+		return $rows;
 	}
 }

@@ -87,6 +87,7 @@ function i18nly_bootstrap() {
 	( new \WP_I18nly\Admin\TranslationExportController() )->register();
 	( new \WP_I18nly\Admin\UI\SaveConflictNotice() )->register();
 	( new \WP_I18nly\Admin\Glossary\GlossaryAdminController() )->register();
+	( new \WP_I18nly\Admin\Glossary\TranslationGlossaryBox() )->register();
 	( new \WP_I18nly\Admin\TranslationDuplicateGuard( 'i18nly_translation', '_i18nly_source_slug', '_i18nly_target_language', 'post-new.php?post_type=i18nly_translation' ) )->register();
 
 	$settings_page = new \WP_I18nly\Admin\TranslationSettingsPage();

@@ -70,7 +70,7 @@ Current edit-screen behavior includes:
 - single-item and bulk AI translation actions,
 - DeepL monthly usage visibility in admin.
 
-Glossaries have a basic administration screen (Translations > Glossaries): list, create and delete glossaries, add, edit and delete terms. They are not used yet by the translation editor.
+Glossaries have a basic administration screen (Translations > Glossaries): list, create and delete glossaries, add, edit and delete terms. A translation can use the glossaries of its language: the terms found in the source strings are shown with their translations and checked against the translated texts.
 
 ## Implemented Capabilities
 
@@ -368,7 +368,7 @@ Translation history remains an open architecture topic.
 
 ### Current implementation status
 
-The glossary backend exists (slice 4 of the refactoring plan) with a basic administration screen (slice 5a); there is no matching or QA usage in the translation editor and no DeepL glossary synchronization yet.
+The glossary backend exists (slice 4 of the refactoring plan) with a basic administration screen (slice 5a); the translation editor shows and checks the terms of the linked glossaries (slice 6a), and there is no DeepL glossary synchronization yet.
 
 What is implemented:
 
