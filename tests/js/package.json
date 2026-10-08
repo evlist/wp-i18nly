@@ -1,0 +1,12 @@
+{
+  "name": "i18nly-js-tests",
+  "private": true,
+  "description": "Browser-side tests for the I18nly admin scripts.",
+  "scripts": {
+    "test": "node --test",
+    "fixtures": "php bin/generate-fixture.php"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}

@@ -12,3 +12,6 @@ build/docs/php/
 
 nohup.out
 
+
+# JavaScript test dependencies
+tests/js/node_modules/

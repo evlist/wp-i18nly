@@ -1,0 +1,87 @@
+<!-- SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<input type="hidden" name="i18nly_translation_meta_box_nonce" value="nonce-i18nly_translation_meta_box">		<table class="form-table" role="presentation">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<label for="i18nly-plugin-selector">Plugin</label>
+					</th>
+					<td>
+						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required disabled="disabled">
+							<option value="">Select a plugin</option>
+															<option value="akismet/akismet.php" selected="selected">Akismet</option>
+													</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="i18nly-target-language-selector">Target language</label>
+					</th>
+					<td>
+						<select id="i18nly-target-language-selector" name="i18nly_target_language_selector" required disabled="disabled">
+							<option value="">Select a target language</option>
+															<option value="fr_FR" selected="selected">Français</option>
+													</select>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+					<p class="description">Plugin and target language are locked after creation.</p>
+		
+					<h3>Translation entries</h3>
+			<div class="i18nly-entry-filters" role="group" aria-label="Translation entry filters">
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title">Entries</span>
+					<label for="i18nly-filter-entry-status-active">
+						<input type="checkbox" id="i18nly-filter-entry-status-active" class="i18nly-filter-entry-status" value="active" checked="checked" />
+						Active					</label>
+					<label for="i18nly-filter-entry-status-obsolete">
+						<input type="checkbox" id="i18nly-filter-entry-status-obsolete" class="i18nly-filter-entry-status" value="obsolete" />
+						Obsolete					</label>
+				</div>
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title">Status</span>
+					<label for="i18nly-filter-quality-status-suspect">
+						<input type="checkbox" id="i18nly-filter-quality-status-suspect" class="i18nly-filter-quality-status" value="suspect" checked="checked" />
+						Suspect					</label>
+					<label for="i18nly-filter-quality-status-draft">
+						<input type="checkbox" id="i18nly-filter-quality-status-draft" class="i18nly-filter-quality-status" value="draft" checked="checked" />
+						Draft					</label>
+					<label for="i18nly-filter-quality-status-validated">
+						<input type="checkbox" id="i18nly-filter-quality-status-validated" class="i18nly-filter-quality-status" value="validated" checked="checked" />
+						Validated					</label>
+					<label for="i18nly-filter-quality-status-empty">
+						<input type="checkbox" id="i18nly-filter-quality-status-empty" class="i18nly-filter-quality-status" value="empty" checked="checked" />
+						Non translated					</label>
+				</div>
+				<div class="i18nly-entry-filter-group">
+					<span class="i18nly-entry-filter-title">Provenance</span>
+					<label for="i18nly-filter-provenance-ai">
+						<input type="checkbox" id="i18nly-filter-provenance-ai" class="i18nly-filter-provenance" value="ai" checked="checked" />
+						AI					</label>
+					<label for="i18nly-filter-provenance-manual">
+						<input type="checkbox" id="i18nly-filter-provenance-manual" class="i18nly-filter-provenance" value="manual" checked="checked" />
+						Manual					</label>
+					<label for="i18nly-filter-provenance-none">
+						<input type="checkbox" id="i18nly-filter-provenance-none" class="i18nly-filter-provenance" value="none" checked="checked" />
+						None					</label>
+				</div>
+				<div class="i18nly-entry-filter-group i18nly-entry-filter-group--search">
+					<span class="i18nly-entry-filter-title">Search</span>
+					<label for="i18nly-filter-search-text" class="screen-reader-text">Search text</label>
+					<input
+						type="text"
+						id="i18nly-filter-search-text"
+						class="i18nly-filter-search-text"
+						placeholder="Contains text…"
+					/>
+					<label for="i18nly-filter-search-source">
+						<input type="checkbox" id="i18nly-filter-search-source" class="i18nly-filter-search-field" value="source" checked="checked" />
+						Source					</label>
+					<label for="i18nly-filter-search-translated">
+						<input type="checkbox" id="i18nly-filter-search-translated" class="i18nly-filter-search-field" value="translated" checked="checked" />
+						Translation					</label>
+				</div>
+			</div>
+			<div id="i18nly-source-entries-table">__TABLE__</div>
+				
