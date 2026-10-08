@@ -8,6 +8,7 @@
  * @package I18nly
  */
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 // phpcs:disable WordPress.WP.AlternativeFunctions
@@ -77,11 +78,10 @@ class PluginSourceFilesTest extends TestCase {
 	/**
 	 * Slugs trying to leave the root are rejected.
 	 *
-	 * @dataProvider unsafe_slugs
-	 *
 	 * @param string $slug Slug.
 	 * @return void
 	 */
+	#[DataProvider( 'unsafe_slugs' )]
 	public function test_rejects_unsafe_slugs( $slug ) {
 		$files = new \WP_I18nly\Build\PluginSourceFiles( $this->root );
 
