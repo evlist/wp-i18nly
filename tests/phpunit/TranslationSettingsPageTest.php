@@ -6,6 +6,8 @@
  * @package I18nly
  */
 
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -94,5 +96,53 @@ class TranslationSettingsPageTest extends TestCase {
 
 		$this->assertSame( 'stored-key', $sanitized['deepl_api_key'] );
 		$this->assertSame( 25, $sanitized['deepl_reserved_characters'] );
+	}
+
+	/**
+	 * The delete-on-uninstall flag is stored as 0 or 1 and defaults to 0.
+	 *
+	 * @return void
+	 */
+	public function test_delete_data_flag_is_normalized_and_off_by_default() {
+		$page = new \WP_I18nly\Admin\TranslationSettingsPage();
+
+		$this->assertSame( 0, $page->sanitize_settings( array() )['delete_data_on_uninstall'] );
+		$this->assertSame( 0, $page->sanitize_settings( array( 'delete_data_on_uninstall' => '0' ) )['delete_data_on_uninstall'] );
+		$this->assertSame( 1, $page->sanitize_settings( array( 'delete_data_on_uninstall' => '1' ) )['delete_data_on_uninstall'] );
+	}
+
+	/**
+	 * Without the constant, the saved key is used.
+	 *
+	 * @return void
+	 */
+	public function test_saved_key_is_used_without_constant() {
+		update_option( 'i18nly_translation_settings', array( 'deepl_api_key' => 'saved-key' ) );
+
+		$page = new \WP_I18nly\Admin\TranslationSettingsPage();
+
+		$this->assertFalse( $page->is_api_key_defined_by_constant() );
+		$this->assertSame( 'saved-key', $page->get_saved_api_key() );
+	}
+
+	/**
+	 * The constant takes precedence and is never copied into the option.
+	 *
+	 * @return void
+	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+	public function test_constant_takes_precedence_and_is_not_stored() {
+		define( 'I18NLY_DEEPL_API_KEY', ' constant-key ' );
+		update_option( 'i18nly_translation_settings', array( 'deepl_api_key' => 'saved-key' ) );
+
+		$page = new \WP_I18nly\Admin\TranslationSettingsPage();
+
+		$this->assertTrue( $page->is_api_key_defined_by_constant() );
+		$this->assertSame( 'constant-key', $page->get_saved_api_key() );
+
+		$sanitized = $page->sanitize_settings( array( 'deepl_reserved_characters' => '10' ) );
+
+		$this->assertSame( 'saved-key', $sanitized['deepl_api_key'] );
 	}
 }

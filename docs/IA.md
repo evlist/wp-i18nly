@@ -513,6 +513,13 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - the browser `alert()` fallback of the AI error dialog is unreachable while the message is not empty, which is always the case,
 - the `suppressNotice` flag of the modified rows tracker has no observable effect after "Apply filters and close", because the tracked rows are emptied anyway.
 
+## Lifecycle and Schema Changes
+
+- Activation runs `SourceSchemaManager::maybe_upgrade()`; every request also checks the stored version (`i18nly_source_schema_version`) at `plugins_loaded`.
+- Changing the schema after a release: raise `SCHEMA_VERSION`, update the `CREATE TABLE` statements (dbDelta adds tables, columns and indexes, never drops or alters), and register a step in `get_migration_steps()` for anything else (renames, drops, data conversion). Steps are idempotent, run in version order, and a failing step leaves the stored version untouched.
+- Deleting the plugin keeps all data unless the administrator ticked the delete option in Settings > Translations (see `PluginUninstaller`).
+- The DeepL key can be defined as `define( 'I18NLY_DEEPL_API_KEY', '...' );` in `wp-config.php`; it then overrides the saved key and the settings field is disabled.
+
 ## Third-Party Code
 
 - `plugin/third-party/vendor` (Composer, loaded by `i18nly.php`): `gettext/gettext` 5.7 (`PoLoader`, `PoGenerator`, `Translations` are used in `Build/`; the MO loader/generators are available for the export), `mck89/peast` (JavaScript parser of `JsGettextExtractor`), and `gettext/languages` (transitive dependency of gettext, CLDR plural rules, deliberately unused: plural data comes from the GlotPress-based `Plurals` registry, see `scripts/plurals/README.md`, "Why GlotPress, Not CLDR?"; the specific gettext/languages limitations that ruled it out are to be recorded there).
@@ -527,8 +534,8 @@ The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 ar
 
 1. H1 input validation and capabilities (source slug traversal, CPT capabilities): done,
 2. H2 raw storage of translations (no `sanitize_text_field` on translations): done,
-3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI),
-4. H4 uninstall, activation and schema migrations,
+3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI): code done, JS tests in CI not done,
+4. H4 uninstall, activation and schema migrations: done,
 5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code,
 6. H6 concurrency, pagination, restoring a trashed translation,
 7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),

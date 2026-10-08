@@ -1390,6 +1390,78 @@ if ( ! function_exists( 'update_option' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_option' ) ) {
+	/**
+	 * Adds an option in the test runtime when it does not exist.
+	 *
+	 * @param string $option Option key.
+	 * @param mixed  $value Option value.
+	 * @return bool
+	 */
+	function add_option( $option, $value = '' ) {
+		global $i18nly_test_options;
+
+		if ( is_array( $i18nly_test_options ) && array_key_exists( (string) $option, $i18nly_test_options ) ) {
+			return false;
+		}
+
+		return update_option( $option, $value );
+	}
+}
+
+if ( ! function_exists( 'delete_option' ) ) {
+	/**
+	 * Deletes an option from the test runtime.
+	 *
+	 * @param string $option Option key.
+	 * @return bool
+	 */
+	function delete_option( $option ) {
+		global $i18nly_test_options;
+
+		unset( $i18nly_test_options[ (string) $option ] );
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'checked' ) ) {
+	/**
+	 * Returns the checked attribute like WordPress.
+	 *
+	 * @param mixed $checked Value.
+	 * @param mixed $current Current value.
+	 * @param bool  $display Whether to echo.
+	 * @return string
+	 */
+	function checked( $checked, $current = true, $display = true ) {
+		$result = (string) $checked === (string) $current ? " checked='checked'" : '';
+
+		if ( $display ) {
+			echo $result; // phpcs:ignore
+		}
+
+		return $result;
+	}
+}
+
+if ( ! function_exists( 'wp_delete_post' ) ) {
+	/**
+	 * Records post deletions in the test runtime.
+	 *
+	 * @param int  $post_id Post ID.
+	 * @param bool $force Force delete.
+	 * @return object
+	 */
+	function wp_delete_post( $post_id, $force = false ) {
+		global $i18nly_test_deleted_posts;
+
+		$i18nly_test_deleted_posts[] = array( (int) $post_id, (bool) $force );
+
+		return (object) array( 'ID' => (int) $post_id );
+	}
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
 	/**
 	 * Minimal WP_Error stub for unit tests.
@@ -1515,7 +1587,14 @@ if ( ! function_exists( 'get_posts' ) ) {
 	function get_posts( array $args ) {
 		global $i18nly_test_posts;
 
-		unset( $args );
+		if ( isset( $args['fields'] ) && 'ids' === $args['fields'] ) {
+			return array_map(
+				static function ( $post ) {
+					return (int) $post->ID;
+				},
+				$i18nly_test_posts
+			);
+		}
 
 		return $i18nly_test_posts;
 	}

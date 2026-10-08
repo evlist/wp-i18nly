@@ -41,6 +41,7 @@ is not available yet.
 * Plural forms of each language explained to translators.
 * DeepL usage gauge, quota protection and adaptive throttling.
 * Security: translations are restricted to administrators and the source plugin is validated.
+* Optional deletion of all data when the plugin is deleted, and DeepL key definable in wp-config.php (`I18NLY_DEEPL_API_KEY`).
 * Translations are stored exactly as typed (HTML, line breaks and spacing are no longer altered).
 
 = 0.1.0 =

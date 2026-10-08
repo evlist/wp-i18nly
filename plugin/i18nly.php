@@ -57,6 +57,19 @@ function i18nly_load_textdomain() {
 add_action( 'init', 'i18nly_load_textdomain' );
 
 /**
+ * Creates the database schema when the plugin is activated.
+ *
+ * On a multisite network only the site being activated gets its tables; the other sites create them on
+ * their first request (see i18nly_bootstrap()).
+ *
+ * @return void
+ */
+function i18nly_activate() {
+	( new \WP_I18nly\Storage\SourceSchemaManager() )->maybe_upgrade();
+}
+register_activation_hook( __FILE__, 'i18nly_activate' );
+
+/**
  * Boots the admin components.
  *
  * @return void

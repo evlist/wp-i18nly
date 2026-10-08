@@ -50,7 +50,12 @@ class SourceSchemaManager {
 	}
 
 	/**
-	 * Ensures source schema is installed.
+	 * Ensures source schema is installed and up to date.
+	 *
+	 * The tables are created or completed (dbDelta adds tables and columns, it never drops or alters
+	 * anything), then the data migration steps newer than the installed version are run in version order.
+	 * When a step fails, the stored version is left unchanged so that the upgrade is retried on the next
+	 * request. See get_migration_steps().
 	 *
 	 * @return void
 	 */
@@ -67,8 +72,77 @@ class SourceSchemaManager {
 
 		$this->create_tables();
 
+		if ( '' !== $installed_version && ! $this->run_migrations( $installed_version ) ) {
+			return;
+		}
+
 		if ( function_exists( 'update_option' ) ) {
 			update_option( self::VERSION_OPTION, self::SCHEMA_VERSION );
+		}
+	}
+
+	/**
+	 * Returns the migration steps, indexed by the schema version they migrate to.
+	 *
+	 * To change the schema after a release: raise SCHEMA_VERSION, update the CREATE TABLE statements (new
+	 * columns and indexes are added by dbDelta) and add here a step for the changes dbDelta cannot make
+	 * (renames, drops, data conversions). A step receives no argument, must be idempotent and may throw.
+	 * The schema of 0.4.0 is the first one with a migration path: databases created before it must be reset.
+	 *
+	 * @return array<string, callable>
+	 */
+	protected function get_migration_steps() {
+		return array();
+	}
+
+	/**
+	 * Runs the migration steps newer than a version, up to the current schema version.
+	 *
+	 * @param string $from_version Installed schema version.
+	 * @return bool False when a step failed.
+	 */
+	private function run_migrations( $from_version ) {
+		$steps = $this->get_migration_steps();
+
+		uksort( $steps, 'version_compare' );
+
+		foreach ( $steps as $version => $step ) {
+			if ( version_compare( (string) $version, $from_version, '<=' ) || version_compare( (string) $version, self::SCHEMA_VERSION, '>' ) ) {
+				continue;
+			}
+
+			try {
+				call_user_func( $step );
+			} catch ( \Throwable $error ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Drops the three tables of the plugin. Used when the plugin data is deleted.
+	 *
+	 * @return void
+	 */
+	public function drop_tables() {
+		$tables = array(
+			$this->get_resource_targets_table_name(),
+			$this->get_resource_entries_table_name(),
+			$this->get_resources_table_name(),
+		);
+
+		foreach ( $tables as $table ) {
+			$escaped = $this->escape_table_name( $table );
+
+			if ( '' !== $escaped ) {
+				$this->db_query( 'DROP TABLE IF EXISTS `' . $escaped . '`' );
+			}
+		}
+
+		if ( function_exists( 'delete_option' ) ) {
+			delete_option( self::VERSION_OPTION );
 		}
 	}
 

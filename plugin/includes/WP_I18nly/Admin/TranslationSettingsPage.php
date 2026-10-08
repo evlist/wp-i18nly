@@ -12,6 +12,8 @@ namespace WP_I18nly\Admin;
 
 use WP_I18nly\AI\DeepLCredentialsValidator;
 
+use WP_I18nly\Support\PluginUninstaller;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -67,6 +69,21 @@ class TranslationSettingsPage {
 			self::PAGE_SLUG,
 			'i18nly_deepl_section'
 		);
+
+		add_settings_section(
+			'i18nly_data_section',
+			esc_html__( 'Data', 'i18nly' ),
+			'__return_null',
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'i18nly_delete_data_on_uninstall',
+			esc_html__( 'Uninstall', 'i18nly' ),
+			array( $this, 'render_delete_data_field' ),
+			self::PAGE_SLUG,
+			'i18nly_data_section'
+		);
 	}
 
 	/**
@@ -93,7 +110,7 @@ class TranslationSettingsPage {
 	 */
 	public function sanitize_settings( $raw ) {
 		$raw               = is_array( $raw ) ? $raw : array();
-		$previous_api_key  = $this->get_saved_api_key();
+		$previous_api_key  = $this->get_stored_api_key();
 		$previous_reserved = $this->get_saved_reserved_characters();
 
 		$api_key = isset( $raw['deepl_api_key'] )
@@ -101,7 +118,7 @@ class TranslationSettingsPage {
 			: '';
 
 		if ( '' === $api_key ) {
-			$api_key = $this->get_saved_api_key();
+			$api_key = $this->get_stored_api_key();
 		}
 
 		$reserved_characters = isset( $raw['deepl_reserved_characters'] )
@@ -113,8 +130,9 @@ class TranslationSettingsPage {
 		}
 
 		return array(
-			'deepl_api_key'             => $api_key,
-			'deepl_reserved_characters' => $reserved_characters,
+			'deepl_api_key'                => $api_key,
+			'deepl_reserved_characters'    => $reserved_characters,
+			PluginUninstaller::DELETE_FLAG => isset( $raw[ PluginUninstaller::DELETE_FLAG ] ) ? (int) ! empty( $raw[ PluginUninstaller::DELETE_FLAG ] ) : 0,
 		);
 	}
 
@@ -141,7 +159,7 @@ class TranslationSettingsPage {
 		echo '<div class="submit" style="display:flex;align-items:center;gap:8px;">';
 		submit_button( esc_html__( 'Save changes', 'i18nly' ), 'primary', 'i18nly_save_changes', false );
 
-		if ( $has_saved_key ) {
+		if ( $has_saved_key && ! $this->is_api_key_defined_by_constant() ) {
 			echo '<button type="submit" form="i18nly-clear-key-form" id="i18nly_clear_saved_key" name="i18nly_clear_saved_key" class="button button-secondary i18nly-danger-button" onclick="return window.confirm(\'' . esc_js( __( 'Are you sure you want to clear the saved API key?', 'i18nly' ) ) . '\');">' . esc_html__( 'Clear saved key', 'i18nly' ) . '</button>';
 		}
 
@@ -216,9 +234,8 @@ class TranslationSettingsPage {
 			wp_die( esc_html__( 'Invalid request.', 'i18nly' ), 400 );
 		}
 
-		$settings  = $this->get_settings();
 		$validator = $this->get_credentials_validator();
-		$result    = $validator->validate_credentials( isset( $settings['deepl_api_key'] ) ? (string) $settings['deepl_api_key'] : '' );
+		$result    = $validator->validate_credentials( $this->get_saved_api_key() );
 
 		add_settings_error(
 			'i18nly_deepl_connection',
@@ -251,7 +268,15 @@ class TranslationSettingsPage {
 			wp_die( esc_html__( 'Invalid request.', 'i18nly' ), 400 );
 		}
 
+		$remaining = get_option( self::OPTION_NAME, array() );
+		$remaining = is_array( $remaining ) ? $remaining : array();
+
+		unset( $remaining['deepl_api_key'] );
 		delete_option( self::OPTION_NAME );
+
+		if ( ! empty( $remaining ) ) {
+			add_option( self::OPTION_NAME, $remaining );
+		}
 
 		add_settings_error(
 			'i18nly_deepl_connection',
@@ -285,6 +310,12 @@ class TranslationSettingsPage {
 		$value    = isset( $settings['deepl_api_key'] ) ? (string) $settings['deepl_api_key'] : '';
 		$has_key  = '' !== $value;
 
+		if ( $this->is_api_key_defined_by_constant() ) {
+			echo '<input type="password" id="i18nly-deepl-api-key" value="" class="regular-text" disabled="disabled" data-has-saved-key="1" />';
+			echo '<p class="description">' . esc_html__( 'The DeepL API key is defined by the I18NLY_DEEPL_API_KEY constant (for example in wp-config.php) and takes precedence over a saved key.', 'i18nly' ) . '</p>';
+			return;
+		}
+
 		echo '<input type="password" id="i18nly-deepl-api-key" name="' . esc_attr( self::OPTION_NAME ) . '[deepl_api_key]" value="" class="regular-text" autocomplete="off" data-has-saved-key="' . esc_attr( $has_key ? '1' : '0' ) . '" />';
 
 		if ( $has_key ) {
@@ -310,6 +341,22 @@ class TranslationSettingsPage {
 	}
 
 	/**
+	 * Renders the "delete data on uninstall" checkbox.
+	 *
+	 * @return void
+	 */
+	public function render_delete_data_field() {
+		$settings = $this->get_settings();
+		$checked  = ! empty( $settings[ PluginUninstaller::DELETE_FLAG ] );
+		$name     = self::OPTION_NAME . '[' . PluginUninstaller::DELETE_FLAG . ']';
+
+		echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="0" />';
+		echo '<label><input type="checkbox" id="i18nly-delete-data" name="' . esc_attr( $name ) . '" value="1"' . checked( $checked, true, false ) . ' /> ';
+		echo esc_html__( 'Delete all translations, glossaries and settings when the plugin is deleted', 'i18nly' ) . '</label>';
+		echo '<p class="description">' . esc_html__( 'Disabled by default: deleting the plugin keeps your translations.', 'i18nly' ) . '</p>';
+	}
+
+	/**
 	 * Returns settings array from WordPress options.
 	 *
 	 * @return array<string, mixed>
@@ -325,11 +372,33 @@ class TranslationSettingsPage {
 	}
 
 	/**
-	 * Returns the currently saved DeepL API key.
+	 * Tells whether the DeepL API key is defined by the I18NLY_DEEPL_API_KEY constant (for example in wp-config.php).
+	 *
+	 * @return bool
+	 */
+	public function is_api_key_defined_by_constant() {
+		return defined( 'I18NLY_DEEPL_API_KEY' ) && '' !== trim( (string) constant( 'I18NLY_DEEPL_API_KEY' ) );
+	}
+
+	/**
+	 * Returns the DeepL API key in use: the constant when defined, otherwise the saved key.
 	 *
 	 * @return string
 	 */
 	public function get_saved_api_key() {
+		if ( $this->is_api_key_defined_by_constant() ) {
+			return trim( (string) constant( 'I18NLY_DEEPL_API_KEY' ) );
+		}
+
+		return $this->get_stored_api_key();
+	}
+
+	/**
+	 * Returns the DeepL API key stored in the settings option, ignoring the constant.
+	 *
+	 * @return string
+	 */
+	private function get_stored_api_key() {
 		$settings = get_option( self::OPTION_NAME, array() );
 
 		if ( ! is_array( $settings ) || ! isset( $settings['deepl_api_key'] ) ) {

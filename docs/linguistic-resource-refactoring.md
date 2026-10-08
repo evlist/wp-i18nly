@@ -423,6 +423,8 @@ Validation: the CI workflow is green on `main`.
 
 #### H4: Plugin lifecycle and schema migrations (audit I1, I2, I3)
 
+Status: done. Activation creates the schema (`i18nly_activate()`); `SourceSchemaManager::maybe_upgrade()` now runs ordered, idempotent migration steps (`get_migration_steps()`, empty for now, the 0.4.0 schema being the first one with a migration path) and keeps the stored version when a step fails so that it is retried; `uninstall.php` and `Support\PluginUninstaller` remove translations, tables, options and throttle files, on every site of a network, only when the new setting "Delete all translations, glossaries and settings when the plugin is deleted" (Settings > Translations, off by default) was ticked; the DeepL key can be set with the `I18NLY_DEEPL_API_KEY` constant, which takes precedence and is never copied to the database. "Clear saved key" no longer erases the other settings. Not done: activation on a whole network only creates the tables of the activated site (the others create them on their first request).
+
 Note: this revises the working assumption "No legacy migration" above. It is valid while there is no released version; it stops being valid at the first public release.
 
 Deliverables:

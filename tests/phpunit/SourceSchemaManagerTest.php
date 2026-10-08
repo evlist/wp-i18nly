@@ -52,6 +52,125 @@ class SourceSchemaManagerTest extends TestCase {
 		$this->assertStringContainsString( 'used_manual tinyint(1) unsigned NOT NULL DEFAULT 1', $wpdb_stub->queries[2] );
 		$this->assertSame( '0.4.0', get_option( 'i18nly_source_schema_version', '' ) );
 	}
+
+	/**
+	 * Runs only the steps newer than the installed version and not newer than the current one, in order.
+	 *
+	 * @return void
+	 */
+	public function test_runs_pending_migration_steps_in_version_order() {
+		i18nly_test_reset_options();
+		update_option( 'i18nly_source_schema_version', '0.3.0' );
+
+		$ran     = array();
+		$manager = new I18nly_Test_Schema_Manager_With_Steps( new I18nly_Test_WPDB_Query_Stub() );
+
+		$manager->steps = array(
+			'0.4.0'  => static function () use ( &$ran ) {
+				$ran[] = '0.4.0';
+			},
+			'0.3.5'  => static function () use ( &$ran ) {
+				$ran[] = '0.3.5';
+			},
+			'0.3.0'  => static function () use ( &$ran ) {
+				$ran[] = '0.3.0';
+			},
+			'0.10.0' => static function () use ( &$ran ) {
+				$ran[] = '0.10.0';
+			},
+		);
+
+		$manager->maybe_upgrade();
+
+		$this->assertSame( array( '0.3.5', '0.4.0' ), $ran );
+		$this->assertSame( '0.4.0', get_option( 'i18nly_source_schema_version' ) );
+	}
+
+	/**
+	 * A fresh install runs no migration.
+	 *
+	 * @return void
+	 */
+	public function test_fresh_install_runs_no_migration() {
+		i18nly_test_reset_options();
+
+		$ran            = false;
+		$manager        = new I18nly_Test_Schema_Manager_With_Steps( new I18nly_Test_WPDB_Query_Stub() );
+		$manager->steps = array(
+			'0.4.0' => static function () use ( &$ran ) {
+				$ran = true;
+			},
+		);
+
+		$manager->maybe_upgrade();
+
+		$this->assertFalse( $ran );
+	}
+
+	/**
+	 * A failing step keeps the old version so that the upgrade is retried.
+	 *
+	 * @return void
+	 */
+	public function test_failed_migration_keeps_the_installed_version() {
+		i18nly_test_reset_options();
+		update_option( 'i18nly_source_schema_version', '0.3.0' );
+
+		$manager        = new I18nly_Test_Schema_Manager_With_Steps( new I18nly_Test_WPDB_Query_Stub() );
+		$manager->steps = array(
+			'0.4.0' => static function () {
+				throw new \RuntimeException( 'boom' );
+			},
+		);
+
+		$manager->maybe_upgrade();
+
+		$this->assertSame( '0.3.0', get_option( 'i18nly_source_schema_version' ) );
+	}
+
+	/**
+	 * Dropping removes the three tables and the version option.
+	 *
+	 * @return void
+	 */
+	public function test_drop_tables_removes_the_tables_and_the_version() {
+		i18nly_test_reset_options();
+		update_option( 'i18nly_source_schema_version', '0.4.0' );
+
+		$wpdb_stub = new I18nly_Test_WPDB_Query_Stub();
+		( new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub ) )->drop_tables();
+
+		$this->assertSame(
+			array(
+				'DROP TABLE IF EXISTS `wp_i18nly_linguistic_resource_targets`',
+				'DROP TABLE IF EXISTS `wp_i18nly_linguistic_resource_entries`',
+				'DROP TABLE IF EXISTS `wp_i18nly_linguistic_resources`',
+			),
+			$wpdb_stub->queries
+		);
+		$this->assertSame( '', get_option( 'i18nly_source_schema_version', '' ) );
+	}
+}
+
+/**
+ * Schema manager with test migration steps.
+ */
+class I18nly_Test_Schema_Manager_With_Steps extends \WP_I18nly\Storage\SourceSchemaManager {
+	/**
+	 * Steps to run.
+	 *
+	 * @var array<string, callable>
+	 */
+	public $steps = array();
+
+	/**
+	 * Returns the test steps.
+	 *
+	 * @return array<string, callable>
+	 */
+	protected function get_migration_steps() {
+		return $this->steps;
+	}
 }
 
 /**
