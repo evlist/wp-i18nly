@@ -435,6 +435,14 @@ Deliverables:
 
 #### H5: Export pipeline (audit B5)
 
+Status: first increment done (H5a), the rest is open.
+
+Done (H5a): PO and MO download from the translation edit screen ("Export" side box, admin-post action `i18nly_export_translation`, administrators only, signed URL). `Export\TranslationCatalogBuilder` turns the rows into a gettext 5 catalog; the plural header comes from the plugin's own plural data (`PluralFormsRegistry`), not from gettext's language database (`Translations::setLanguage()` would pull the CLDR data we do not use, so the headers are set directly). `Export\TranslationFileExporter` generates the files with `PoGenerator` and `MoGenerator`; **the MO generator must be told to include the headers** (`includeHeaders( true )`), otherwise the MO has no `Plural-Forms` and WordPress cannot select plural forms. Empty translations are left out; in the MO file, plural entries are left out unless every form is translated. File names follow WordPress (`{text-domain}-{locale}.po|mo`). The MO was also checked with Python's `gettext` module (plural selection for Polish, contexts). Limits: 100000 entries per export; the status of a translation (draft, AI draft, suspect, validated) is not taken into account, every non-empty translation is exported; PO files carry no source references (the translation rows do not store them).
+
+Open: H5b JSON (JED) files per script, with the `make-json` rules, which need the source references of each entry; H5c installing the MO directly in `wp-content/languages/plugins/` (through `WP_Filesystem`) so that WordPress uses it without a manual copy; H5d comparison of the extractors (see below); H5e optional `.l10n.php` files; policy on statuses (for example export validated translations only, or mark the others fuzzy).
+
+Remaining design notes:
+
 Goal:
 
 - produce usable PO, MO and JSON (JED) files from a translation.

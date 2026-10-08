@@ -22,11 +22,12 @@ Features of the current development version:
 * translations as dedicated admin items, with list, add and edit screens,
 * import of the translatable strings of an installed plugin,
 * plural-aware editing, with the plural forms of each language explained,
+* download of the translations as PO and MO files,
 * optional machine translation with DeepL (single strings and batches), with
   monthly usage display, quota protection and rate-limit handling.
 
-This is a work in progress: exporting the translations as PO, MO and JSON files
-is not available yet.
+This is a work in progress: JSON files for JavaScript translations and direct
+installation of the translation files are not available yet.
 
 == Installation ==
 
@@ -37,6 +38,7 @@ is not available yet.
 == Changelog ==
 
 = 0.1.1 =
+* Download of translations as PO and MO files.
 * Translations and glossaries stored as linguistic resources.
 * Plural forms of each language explained to translators.
 * DeepL usage gauge, quota protection and adaptive throttling.

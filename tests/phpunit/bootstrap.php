@@ -1104,10 +1104,21 @@ if ( ! function_exists( 'add_query_arg' ) ) {
 	 * @param string $url Base URL.
 	 * @return string
 	 */
-	function add_query_arg( $key, $value, $url ) {
-		$separator = false === strpos( (string) $url, '?' ) ? '?' : '&';
+	function add_query_arg( $key, $value = '', $url = '' ) {
+		// Supports both add_query_arg( $key, $value, $url ) and add_query_arg( array(...), $url ).
+		if ( is_array( $key ) ) {
+			$pairs = $key;
+			$url   = (string) $value;
+		} else {
+			$pairs = array( (string) $key => $value );
+		}
 
-		return (string) $url . $separator . rawurlencode( (string) $key ) . '=' . rawurlencode( (string) $value );
+		foreach ( $pairs as $name => $pair_value ) {
+			$separator = false === strpos( (string) $url, '?' ) ? '?' : '&';
+			$url       = (string) $url . $separator . rawurlencode( (string) $name ) . '=' . rawurlencode( (string) $pair_value );
+		}
+
+		return (string) $url;
 	}
 }
 
@@ -1191,6 +1202,18 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 		$text = (string) preg_replace( '/[\r\n\t ]+/', ' ', $text );
 
 		return trim( (string) preg_replace( '/%[a-f0-9]{2}/i', '', $text ) );
+	}
+}
+
+if ( ! function_exists( 'sanitize_file_name' ) ) {
+	/**
+	 * Sanitizes a file name in tests.
+	 *
+	 * @param string $filename File name.
+	 * @return string
+	 */
+	function sanitize_file_name( $filename ) {
+		return (string) preg_replace( '/[^A-Za-z0-9._-]/', '', (string) $filename );
 	}
 }
 

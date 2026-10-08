@@ -513,6 +513,13 @@ These behaviors predate the refactoring of the script and are pinned by the jsdo
 - the browser `alert()` fallback of the AI error dialog is unreachable while the message is not empty, which is always the case,
 - the `suppressNotice` flag of the modified rows tracker has no observable effect after "Apply filters and close", because the tracked rows are emptied anyway.
 
+## Export
+
+- `Export\TranslationCatalogBuilder` builds a `Gettext\Translations` catalog from the rows of a translation; `Export\TranslationFileExporter` writes PO or MO; `Admin\TranslationExportController` provides the download (admin-post, `edit_post` capability, nonce) and the "Export" box of the edit screen.
+- The plural header comes from `Plurals\PluralFormsRegistry` (GlotPress data), never from gettext's own language database.
+- The MO generator is used with `includeHeaders( true )`: without the headers the MO has no `Plural-Forms`.
+- Not exported: empty translations; in MO, plural entries with an empty form.
+
 ## Lifecycle and Schema Changes
 
 - Activation runs `SourceSchemaManager::maybe_upgrade()`; every request also checks the stored version (`i18nly_source_schema_version`) at `plugins_loaded`.
@@ -536,7 +543,7 @@ The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 ar
 2. H2 raw storage of translations (no `sanitize_text_field` on translations): done,
 3. H3 CI green (Plugin Check, readme/version alignment, REUSE, optional JS tests in CI): code done, JS tests in CI not done,
 4. H4 uninstall, activation and schema migrations: done,
-5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code,
+5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download done (H5a); JSON, direct installation and extractor comparison open,
 6. H6 concurrency, pagination, restoring a trashed translation,
 7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),
 8. slice 5a: dedicated glossary editor screen; slice 5b only if duplication is proven,
