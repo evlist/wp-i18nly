@@ -139,6 +139,25 @@ class SourceWpdbRepositoryTest extends TestCase {
 	}
 
 	/**
+	 * Exposes the storage resource ID through the translation repository.
+	 *
+	 * @return void
+	 */
+	public function test_translation_repository_exposes_storage_resource_id() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$storage   = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+		$repo      = new \WP_I18nly\LinguisticResources\TranslationResourceRepository( $storage, $manager );
+
+		$this->assertSame( 0, $repo->get_translation_resource_id( 42 ) );
+
+		$repo->ensure_translation_targets( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00', 2 );
+
+		$this->assertSame( $storage->find_translation_resource_id( 42 ), $repo->get_translation_resource_id( 42 ) );
+		$this->assertGreaterThan( 0, $repo->get_translation_resource_id( 42 ) );
+	}
+
+	/**
 	 * Deletes one translation resource with its targets and nothing else.
 	 *
 	 * @return void

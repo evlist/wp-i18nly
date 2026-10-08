@@ -46,6 +46,16 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	}
 
 	/**
+	 * Returns the storage resource ID of one translation.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return int Resource ID, or 0 when the translation has no resource row yet.
+	 */
+	public function get_translation_resource_id( $translation_id ) {
+		return (int) $this->get_storage_repository()->find_translation_resource_id( (int) $translation_id );
+	}
+
+	/**
 	 * Deletes one translation resource with its target rows.
 	 *
 	 * @param int $translation_id Translation ID.

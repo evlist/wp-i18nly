@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (154 tests, 681 assertions)`,
+- PHPUnit status: `OK (155 tests, 685 assertions)`,
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -159,7 +159,7 @@ These tables currently hold:
 
 The `i18nly_linguistic_resource_links` and `i18nly_linguistic_resource_compilations` tables from the refactoring plan are intentionally not created yet; they are only needed by the glossary slices.
 
-Known gap: `TranslationResource::get_resource_id()` in the editor model still carries the translation post ID, not the storage resource ID.
+In the editor model, `TranslationResource::get_resource_id()` is the storage resource ID and `get_translation_id()` is the anchoring post ID.
 
 ### Translation entry semantics
 

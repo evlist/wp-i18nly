@@ -19,7 +19,8 @@ class TranslationEditorModel extends AbstractLinguisticResourceEditorModel {
 	/**
 	 * Builds a model from repository rows.
 	 *
-	 * @param int                              $translation_id Translation ID.
+	 * @param int                              $resource_id Storage resource ID.
+	 * @param int                              $translation_id Translation post ID.
 	 * @param string                           $source_slug Source slug.
 	 * @param string                           $source_locale Source locale.
 	 * @param string                           $target_locale Target locale.
@@ -30,7 +31,7 @@ class TranslationEditorModel extends AbstractLinguisticResourceEditorModel {
 	 * @param array<int, string>               $form_tooltips Tooltips by form index.
 	 * @return self
 	 */
-	public static function from_repository_rows( $translation_id, $source_slug, $source_locale, $target_locale, array $rows, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
+	public static function from_repository_rows( $resource_id, $translation_id, $source_slug, $source_locale, $target_locale, array $rows, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
 		$entries = array();
 
 		foreach ( $rows as $row ) {
@@ -42,7 +43,7 @@ class TranslationEditorModel extends AbstractLinguisticResourceEditorModel {
 			$entries[] = $entry->with_plural_metadata( $forms, $form_labels, $form_markers, $form_tooltips );
 		}
 
-		$resource = new TranslationResource( $translation_id, $source_slug, $source_locale, $target_locale, $entries );
+		$resource = new TranslationResource( $resource_id, $translation_id, $source_slug, $source_locale, $target_locale, $entries );
 
 		return new self( $resource );
 	}

@@ -735,6 +735,7 @@ class AdminPage {
 		$form_tooltips = \WP_I18nly\Plurals\PluralFormsRegistry::get_form_tooltips_for_locale( $locale );
 
 		$model = $this->create_translation_editor_model(
+			(int) $repository->get_translation_resource_id( (int) $translation_id ),
 			(int) $translation_id,
 			(string) $source_slug,
 			$locale,
@@ -751,7 +752,8 @@ class AdminPage {
 	/**
 	 * Creates a translation editor model from repository rows.
 	 *
-	 * @param int                              $translation_id Translation ID.
+	 * @param int                              $resource_id Storage resource ID.
+	 * @param int                              $translation_id Translation post ID.
 	 * @param string                           $source_slug Source slug.
 	 * @param string                           $target_locale Target locale.
 	 * @param array<int, array<string, mixed>> $entries Repository rows.
@@ -761,8 +763,9 @@ class AdminPage {
 	 * @param array<int, string>               $form_tooltips Tooltips by form index.
 	 * @return TranslationEditorModel
 	 */
-	protected function create_translation_editor_model( $translation_id, $source_slug, $target_locale, array $entries, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
+	protected function create_translation_editor_model( $resource_id, $translation_id, $source_slug, $target_locale, array $entries, array $forms, array $form_labels, array $form_markers, array $form_tooltips ) {
 		return TranslationEditorModel::from_repository_rows(
+			(int) $resource_id,
 			(int) $translation_id,
 			(string) $source_slug,
 			self::SOURCE_LOCALE,

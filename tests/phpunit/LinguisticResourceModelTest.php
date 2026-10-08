@@ -40,6 +40,7 @@ class LinguisticResourceModelTest extends TestCase {
 	 */
 	public function test_translation_editor_model_round_trips_rows_with_plural_metadata() {
 		$model = \WP_I18nly\LinguisticResources\TranslationEditorModel::from_repository_rows(
+			7,
 			42,
 			'akismet/akismet.php',
 			'en_US',
@@ -85,7 +86,8 @@ class LinguisticResourceModelTest extends TestCase {
 		$rows     = $model->to_rows();
 
 		$this->assertSame( 'translation', $resource->get_resource_kind() );
-		$this->assertSame( 42, $resource->get_resource_id() );
+		$this->assertSame( 7, $resource->get_resource_id() );
+		$this->assertSame( 42, $resource->get_translation_id() );
 		$this->assertSame( 'akismet/akismet.php', $resource->get_source_slug() );
 		$this->assertSame( 'en_US', $resource->get_source_locale() );
 		$this->assertSame( 'fr_FR', $resource->get_target_locale() );
