@@ -26,6 +26,16 @@ class TranslationResourceEntry extends AbstractLinguisticResourceEntry {
 	}
 
 	/**
+	 * Creates one translation target from a raw target row.
+	 *
+	 * @param array<string, mixed> $row Raw target row.
+	 * @return TranslationResourceTarget
+	 */
+	protected function create_target( array $row ) {
+		return new TranslationResourceTarget( $row );
+	}
+
+	/**
 	 * Returns a cloned entry enriched with plural metadata.
 	 *
 	 * @param array<int, array<string, mixed>> $forms Ordered forms metadata.

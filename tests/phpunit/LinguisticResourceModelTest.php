@@ -22,6 +22,8 @@ class LinguisticResourceModelTest extends TestCase {
 	public function test_translation_linguistic_resource_classes_exist() {
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\AbstractLinguisticResource' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\AbstractLinguisticResourceEntry' ) );
+		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\AbstractLinguisticResourceTarget' ) );
+		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationResourceTarget' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\AbstractLinguisticResourceEditorModel' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\AbstractLinguisticResourceRepository' ) );
 		$this->assertTrue( class_exists( 'WP_I18nly\\LinguisticResources\\TranslationResource' ) );
@@ -93,5 +95,57 @@ class LinguisticResourceModelTest extends TestCase {
 		$this->assertSame( array( 'a', 'b' ), $rows[0]['form_markers'] );
 		$this->assertSame( array( 'one', 'other' ), $rows[0]['form_tooltips'] );
 		$this->assertIsArray( $rows[0]['forms'] );
+	}
+
+	/**
+	 * Expects translation entries to expose their target values as objects.
+	 *
+	 * @return void
+	 */
+	public function test_translation_entry_exposes_targets_by_form() {
+		$entry = new \WP_I18nly\LinguisticResources\TranslationResourceEntry(
+			array(
+				'source_entry_id' => 61,
+				'translations'    => array(
+					array(
+						'form_index'  => 0,
+						'translation' => '%s pomme',
+						'status'      => 'validated',
+						'used_ai'     => 1,
+						'used_manual' => 0,
+					),
+					array(
+						'form_index'  => 1,
+						'translation' => '%s pommes',
+					),
+				),
+			)
+		);
+
+		$targets = $entry->get_targets();
+
+		$this->assertCount( 2, $targets );
+		$this->assertInstanceOf( 'WP_I18nly\\LinguisticResources\\TranslationResourceTarget', $targets[0] );
+		$this->assertSame( 'translation', $targets[0]->get_target_kind() );
+		$this->assertSame( 0, $targets[0]->get_form_index() );
+		$this->assertSame( '%s pomme', $targets[0]->get_text() );
+		$this->assertSame( 'validated', $targets[0]->get_status() );
+		$this->assertTrue( $targets[0]->is_ai_generated() );
+		$this->assertFalse( $targets[0]->is_manual() );
+		$this->assertSame( 1, $targets[1]->get_form_index() );
+		$this->assertSame( 'draft', $targets[1]->get_status() );
+		$this->assertFalse( $targets[1]->is_ai_generated() );
+		$this->assertTrue( $targets[1]->is_manual() );
+	}
+
+	/**
+	 * Expects an entry without target rows to expose no targets.
+	 *
+	 * @return void
+	 */
+	public function test_translation_entry_without_translations_has_no_targets() {
+		$entry = new \WP_I18nly\LinguisticResources\TranslationResourceEntry( array( 'source_entry_id' => 7 ) );
+
+		$this->assertSame( array(), $entry->get_targets() );
 	}
 }

@@ -49,6 +49,37 @@ abstract class AbstractLinguisticResourceEntry {
 	}
 
 	/**
+	 * Creates one target value object from a raw target row.
+	 *
+	 * @param array<string, mixed> $row Raw target row.
+	 * @return AbstractLinguisticResourceTarget
+	 */
+	abstract protected function create_target( array $row );
+
+	/**
+	 * Returns target values of this entry, one per plural form row.
+	 *
+	 * @return array<int, AbstractLinguisticResourceTarget>
+	 */
+	public function get_targets() {
+		$rows = $this->get_row_value( 'translations', array() );
+
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$targets = array();
+
+		foreach ( $rows as $row ) {
+			if ( is_array( $row ) ) {
+				$targets[] = $this->create_target( $row );
+			}
+		}
+
+		return $targets;
+	}
+
+	/**
 	 * Returns raw row.
 	 *
 	 * @return array<string, mixed>
