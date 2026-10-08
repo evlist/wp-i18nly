@@ -89,6 +89,23 @@ class PotGeneratorTest extends TestCase {
 		rmdir( $nested_dir );
 		rmdir( $base_dir );
 	}
-}
 
-// phpcs:enable
+	/**
+	 * A text such as "0" is a valid string and is not dropped.
+	 *
+	 * (The gettext generator itself drops a context or a plural that is exactly "0".)
+	 *
+	 * @return void
+	 */
+	public function test_generate_keeps_a_text_that_is_falsy_in_php() {
+		$temp_file = sys_get_temp_dir() . '/i18nly-pot-' . uniqid( '', true ) . '.pot';
+
+		( new \WP_I18nly\Build\PotGenerator() )->generate( $temp_file, 'i18nly', array( array( 'original' => '0' ) ) );
+
+		$content = file_get_contents( $temp_file );
+
+		unlink( $temp_file );
+
+		$this->assertStringContainsString( 'msgid "0"', $content );
+	}
+}

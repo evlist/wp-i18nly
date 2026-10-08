@@ -29,12 +29,8 @@ class PhpGettextExtractor {
 		$token_count = count( $tokens );
 
 		for ( $index = 0; $index < $token_count; $index++ ) {
-			if ( ! is_array( $tokens[ $index ] ) || T_STRING !== $tokens[ $index ][0] ) {
-				continue;
-			}
-
-			$function_name = strtolower( (string) $tokens[ $index ][1] );
-			if ( ! $this->is_supported_gettext_function( $function_name ) ) {
+			$function_name = $this->get_called_function_name( $tokens, $index );
+			if ( '' === $function_name || ! $this->is_supported_gettext_function( $function_name ) ) {
 				continue;
 			}
 
@@ -62,6 +58,47 @@ class PhpGettextExtractor {
 		}
 
 		return $entries;
+	}
+
+	/**
+	 * Returns the lower-cased name of the global function called at a token, or an empty string.
+	 *
+	 * A name is a plain call (`__( ... )`) or a fully qualified one (`\__( ... )`, a single token since PHP 8).
+	 * It is not a call of the global function when it follows `->`, `?->`, `::`, `new` or `function`: method
+	 * calls, static calls, instantiations and declarations.
+	 *
+	 * @param array<int, mixed> $tokens Tokens.
+	 * @param int               $index Token index.
+	 * @return string
+	 */
+	private function get_called_function_name( array $tokens, $index ) {
+		$token = $tokens[ $index ];
+
+		if ( ! is_array( $token ) ) {
+			return '';
+		}
+
+		if ( T_STRING === $token[0] ) {
+			$name = (string) $token[1];
+		} elseif ( T_NAME_FULLY_QUALIFIED === $token[0] && 1 === substr_count( (string) $token[1], '\\' ) ) {
+			$name = substr( (string) $token[1], 1 );
+		} else {
+			return '';
+		}
+
+		for ( $previous = $index - 1; $previous >= 0; $previous-- ) {
+			if ( is_array( $tokens[ $previous ] ) && in_array( $tokens[ $previous ][0], array( T_WHITESPACE, T_COMMENT, T_DOC_COMMENT ), true ) ) {
+				continue;
+			}
+
+			if ( is_array( $tokens[ $previous ] ) && in_array( $tokens[ $previous ][0], array( T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_NEW, T_FUNCTION ), true ) ) {
+				return '';
+			}
+
+			break;
+		}
+
+		return strtolower( $name );
 	}
 
 	/**

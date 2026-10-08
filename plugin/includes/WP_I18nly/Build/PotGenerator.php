@@ -61,7 +61,7 @@ class PotGenerator {
 		}
 
 		foreach ( $entries as $entry ) {
-			if ( empty( $entry['original'] ) || ! is_string( $entry['original'] ) ) {
+			if ( ! isset( $entry['original'] ) || ! is_string( $entry['original'] ) || '' === $entry['original'] ) {
 				continue;
 			}
 
@@ -115,7 +115,8 @@ class PotGenerator {
 	 * @return \Gettext\Translation
 	 */
 	private function build_translation_entry( array $entry ) {
-		$context     = ( ! empty( $entry['context'] ) && is_string( $entry['context'] ) ) ? $entry['context'] : null;
+		// A string like "0" is a valid text, context or plural: do not use empty().
+		$context     = ( isset( $entry['context'] ) && is_string( $entry['context'] ) && '' !== $entry['context'] ) ? $entry['context'] : null;
 		$translation = \Gettext\Translation::create( $context, (string) $entry['original'] );
 
 		if ( ! empty( $entry['comments'] ) && is_array( $entry['comments'] ) ) {
@@ -145,7 +146,7 @@ class PotGenerator {
 			}
 		}
 
-		if ( ! empty( $entry['plural'] ) && is_string( $entry['plural'] ) ) {
+		if ( isset( $entry['plural'] ) && is_string( $entry['plural'] ) && '' !== $entry['plural'] ) {
 			$translation->setPlural( $entry['plural'] );
 		}
 

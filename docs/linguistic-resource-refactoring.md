@@ -519,6 +519,17 @@ Deliverables:
 
 #### H7: Quality backlog (audit I6, I8 and minor items)
 
+Status: partly done (2026-10-08).
+
+Done:
+
+- **JavaScript internationalisation (I6).** The editor scripts translate their messages with `wp.i18n` through `I18nly.i18n` (`ui-text.js`, loaded first, resolves `wp.i18n` at call time and returns the text unchanged without it); calls are written `__( 'text', 'i18nly' )`, `_n(...)` and `sprintf(...)` so that the extractor finds them, with translators comments. The PHP-provided `i18n` config and the `UiText` class are gone; every script of the manifest gets `wp_set_script_translations( handle, 'i18nly', plugin/languages )`. The jsdom suite can install a dictionary (`translations` option) and checks a translated progress dialog and notice.
+- **Plugin POT.** `php scripts/generate-pot.php` writes `plugin/languages/i18nly.pot` with the plugin's own extractor (208 strings, PHP and JavaScript); `PluginPotFileTest` fails when the file is not up to date. No translation of I18nly itself exists yet; when one is made, its MO and the JSON files for the scripts can be produced and installed with the export of the plugin.
+- **Extractor gaps (I8).** Fully qualified PHP calls are extracted, method calls, static calls and declarations of `__` are no longer taken for gettext calls, and TypeScript with types is read by a fallback scanner (see `IA.md`, Source extraction). The golden test and its fixture were updated accordingly (the previous behavior was pinned as a limit).
+- **Falsy strings.** `PotGenerator` dropped a msgid, context or plural equal to `"0"` (`empty()`); fixed, with a test. The remaining losses come from the vendored gettext (see `IA.md`).
+
+Open: `AdminPage` still above 400 lines; documentation of the plural data regeneration was already in `scripts/plurals/README.md` (the audit remark was wrong).
+
 Deliverables:
 
 - internationalisation of the plugin JS (`wp_set_script_translations`) and a `languages/` directory,

@@ -1,0 +1,1523 @@
+msgid ""
+msgstr ""
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: \n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2026-10-08 16:43+0000\n"
+"Project-Id-Version: I18nly 0.1.1\n"
+"Report-Msgid-Bugs-To: \n"
+"X-Domain: i18nly\n"
+
+#: includes/WP_I18nly/AI/DeepLClient.php:76
+#: includes/WP_I18nly/AI/DeepLClient.php:328
+#: includes/WP_I18nly/AI/DeepLClient.php:372
+msgid "DeepL returned an unexpected response format."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLClient.php:109
+msgid "The source text is empty."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLClient.php:123
+msgid "Batch payload is empty."
+msgstr ""
+
+#. translators: %s: transport error message.
+#: includes/WP_I18nly/AI/DeepLClient.php:319
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:72
+#, php-format
+msgid "DeepL connection failed: %s"
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLClient.php:338
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:85
+msgid "DeepL rejected the API key. Check that the key is valid and active."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLClient.php:349
+msgid "DeepL rate limit reached. Please retry later."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/WP_I18nly/AI/DeepLClient.php:357
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:93
+#, php-format
+msgid "DeepL returned an unexpected HTTP status: %d"
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLClient.php:381
+msgid "DeepL returned an unexpected number of translated items."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:51
+msgid "The DeepL API key is empty."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:103
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:124
+msgid "DeepL connection successful."
+msgstr ""
+
+#. translators: 1: used character count, 2: character limit.
+#: includes/WP_I18nly/AI/DeepLCredentialsValidator.php:115
+#, php-format
+msgid "DeepL connection successful. Usage: %1$s / %2$s characters."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLUsageStatusProvider.php:128
+msgid "No DeepL API key configured."
+msgstr ""
+
+#. translators: %s: transport error message.
+#: includes/WP_I18nly/AI/DeepLUsageStatusProvider.php:146
+#, php-format
+msgid "Unable to refresh DeepL usage: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/WP_I18nly/AI/DeepLUsageStatusProvider.php:159
+#, php-format
+msgid "Unable to refresh DeepL usage (HTTP %d)."
+msgstr ""
+
+#: includes/WP_I18nly/AI/DeepLUsageStatusProvider.php:168
+msgid "DeepL usage response format is invalid."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/AiTranslationManager.php:104
+msgid "DeepL monthly usage is above 100%. Please wait for quota reset before sending new translations."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/AiTranslationManager.php:112
+msgid "You can also reduce the reserved monthly characters in Settings > Translations."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/AiTranslationManager.php:115
+#: assets/js/translation/ai-error-dialog.js:38
+msgid "Settings > Translations"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/AiTranslationManager.php:138
+#: includes/WP_I18nly/Admin/DeepLUsageWidgets.php:84
+#: includes/WP_I18nly/Admin/DeepLUsageWidgets.php:106
+#: includes/WP_I18nly/Admin/DeepLUsageWidgets.php:133
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:198
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:215
+#: includes/WP_I18nly/Admin/UI/DeepLUsageGaugeRenderer.php:59
+msgid "DeepL monthly usage"
+msgstr ""
+
+#. translators: %d: number of entries displayed.
+#: includes/WP_I18nly/Admin/TranslationAjaxController.php:194
+#, php-format
+msgid "Only the first %d entries are displayed and can be edited here; the others are not shown yet. The exported files contain all the translated entries."
+msgstr ""
+
+#. translators: 1: plugin, 2: language.
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:159
+#, php-format
+msgid "This translation cannot be restored: another translation already exists for %1$s in %2$s. Delete one of them, or open the existing one."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:165
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:196
+msgid "Open existing translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:167
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:200
+msgid "Duplicate translation"
+msgstr ""
+
+#. translators: 1: source slug, 2: target language.
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:190
+#, php-format
+msgid "A translation already exists for %1$s in %2$s."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationDuplicateGuard.php:197
+#: assets/js/translation/ai-batch-translation.js:142
+msgid "Cancel"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationEditController.php:127
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:63
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:173
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:213
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:129
+#: includes/WP_I18nly/Support/AdminRegistration.php:31
+#: includes/WP_I18nly/Support/AdminRegistration.php:35
+msgid "Translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationExportController.php:143
+#: includes/WP_I18nly/Admin/TranslationExportController.php:177
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:226
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:260
+msgid "You are not allowed to perform this action."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationExportController.php:147
+#: includes/WP_I18nly/Admin/TranslationExportController.php:181
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:234
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:268
+msgid "Invalid request."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationExportController.php:161
+msgid "This translation cannot be exported."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:52
+msgid "DeepL API"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:59
+msgid "DeepL API key"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:67
+msgid "Reserved monthly quota"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:75
+msgid "Data"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:82
+msgid "Uninstall"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:97
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:98
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:153
+#: includes/WP_I18nly/Support/AdminRegistration.php:28
+#: includes/WP_I18nly/Support/AdminRegistration.php:30
+#: includes/WP_I18nly/Support/AdminRegistration.php:73
+#: includes/WP_I18nly/Support/AdminRegistration.php:74
+msgid "Translations"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:154
+msgid "Because translating a plugin in WordPress should be as simple as writing a blog post."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:160
+msgid "Save changes"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:163
+msgid "Are you sure you want to clear the saved API key?"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:163
+msgid "Clear saved key"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:172
+msgid "Connection test"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:173
+msgid "Validate your DeepL API key before enabling translation actions."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:179
+msgid "Test connection"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:192
+msgid "Save a DeepL API key first to enable connection testing."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:284
+msgid "DeepL API key cleared."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:300
+msgid "Configure DeepL credentials for AI-assisted translation suggestions."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:315
+msgid "The DeepL API key is defined by the I18NLY_DEEPL_API_KEY constant (for example in wp-config.php) and takes precedence over a saved key."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:322
+msgid "A DeepL API key is already saved. Enter a new key to replace it."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:325
+msgid "Paste your DeepL API key."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:340
+msgid "Characters reserved for other DeepL usages. This value is deducted from the monthly limit used by I18nly."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:355
+msgid "Delete all translations, glossaries and settings when the plugin is deleted"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/TranslationSettingsPage.php:356
+msgid "Disabled by default: deleting the plugin keeps your translations."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/DeepLUsageGaugeRenderer.php:55
+msgid "characters this month"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/DeepLUsageGaugeRenderer.php:65
+msgid "Usage limit is unavailable for this key."
+msgstr ""
+
+#. translators: %s: date and time of last refresh.
+#: includes/WP_I18nly/Admin/UI/DeepLUsageGaugeRenderer.php:78
+#, php-format
+msgid "Last refresh: %s"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/DeepLUsageGaugeRenderer.php:80
+msgid "stale values"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:30
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:88
+#: assets/js/linguistic-resource/entry-badges.js:15
+msgid "Draft"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:34
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:84
+#: assets/js/linguistic-resource/entry-badges.js:16
+msgid "Suspect"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:38
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:92
+#: assets/js/linguistic-resource/entry-badges.js:17
+msgid "Validated"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:84
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:77
+msgid "Obsolete"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:103
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:103
+#: assets/js/linguistic-resource/entry-badges.js:21
+msgid "AI"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:111
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:107
+#: assets/js/linguistic-resource/entry-badges.js:22
+msgid "Manual"
+msgstr ""
+
+#. translators: %d: number of translations.
+#: includes/WP_I18nly/Admin/UI/SaveConflictNotice.php:64
+#, php-format
+msgid "%d translation was not saved because someone else changed it after you opened this screen. Their version was kept; the screen shows the current texts."
+msgid_plural "%d translations were not saved because someone else changed them after you opened this screen. Their versions were kept; the screen shows the current texts."
+msgstr[0] ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:60
+msgid "Select all translation entries"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:61
+msgid "Context"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:62
+msgid "Source string"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:64
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:81
+msgid "Status"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:75
+msgid "Clear selected translations"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:76
+msgid "Copy source to translation"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:77
+msgid "Mark as draft"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:78
+msgid "Mark as suspect"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:79
+msgid "Mark as validated"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:80
+msgid "Translate selected with AI"
+msgstr ""
+
+#. translators: %d: source entry ID.
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:103
+#, php-format
+msgid "Select translation entry %d"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:337
+msgid "Translate with AI"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:449
+msgid "No translation entries available yet."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:466
+msgid "Select bulk action"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:468
+msgid "Bulk actions"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:475
+msgid "Apply"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:50
+msgid "Export"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:64
+msgid "Save the translation with a plugin and a language to enable the export."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:78
+msgid "Download MO"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:80
+msgid "Download PO"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:84
+msgid "Download JSON (ZIP)"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:89
+msgid "Install on this site"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:91
+msgid "Install writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:92
+msgid "Entries without translation are left out. In the MO and JSON files, plural entries are left out unless all their forms are translated. The JSON files are the translations of the JavaScript files of the plugin; install them on the site, or unpack the ZIP into wp-content/languages/plugins/."
+msgstr ""
+
+#. translators: %d: number of entries.
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:110
+#, php-format
+msgid "%d entry has a translation that is not validated."
+msgid_plural "%d entries have a translation that is not validated."
+msgstr[0] ""
+
+#. translators: %d: number of entries.
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:113
+msgid "Drafts, machine suggestions and suspect translations may be wrong. Choose what to do with them:"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:114
+msgid "Leave them out"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:115
+msgid "Include them (flagged fuzzy in the PO file)"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:150
+msgid "Translation installed in the languages directory."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:151
+msgid "The languages directory cannot be written: WordPress needs direct file access or file system credentials."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:152
+msgid "A translation file could not be written."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:153
+msgid "Some translations are not validated: choose whether to include them or to leave them out, then try again."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:154
+msgid "This translation cannot be installed."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:35
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:40
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:125
+msgid "Source"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:36
+#: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:44
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:49
+msgid "Target language"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:29
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:32
+#: includes/WP_I18nly/Support/AdminRegistration.php:50
+msgid "Translation updated."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:30
+msgid "Custom field updated."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:31
+msgid "Custom field deleted."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:33
+msgid "Translation restored to revision."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:34
+#: includes/WP_I18nly/Support/AdminRegistration.php:49
+msgid "Translation published."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:35
+msgid "Translation saved."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:36
+msgid "Translation submitted."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:37
+msgid "Translation scheduled."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:38
+msgid "Translation draft updated."
+msgstr ""
+
+#. translators: %s is the number of translations.
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:61
+#, php-format
+msgid "%s translation updated."
+msgid_plural "%s translations updated."
+msgstr[0] ""
+
+#. translators: %s is the number of translations.
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:63
+#, php-format
+msgid "%s translation not updated, somebody is editing it."
+msgid_plural "%s translations not updated, somebody is editing them."
+msgstr[0] ""
+
+#. translators: %s is the number of translations.
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:65
+#, php-format
+msgid "%s translation permanently deleted."
+msgid_plural "%s translations permanently deleted."
+msgstr[0] ""
+
+#. translators: %s is the number of translations.
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:67
+#, php-format
+msgid "%s translation moved to the Trash."
+msgid_plural "%s translations moved to the Trash."
+msgstr[0] ""
+
+#. translators: %s is the number of translations.
+#: includes/WP_I18nly/Admin/UI/TranslationMessages.php:69
+#, php-format
+msgid "%s translation restored from the Trash."
+msgid_plural "%s translations restored from the Trash."
+msgstr[0] ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:36
+msgid "Plugin"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:40
+msgid "Select a plugin"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:53
+msgid "Select a target language"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:63
+msgid "Plugin and target language are locked after creation."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:67
+msgid "Translation entries"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:68
+msgid "Translation entry filters"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:70
+msgid "Entries"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:73
+msgid "Active"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:96
+msgid "Non translated"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:100
+msgid "Provenance"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:111
+msgid "None"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:115
+msgid "Search"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:116
+msgid "Search text"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:121
+msgid "Contains text…"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:134
+msgid "Loading translation entries…"
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryResourceRepository.php:76
+msgid "A glossary with this identifier already exists for this target language."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryResourceRepository.php:177
+msgid "The glossary does not exist."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryResourceRepository.php:181
+msgid "The term does not exist in this glossary."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryResourceRepository.php:247
+msgid "The glossary could not be saved."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:63
+msgid "The glossary identifier must contain 1 to 100 lowercase letters, digits, hyphens or underscores, and start with a letter or a digit."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:70
+msgid "The source language is not a valid locale."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:74
+msgid "The target language is not a valid locale."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:78
+msgid "The source and target languages must be different."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:96
+msgid "The term is required."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:98
+msgid "The term is too long."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:106
+msgid "The match mode must be exact or partial."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:112
+msgid "The preferred translation is required."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:114
+msgid "The preferred translation is too long."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:121
+msgid "The note is too long."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:129
+msgid "This term already exists in the glossary."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:164
+msgid "The alternate translations must be a list."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:179
+msgid "An alternate translation is too long."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:185
+msgid "An alternate translation must differ from the preferred translation."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:189
+msgid "The alternate translations must be different from each other."
+msgstr ""
+
+#: includes/WP_I18nly/LinguisticResources/GlossaryValidator.php:197
+msgid "There are too many alternate translations."
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAf.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAm.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangArg.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangAs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAz.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAzb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangBgBg.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangBnBd.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCeb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCkb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDaDk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangDeAt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangDeCh.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangDeDe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnAu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnCa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnGb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnNz.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnUs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEnZa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsAr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsCl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsCo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsCr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsDo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsEc.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsEs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsGt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsMx.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsPe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsPr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsUy.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEsVe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangEu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFi.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFur.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFy.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangGlEs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangGu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHaz.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHeIl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHiIn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHuHu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHy.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangItIt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangJvId.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKir.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMlIn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMyMm.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangNbNo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangNeNp.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangNlBe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangNlNl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangNnNo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPtAo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPtPt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPtPtAo90.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSah.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSiLk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSkr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSnd.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSq.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSvSe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSw.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTaIn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTaLk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangUgCn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangUr.php:32
+msgid "1"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAf.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangAm.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangArg.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangAs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangAz.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangAzb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangBgBg.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangBnBd.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangCa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangCeb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangCkb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDaDk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDeAt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDeCh.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDeDe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnAu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnCa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnGb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnNz.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnUs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEnZa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsAr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsCl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsCo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsCr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsDo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsEc.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsEs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsGt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsMx.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsPe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsPr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsUy.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEsVe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangEu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFi.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFur.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFy.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangGlEs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangGu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHaz.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHeIl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHiIn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHuHu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHy.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangItIt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangJvId.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKir.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangMlIn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangMn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangMr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangMyMm.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangNbNo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangNeNp.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangNlBe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangNlNl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangNnNo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPtAo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPtPt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPtPtAo90.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSah.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSiLk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSkr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSnd.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSq.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSvSe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSw.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTaIn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTaLk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTl.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangUgCn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangUr.php:34
+msgid "One"
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAf.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangAm.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangArg.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangAs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangAz.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangAzb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangBgBg.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangBnBd.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangCa.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangCeb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangCkb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangDaDk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangDeAt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangDeCh.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangDeDe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnAu.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnCa.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnGb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnNz.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnUs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEnZa.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsAr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsCl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsCo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsCr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsDo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsEc.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsEs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsGt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsMx.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsPe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsPr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsUy.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEsVe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangEu.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFi.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFur.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFy.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangGlEs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangGu.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHaz.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHeIl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHiIn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHuHu.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHy.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangItIt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangJvId.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangKir.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangKk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangKn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangMlIn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangMn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangMr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangMyMm.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangNbNo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangNeNp.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangNlBe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangNlNl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangNnNo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPtAo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPtPt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPtPtAo90.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSah.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSiLk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSkr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSnd.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSq.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSvSe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSw.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTaIn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTaLk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangUgCn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangUr.php:39
+msgid "n"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAf.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangAm.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangArg.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangAs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangAz.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangAzb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangBgBg.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangBnBd.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangCa.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangCeb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangCkb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangDaDk.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangDeAt.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangDeCh.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangDeDe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnAu.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnCa.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnGb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnNz.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnUs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEnZa.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsAr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsCl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsCo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsCr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsDo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsEc.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsEs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsGt.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsMx.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsPe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsPr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsUy.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEsVe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEt.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangEu.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFi.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFur.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFy.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangGlEs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangGu.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHaz.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHeIl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHiIn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHuHu.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHy.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangItIt.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangJvId.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangKir.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangKk.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangKn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangMlIn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangMn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangMr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangMyMm.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangNbNo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangNeNp.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangNlBe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangNlNl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangNnNo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPtAo.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPtPt.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPtPtAo90.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSah.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSiLk.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSkr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSnd.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSq.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSvSe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSw.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangTaIn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangTaLk.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangTe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangTl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangUgCn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangUr.php:41
+msgid "Other than one"
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFaAf.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFaIr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFrBe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFrCa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangFrFr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangIdId.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangIsIs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKab.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMkMk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangOci.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPaIn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangPtBr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTah.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTrTr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:32
+msgid "a"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:34
+msgid "0"
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFaAf.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFaIr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFrBe.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFrCa.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangFrFr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangIdId.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangIsIs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangKab.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangMkMk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangOci.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPaIn.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangPtBr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTah.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangTrTr.php:39
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:39
+msgid "b"
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:46
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:46
+msgid "c"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:41
+msgid "2"
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:53
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:53
+msgid "d"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:48
+msgid "3, 4, 5, 6, ..."
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:60
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:60
+msgid "e"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:62
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:62
+msgid "11, 12, 13, 14, ..."
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:67
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:67
+msgid "f"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangAr.php:69
+#: includes/WP_I18nly/Plurals/Languages/LangAry.php:69
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangFaAf.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFaIr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFrBe.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFrCa.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangFrFr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangIdId.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangIsIs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangKab.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangMkMk.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangOci.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPaIn.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangPtBr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:55
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSzl.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangTah.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangTrTr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:48
+#: includes/WP_I18nly/Plurals/PluralFormsRegistry.php:230
+msgid "other"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangIsIs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangMkMk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:34
+msgid "1, 21, 31, 41, ..."
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangBel.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangBsBa.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHr.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangPlPl.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangRuRu.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSrRs.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangUk.php:41
+msgid "2, 3, 4, 22, ..."
+msgstr ""
+
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangBo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangDzo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangJa.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKaGe.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKm.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangKoKr.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangLo.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangMsMy.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangRhg.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTh.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangTtRu.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangUzUz.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangVi.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangZhCn.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangZhHk.php:32
+#: includes/WP_I18nly/Plurals/Languages/LangZhTw.php:32
+msgid "*"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangBo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangDzo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangJa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKaGe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKm.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKoKr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangLo.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangMsMy.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangRhg.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTh.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTtRu.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangUzUz.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangVi.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangZhCn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangZhHk.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangZhTw.php:34
+msgid "Any number"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangCsCz.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSkSk.php:41
+msgid "2, 3, 4"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangCy.php:48
+msgid "0, 3, 4, 5, ..."
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:34
+msgid "1, 101"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:41
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:41
+msgid "2, 102"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangDsb.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangHsb.php:48
+#: includes/WP_I18nly/Plurals/Languages/LangSlSi.php:48
+msgid "3, 4, 103, 104"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangFaAf.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFaIr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFrBe.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFrCa.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangFrFr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangIdId.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangKab.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangOci.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPaIn.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangPtBr.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTah.php:34
+#: includes/WP_I18nly/Plurals/Languages/LangTrTr.php:34
+msgid "0, 1"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:34
+msgid "1, 11"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangGd.php:41
+msgid "2, 12"
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangLtLt.php:41
+msgid "2, 3, 4, 5, ..."
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangLv.php:34
+msgid "0, 10, 11, 12, ..."
+msgstr ""
+
+#. translators: Tooltip explaining when this plural form input should be used in the translation editor.
+#. translators: Short label identifying one plural form input in the translation editor.
+#: includes/WP_I18nly/Plurals/Languages/LangRoRo.php:41
+msgid "0, 2, 3, 4, ..."
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:32
+#: includes/WP_I18nly/Support/AdminRegistration.php:33
+#: includes/WP_I18nly/Support/AdminRegistration.php:92
+#: includes/WP_I18nly/Support/AdminRegistration.php:93
+msgid "Add translation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:34
+msgid "Edit translation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:36
+msgid "View translation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:37
+msgid "View translations"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:38
+msgid "Search translations"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:39
+msgid "No translations found."
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:40
+msgid "No translations found in Trash."
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:41
+#: includes/WP_I18nly/Support/AdminRegistration.php:84
+#: includes/WP_I18nly/Support/AdminRegistration.php:85
+msgid "All translations"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:42
+msgid "Translation archives"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:43
+msgid "Translation attributes"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:44
+msgid "Insert into translation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:45
+msgid "Uploaded to this translation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:46
+msgid "Filter translations list"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:47
+msgid "Translations list navigation"
+msgstr ""
+
+#: includes/WP_I18nly/Support/AdminRegistration.php:48
+msgid "Translations list"
+msgstr ""
+
+#: assets/js/linguistic-resource/modified-rows-tracker.js:213
+msgid "Show only these modified rows"
+msgstr ""
+
+#: assets/js/linguistic-resource/modified-rows-tracker.js:219
+msgid "Apply filters and close"
+msgstr ""
+
+#: assets/js/linguistic-resource/modified-rows-tracker.js:269
+#, js-format
+msgid "%d modified row no longer matches active filters."
+msgid_plural "%d modified rows no longer match active filters."
+msgstr[0] ""
+
+#: assets/js/translation/ai-batch-translation.js:125
+msgid "AI Translation in Progress"
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:148
+#: assets/js/translation/ai-error-dialog.js:98
+msgid "Close"
+msgstr ""
+
+#. 1: number of the batch being processed, 2: total number of batches.
+#: assets/js/translation/ai-batch-translation.js:181
+#, js-format
+msgid "Processing batch %1$d of %2$d"
+msgstr ""
+
+#. 1: number of batches processed, 2: total number of batches.
+#: assets/js/translation/ai-batch-translation.js:201
+#, js-format
+msgid "Processed batch %1$d of %2$d"
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:259
+msgid "Translation cancelled."
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:269
+msgid "Translation completed."
+msgstr ""
+
+#. 1: current batch number, 2: total number of batches, 3: seconds to wait.
+#: assets/js/translation/ai-batch-translation.js:338
+#, js-format
+msgid "Too many requests. Retrying batch %1$d of %2$d in %3$ds..."
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:527
+msgid "Translation stopped after repeated rate-limit errors."
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:533
+msgid "Translation stopped because the batch response was invalid."
+msgstr ""
+
+#: assets/js/translation/ai-batch-translation.js:553
+msgid "Translation stopped because the batch request failed."
+msgstr ""
+
+#: assets/js/translation/ai-error-dialog.js:82
+msgid "AI Translation Error"
+msgstr ""
+
+#: assets/js/translation/translation-editor.js:90
+msgid "DeepL API key not configured"
+msgstr ""
+
+#: assets/js/translation/translation-editor.js:163
+msgid "Translation failed."
+msgstr ""
+
+#: assets/js/translation/translation-editor.js:175
+msgid "Translation failed because the request could not be completed."
+msgstr ""

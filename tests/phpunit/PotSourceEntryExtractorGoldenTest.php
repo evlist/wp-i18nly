@@ -49,6 +49,8 @@ esc_attr_e( 'Attribute text', 'composite' );
 __( $dynamic, 'composite' );
 __( "Double quoted \"escaped\"\n", 'composite' );
 $object->__( 'Method call', 'composite' );
+Object::__( 'Static call', 'composite' );
+function __( $declared, $domain ) {}
 \__( 'Namespaced call', 'composite' );
 __( '', 'composite' );
 PHPCODE

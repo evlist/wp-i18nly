@@ -137,11 +137,11 @@ return array(
 		),
 	),
 	array(
-		'original' => 'Method call',
+		'original' => 'Namespaced call',
 		'references' => array(
 			array(
 				'file' => 'composite.php',
-				'line' => 18,
+				'line' => 21,
 			),
 		),
 	),
@@ -414,6 +414,31 @@ return array(
 				'line' => 1,
 			),
 		),
+	),
+	array(
+		'original' => 'Section title',
+		'references' => array(
+			array(
+				'file' => 'assets/js/view.tsx',
+				'line' => 5,
+			),
+		),
+	),
+	array(
+		'original' => '%d item',
+		'references' => array(
+			array(
+				'file' => 'assets/js/view.tsx',
+				'line' => 7,
+			),
+		),
+		'comments' => array(
+			'Number of items.',
+		),
+		'flags' => array(
+			'js-format',
+		),
+		'plural' => '%d items',
 	),
 	array(
 		'original' => 'From sourcemap source',

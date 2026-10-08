@@ -45,7 +45,8 @@ class JsGettextExtractor {
 				)
 			)->parse();
 		} catch ( \Exception $exception ) {
-			return $entries;
+			// Typically TypeScript with type annotations, which the parser rejects: read the calls without parsing.
+			return $this->extract_from_unparsable_code( $code, $relative_path, $lines );
 		}
 
 		$traverser = new Traverser();
@@ -105,6 +106,43 @@ class JsGettextExtractor {
 		);
 
 		$traverser->traverse( $ast );
+
+		return $entries;
+	}
+
+	/**
+	 * Extracts gettext entries from code the parser rejects, by scanning for the calls.
+	 *
+	 * Only the calls of __, _x, _n and _nx are found, with string literal arguments; code that is not
+	 * valid script, JSX text with quotes or regular expressions may hide calls.
+	 *
+	 * @param string            $code Source code.
+	 * @param string            $relative_path Relative reference file path.
+	 * @param array<int,string> $lines Source lines.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function extract_from_unparsable_code( $code, $relative_path, array $lines ) {
+		$entries = array();
+		$calls   = ( new TypedScriptCallScanner() )->scan(
+			$code,
+			function ( $name ) {
+				return 'eval' !== strtolower( (string) $name ) && $this->is_supported_js_gettext_function( $name );
+			}
+		);
+
+		foreach ( $calls as $call ) {
+			$entry = $this->build_entry_from_js_gettext_call(
+				$call['name'],
+				$call['args'],
+				$relative_path,
+				$call['line'],
+				$this->extract_js_translator_comments_near_line( $lines, $call['line'] )
+			);
+
+			if ( null !== $entry ) {
+				$entries[] = $entry;
+			}
+		}
 
 		return $entries;
 	}
@@ -425,6 +463,8 @@ class JsGettextExtractor {
 				break;
 			}
 
+			// JSX comments are wrapped in braces: { /* translators: ... */ }.
+			$text = trim( $text, "{} \t" );
 			$text = ltrim( $text, "/*# \t" );
 			$text = preg_replace( '/\*\/$/', '', $text );
 			if ( null === $text ) {

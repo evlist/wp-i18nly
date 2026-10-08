@@ -881,9 +881,9 @@ Any decision should also settle whether a trashed translation should keep blocki
 
 The extractor output is pinned by `PotSourceEntryExtractorGoldenTest`, limits included:
 
-- fully qualified PHP calls such as `\__( 'text' )` or `\esc_html__( 'text' )` are not extracted (PHP 8 tokenizes them as a single name); calls after `use function __;` are,
-- a TypeScript file containing type syntax cannot be parsed by Peast and yields no entry, silently; `.ts` files without type syntax and `.jsx` files work,
-- a method call such as `$object->__( 'text' )` is extracted as if it were gettext,
+- fully qualified PHP calls (`\__( 'text' )`, `\esc_html__( 'text' )`, a single token since PHP 8) are extracted; a name that follows `->`, `?->`, `::`, `new` or `function` (method call, static call, instantiation, declaration) is not a call of the global function and is ignored,
+- JavaScript the Peast parser rejects, typically TypeScript with type annotations, is read by `TypedScriptCallScanner`: it finds the calls of `__`, `_x`, `_n` and `_nx` with string literal arguments, skipping comments and strings (a quoted string ends with its line, so that a stray apostrophe in JSX text does not hide the code); it may miss calls in code that is not valid script and does not read regular expression literals,
+- a string that is exactly `"0"` is extracted and exported, but the vendored gettext `PoLoader` drops it when a POT is read (it tests the msgid with `empty()`), so the POT import loses it; a context or a plural equal to `"0"` is dropped by the gettext `PoGenerator`,
 - a Blade template is scanned twice, as a PHP file and after Blade compilation; the duplicates are merged,
 - the two printf detection patterns of `GettextPlaceholders` overlap: the second one already matches everything the first one does.
 

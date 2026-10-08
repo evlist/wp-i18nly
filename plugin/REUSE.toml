@@ -11,3 +11,9 @@ path = ["third-party/vendor/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Various upstream authors"
 SPDX-License-Identifier = "BSD-3-Clause OR MIT"
+
+[[annotations]]
+path = ["languages/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Eric van der Vlist <vdv@dyomedea.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
