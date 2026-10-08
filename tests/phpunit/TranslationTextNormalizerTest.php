@@ -66,5 +66,6 @@ class TranslationTextNormalizerTest extends TestCase {
 		$this->assertNull( TranslationTextNormalizer::decode_json_array( '{bad' ) );
 		$this->assertNull( TranslationTextNormalizer::decode_json_array( '' ) );
 		$this->assertNull( TranslationTextNormalizer::decode_json_array( array() ) );
+		$this->assertNull( TranslationTextNormalizer::decode_json_array( '["' . str_repeat( 'a', TranslationTextNormalizer::MAX_JSON_BYTES ) . '"]' ) );
 	}
 }

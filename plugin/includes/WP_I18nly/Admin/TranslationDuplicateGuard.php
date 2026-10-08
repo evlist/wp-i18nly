@@ -116,6 +116,58 @@ class TranslationDuplicateGuard {
 	}
 
 	/**
+	 * Registers the hook blocking the restoration of a duplicate from the trash.
+	 *
+	 * @return void
+	 */
+	public function register() {
+		add_filter( 'pre_untrash_post', array( $this, 'block_restoring_a_duplicate' ), 10, 2 );
+	}
+
+	/**
+	 * Refuses to restore a trashed translation when an active one exists for the same plugin and language.
+	 *
+	 * A trashed translation does not block the creation of a new one, so restoring it later could leave two
+	 * active translations for the same pair, which the duplicate check forbids everywhere else.
+	 *
+	 * @param bool|null $untrash Short-circuit value of the filter.
+	 * @param object    $post Post about to be restored.
+	 * @return bool|null
+	 */
+	public function block_restoring_a_duplicate( $untrash, $post ) {
+		if ( ! is_object( $post ) || ! isset( $post->ID, $post->post_type ) || $this->post_type !== (string) $post->post_type ) {
+			return $untrash;
+		}
+
+		$source_slug     = (string) get_post_meta( (int) $post->ID, $this->meta_source_slug, true );
+		$target_language = (string) get_post_meta( (int) $post->ID, $this->meta_target_language, true );
+
+		if ( '' === $source_slug || '' === $target_language ) {
+			return $untrash;
+		}
+
+		$existing_translation_id = $this->find_duplicate_translation_id( $source_slug, $target_language, (int) $post->ID );
+
+		if ( $existing_translation_id <= 0 ) {
+			return $untrash;
+		}
+
+		$repository = $this->repository instanceof TranslationRepository ? $this->repository : new TranslationRepository();
+		$message    = esc_html(
+			sprintf(
+				/* translators: 1: plugin, 2: language. */
+				__( 'This translation cannot be restored: another translation already exists for %1$s in %2$s. Delete one of them, or open the existing one.', 'i18nly' ),
+				$source_slug,
+				$target_language
+			)
+		);
+
+		$message .= '<p><a class="button button-primary" href="' . esc_url( $repository->get_edit_url( $existing_translation_id ) ) . '">' . esc_html__( 'Open existing translation', 'i18nly' ) . '</a></p>';
+
+		wp_die( wp_kses_post( $message ), esc_html__( 'Duplicate translation', 'i18nly' ), array( 'response' => 409 ) );
+	}
+
+	/**
 	 * Handles duplicate translation creation attempt.
 	 *
 	 * @param int    $new_post_id New post ID.

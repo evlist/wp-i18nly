@@ -14,6 +14,8 @@ use WP_I18nly\Build\PotSourceEntryExtractor;
 use WP_I18nly\Build\PotSourceImporter;
 use WP_I18nly\Build\PotWorkspaceService;
 
+use WP_I18nly\LinguisticResources\TranslationEditorRowsProvider;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -183,11 +185,24 @@ class TranslationAjaxController {
 		$render_entries_table = $this->render_entries_table_callback;
 		$source_entries       = $get_source_entries( $translation_id, $source_slug );
 
+		$truncation_notice = '';
+
+		if ( count( $source_entries ) >= TranslationEditorRowsProvider::ROW_LIMIT ) {
+			$truncation_notice = '<div class="notice notice-warning inline"><p>' . esc_html(
+				sprintf(
+					/* translators: %d: number of entries displayed. */
+					__( 'Only the first %d entries are displayed and can be edited here; the others are not shown yet. The exported files contain all the translated entries.', 'i18nly' ),
+					TranslationEditorRowsProvider::ROW_LIMIT
+				)
+			) . '</p></div>';
+		}
+
 		wp_send_json_success(
 			array(
 				'translation_id' => $translation_id,
 				'entries_count'  => count( $source_entries ),
-				'html'           => $render_entries_table( $source_entries ),
+				// The load time travels with the form: saving skips what someone else changed after it.
+				'html'           => '<input type="hidden" name="i18nly_loaded_at" value="' . esc_attr( gmdate( 'Y-m-d H:i:s' ) ) . '" />' . $truncation_notice . $render_entries_table( $source_entries ),
 			)
 		);
 	}

@@ -474,14 +474,17 @@ class AdminPageRenderTest extends TestCase {
 			 * @param int    $translation_id Translation ID.
 			 * @param string $source_slug Source slug.
 			 * @param array  $entries_payload Posted entries payload.
-			 * @return void
+			 * @param string $loaded_at Load time.
+			 * @return int
 			 */
-			protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+			protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload, $loaded_at = '' ) {
 				$this->captured_payload = array(
 					'translation_id'  => (int) $translation_id,
 					'source_slug'     => (string) $source_slug,
 					'entries_payload' => $entries_payload,
 				);
+
+				return 0;
 			}
 		};
 
@@ -540,14 +543,17 @@ class AdminPageRenderTest extends TestCase {
 			 * @param int    $translation_id Translation ID.
 			 * @param string $source_slug Source slug.
 			 * @param array  $entries_payload Posted entries payload.
-			 * @return void
+			 * @param string $loaded_at Load time.
+			 * @return int
 			 */
-			protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
+			protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload, $loaded_at = '' ) {
 				$this->captured_payload = array(
 					'translation_id'  => (int) $translation_id,
 					'source_slug'     => (string) $source_slug,
 					'entries_payload' => $entries_payload,
 				);
+
+				return 0;
 			}
 		};
 

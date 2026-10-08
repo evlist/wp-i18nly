@@ -204,8 +204,8 @@ class AdminPage {
 			self::POST_TYPE,
 			self::META_SOURCE_SLUG,
 			self::META_TARGET_LANGUAGE,
-			function ( $translation_id, $source_slug, array $entries_payload ) {
-				$this->persist_translation_entries( $translation_id, $source_slug, $entries_payload );
+			function ( $translation_id, $source_slug, array $entries_payload, $loaded_at = '' ) {
+				return $this->persist_translation_entries( $translation_id, $source_slug, $entries_payload, $loaded_at );
 			},
 			function ( $source_slug, $target_language, $current_post_id ) {
 				return $this->get_duplicate_guard()->find_duplicate_translation_id( $source_slug, $target_language, $current_post_id );
@@ -234,10 +234,11 @@ class AdminPage {
 	 * @param int    $translation_id Translation ID.
 	 * @param string $source_slug Source slug.
 	 * @param array  $entries_payload Entries payload.
-	 * @return void
+	 * @param string $loaded_at GMT time at which the editor loaded the translation.
+	 * @return int Number of forms not saved because of concurrent changes.
 	 */
-	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload ) {
-		$this->get_translation_entries_persister()->persist( (int) $translation_id, (string) $source_slug, $entries_payload );
+	protected function persist_translation_entries( $translation_id, $source_slug, array $entries_payload, $loaded_at = '' ) {
+		return $this->get_translation_entries_persister()->persist( (int) $translation_id, (string) $source_slug, $entries_payload, (string) $loaded_at );
 	}
 
 	/**

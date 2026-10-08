@@ -10,6 +10,7 @@
 
 namespace WP_I18nly\Admin;
 
+use WP_I18nly\Admin\UI\SaveConflictNotice;
 use WP_I18nly\Support\TranslationTextNormalizer;
 
 defined( 'ABSPATH' ) || exit;
@@ -80,7 +81,7 @@ class TranslationSaveHandler {
 	 * @param string   $post_type Translation post type.
 	 * @param string   $meta_source_slug Source slug meta key.
 	 * @param string   $meta_target_language Target language meta key.
-	 * @param callable $persist_entries_callback Persist callback.
+	 * @param callable $persist_entries_callback Persist callback, receiving the translation ID, the source slug, the payload and the load time, and returning the number of forms not saved because of concurrent changes.
 	 * @param callable $find_duplicate_callback Duplicate lookup callback.
 	 * @param callable $handle_duplicate_callback Duplicate handling callback.
 	 * @param callable $is_valid_source_slug_callback Returns whether a posted source slug is an installed plugin.
@@ -180,13 +181,21 @@ class TranslationSaveHandler {
 				}
 			}
 
+			$loaded_at = isset( $_POST['i18nly_loaded_at'] ) ? sanitize_text_field( wp_unslash( $_POST['i18nly_loaded_at'] ) ) : '';
+			$loaded_at = 1 === preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $loaded_at ) ? $loaded_at : '';
+
 			if ( ! empty( $entries_payload ) ) {
-				call_user_func(
+				$conflicts = (int) call_user_func(
 					$this->persist_entries_callback,
 					(int) $post_id,
 					$source_slug,
-					$this->normalize_translation_entries_payload( $entries_payload )
+					$this->normalize_translation_entries_payload( $entries_payload ),
+					$loaded_at
 				);
+
+				if ( $conflicts > 0 ) {
+					SaveConflictNotice::remember( (int) $post_id, $conflicts );
+				}
 			}
 		}
 

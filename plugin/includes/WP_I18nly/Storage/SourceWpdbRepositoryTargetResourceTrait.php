@@ -142,6 +142,20 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 			ARRAY_A
 		);
 
+		// One query for the targets that exist, instead of one per entry and form: the editor calls this at every load.
+		$existing_targets = array();
+
+		foreach ( (array) $this->db_get_results(
+			$this->wpdb->prepare(
+				'SELECT source_entry_id, form_index FROM %i WHERE resource_id = %d',
+				$targets_table,
+				$target_resource_id
+			),
+			ARRAY_A
+		) as $existing_row ) {
+			$existing_targets[ (int) $existing_row['source_entry_id'] . ':' . (int) $existing_row['form_index'] ] = true;
+		}
+
 		$inserted = 0;
 
 		foreach ( $source_rows as $source_row ) {
@@ -155,17 +169,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 			$required_forms = $has_plural ? $max_forms : 1;
 
 			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
-				$existing_target_id = (int) $this->db_get_var(
-					$this->wpdb->prepare(
-						'SELECT id FROM %i WHERE resource_id = %d AND source_entry_id = %d AND form_index = %d',
-						$targets_table,
-						$target_resource_id,
-						$source_entry_id,
-						$form_index
-					)
-				);
-
-				if ( $existing_target_id > 0 ) {
+				if ( isset( $existing_targets[ $source_entry_id . ':' . $form_index ] ) ) {
 					continue;
 				}
 
@@ -261,6 +265,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 					'status'          => isset( $row['translated_status'] ) ? (string) $row['translated_status'] : 'draft',
 					'used_ai'         => isset( $row['used_ai'] ) ? (int) $row['used_ai'] : 0,
 					'used_manual'     => isset( $row['used_manual'] ) ? (int) $row['used_manual'] : 1,
+					'updated_at_gmt'  => isset( $row['translation_updated_at_gmt'] ) ? (string) $row['translation_updated_at_gmt'] : '',
 				);
 			}
 		}

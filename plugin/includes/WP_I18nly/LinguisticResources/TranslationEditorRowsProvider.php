@@ -21,7 +21,7 @@ class TranslationEditorRowsProvider {
 	/**
 	 * Maximum number of rows loaded for the editor.
 	 */
-	private const ROW_LIMIT = 500;
+	public const ROW_LIMIT = 500;
 
 	/**
 	 * Translation resource repository.

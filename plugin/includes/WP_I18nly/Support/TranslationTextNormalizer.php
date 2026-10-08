@@ -25,6 +25,11 @@ defined( 'ABSPATH' ) || exit;
  */
 class TranslationTextNormalizer {
 	/**
+	 * Maximum size of a posted JSON document, in bytes: far above a real translation, below what could exhaust memory.
+	 */
+	public const MAX_JSON_BYTES = 10485760;
+
+	/**
 	 * Normalizes one text.
 	 *
 	 * @param mixed $value Raw (already unslashed) value.
@@ -48,7 +53,7 @@ class TranslationTextNormalizer {
 	 * @return array<int|string, mixed>|null Decoded array, or null when the value is not a JSON array/object.
 	 */
 	public static function decode_json_array( $raw ) {
-		if ( ! is_string( $raw ) || '' === $raw ) {
+		if ( ! is_string( $raw ) || '' === $raw || strlen( $raw ) > self::MAX_JSON_BYTES ) {
 			return null;
 		}
 

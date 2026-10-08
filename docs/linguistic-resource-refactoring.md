@@ -493,6 +493,24 @@ Validation after removal: `phpcs`, PHPUnit and JS suites green, REUSE lint green
 
 #### H6: Robustness and scale (audit I4, I5, I9)
 
+Status: partly done (2026-10-08).
+
+Done:
+
+- **N+1 queries (I5).** `ensure_translation_target_rows()`, called at every load of the editor and at every save, issued one SELECT per entry and per form; it now reads the existing targets with one query and inserts only the missing ones. Test with a query counter.
+- **Concurrent edits (I4).** WordPress already locks a post being edited ("X is currently editing", with take over), which covers the usual case. For the rest, the table sent to the editor carries a hidden `i18nly_loaded_at` field (GMT time of the load); on save, `TranslationEntriesPersister` skips every form that was saved by someone else after that time with a different, non-empty text, and the user sees a warning (`Admin\UI\SaveConflictNotice`, transient per user and post) saying how many forms kept the other version. Limit: a conflicting edit of the user is lost, with a count but without the detail; resolution is by form, not by merge; the time has a one-second resolution.
+- **Restoring from the trash (I9).** Decision: restoring is refused when an active translation exists for the same plugin and language (`pre_untrash_post` filter in `TranslationDuplicateGuard`, 409 page with a link to the existing translation). A trashed translation still does not block the creation of a new one. This replaces the open question of `IA.md`, Known Limitations.
+- **Silent truncation (I5).** The editor shows at most 500 entries (`TranslationEditorRowsProvider::ROW_LIMIT`); a warning is now displayed above the table when the limit is reached. The exports are not limited (100000).
+- **Payload size.** Posted JSON documents above 10 MB are ignored (`TranslationTextNormalizer::MAX_JSON_BYTES`).
+
+Open:
+
+- **Real pagination of the editor.** The filters and the search of the editor work in the browser on the rows present in the page (`entry-filter-bar.js`), so paginating the rows requires moving the filters, the search and the "modified rows" tracking to the server first, and making the save payload independent of the displayed rows. Until then, plugins with more than 500 strings cannot be edited beyond the first 500 (sorted by source text).
+- Per-form resolution UI for conflicts (show the other version next to the user's).
+- `find_duplicate_translation_id()` loads all translation posts and their meta; use a meta query if the number of translations grows.
+
+Details of the original plan:
+
 Deliverables:
 
 - optimistic concurrency (revision counter or `updated_at` check) on save,

@@ -239,6 +239,55 @@ class AjaxPotGenerationTest extends TestCase {
 		$this->assertStringNotContainsString( 'name="_wpnonce"', $response['data']['html'] );
 		$this->assertStringNotContainsString( 'name="_wp_http_referer"', $response['data']['html'] );
 		$this->assertStringContainsString( 'i18nly-entry-status--draft', $response['data']['html'] );
+		$this->assertMatchesRegularExpression( '/^<input type="hidden" name="i18nly_loaded_at" value="\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" \/>/', $response['data']['html'] );
+		$this->assertStringNotContainsString( 'notice-warning', $response['data']['html'] );
+
+		unset( $_POST['translation_id'], $_POST['nonce'] );
+	}
+
+	/**
+	 * A warning is shown when the editor limit is reached.
+	 *
+	 * @return void
+	 */
+	public function test_ajax_get_translation_entries_table_warns_when_entries_are_cut() {
+		i18nly_test_set_can_manage_options( true );
+		i18nly_test_set_translations_rows(
+			array(
+				array(
+					'id'              => 42,
+					'source_slug'     => 'akismet/akismet.php',
+					'target_language' => 'fr_FR',
+				),
+			)
+		);
+		i18nly_test_reset_last_json_response();
+
+		$_POST['translation_id'] = '42';
+		$_POST['nonce']          = 'nonce-i18nly_get_translation_entries_table_42';
+
+		$page = new class() extends \WP_I18nly\Admin\AdminPage {
+			/**
+			 * Returns as many entries as the editor can show.
+			 *
+			 * @param int    $translation_id Translation ID.
+			 * @param string $source_slug Source slug.
+			 * @return array<int, array<string, mixed>>
+			 */
+			protected function get_translation_source_entries( $translation_id, $source_slug ) {
+				unset( $translation_id, $source_slug );
+
+				return array_fill( 0, \WP_I18nly\LinguisticResources\TranslationEditorRowsProvider::ROW_LIMIT, array() );
+			}
+
+		};
+
+		$page->ajax_get_translation_entries_table();
+
+		$response = i18nly_test_get_last_json_response();
+
+		$this->assertStringContainsString( 'notice-warning', $response['data']['html'] );
+		$this->assertStringContainsString( 'Only the first 500 entries', $response['data']['html'] );
 
 		unset( $_POST['translation_id'], $_POST['nonce'] );
 	}

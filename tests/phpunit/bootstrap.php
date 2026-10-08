@@ -1205,6 +1205,100 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Returns the content unchanged in tests.
+	 *
+	 * @param string $content Content.
+	 * @return string
+	 */
+	function wp_kses_post( $content ) {
+		return (string) $content;
+	}
+}
+
+if ( ! function_exists( 'wp_die' ) ) {
+	/**
+	 * Throws instead of stopping the script in tests.
+	 *
+	 * @param string $message Message.
+	 * @param string $title Title.
+	 * @param array  $args Arguments.
+	 * @return void
+	 * @throws RuntimeException Always.
+	 */
+	function wp_die( $message = '', $title = '', $args = array() ) {
+		unset( $title );
+
+		throw new RuntimeException( 'wp_die:' . ( is_array( $args ) && isset( $args['response'] ) ? (int) $args['response'] : '' ) . ':' . (string) $message );
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	/**
+	 * Stores a transient in the test runtime.
+	 *
+	 * @param string $transient Name.
+	 * @param mixed  $value Value.
+	 * @param int    $expiration Lifetime.
+	 * @return bool
+	 */
+	function set_transient( $transient, $value, $expiration = 0 ) {
+		global $i18nly_test_transients;
+
+		unset( $expiration );
+
+		$i18nly_test_transients[ (string) $transient ] = $value;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	/**
+	 * Reads a transient from the test runtime.
+	 *
+	 * @param string $transient Name.
+	 * @return mixed
+	 */
+	function get_transient( $transient ) {
+		global $i18nly_test_transients;
+
+		return isset( $i18nly_test_transients[ (string) $transient ] ) ? $i18nly_test_transients[ (string) $transient ] : false;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	/**
+	 * Deletes a transient from the test runtime.
+	 *
+	 * @param string $transient Name.
+	 * @return bool
+	 */
+	function delete_transient( $transient ) {
+		global $i18nly_test_transients;
+
+		unset( $i18nly_test_transients[ (string) $transient ] );
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+	/**
+	 * Returns a fixed user ID in tests.
+	 *
+	 * @return int
+	 */
+	function get_current_user_id() {
+		return 1;
+	}
+}
+
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
 if ( ! function_exists( 'sanitize_key' ) ) {
 	/**
 	 * Sanitizes a key like WordPress.

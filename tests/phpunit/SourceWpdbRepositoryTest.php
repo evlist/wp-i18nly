@@ -73,6 +73,41 @@ class SourceWpdbRepositoryTest extends TestCase {
 	}
 
 	/**
+	 * Ensuring the targets reads the existing ones with one query, not one per entry and form.
+	 *
+	 * @return void
+	 */
+	public function test_ensure_translation_target_rows_uses_one_query_to_find_existing_targets() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$catalog_id = $repo->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+
+		foreach ( array( 'One', 'Two', 'Three' ) as $msgid ) {
+			$wpdb_stub->seed_entry(
+				array(
+					'resource_id'        => $catalog_id,
+					'msgctxt'            => '',
+					'msgid'              => $msgid,
+					'msgid_plural'       => $msgid . 's',
+					'translator_comment' => '',
+					'status'             => 'active',
+					'last_seen_at_gmt'   => '2026-05-10 10:00:00',
+					'updated_at_gmt'     => '2026-05-10 10:00:00',
+				)
+			);
+		}
+
+		$first  = $repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00', 2 );
+		$second = $repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:05:00', 2 );
+
+		$this->assertSame( 6, $first );
+		$this->assertSame( 0, $second );
+		$this->assertSame( 2, $wpdb_stub->existing_targets_queries );
+	}
+
+	/**
 	 * Creates one translation resource row anchored on the translation post.
 	 *
 	 * @return void
@@ -310,6 +345,13 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 	private $targets = array();
 
 	/**
+	 * Number of queries listing the existing targets.
+	 *
+	 * @var int
+	 */
+	public $existing_targets_queries = 0;
+
+	/**
 	 * Seeds one resource row.
 	 *
 	 * @param array<string, mixed> $catalog Catalog row.
@@ -440,6 +482,27 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 
 		if ( false !== strpos( $query, 'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM' ) ) {
 			return $this->build_list_source_rows( $query );
+		}
+
+		if ( 1 === preg_match( '/^SELECT source_entry_id, form_index FROM\s+`?\w+i18nly_linguistic_resource_targets`?\s+WHERE resource_id = (\d+)$/', $query, $matches ) ) {
+			++$this->existing_targets_queries;
+
+			return array_values(
+				array_map(
+					static function ( $target ) {
+						return array(
+							'source_entry_id' => $target['source_entry_id'],
+							'form_index'      => $target['form_index'],
+						);
+					},
+					array_filter(
+						$this->targets,
+						static function ( $target ) use ( $matches ) {
+							return (int) $matches[1] === (int) $target['resource_id'];
+						}
+					)
+				)
+			);
 		}
 
 		if ( false !== strpos( $query, 'SELECT e.id AS source_entry_id, e.msgid_plural FROM' ) ) {

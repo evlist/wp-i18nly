@@ -23,6 +23,13 @@ class TranslationSaveHandlerTest extends TestCase {
 	private $persisted = array();
 
 	/**
+	 * Number of conflicts reported by the persist callback.
+	 *
+	 * @var int
+	 */
+	private $conflicts = 0;
+
+	/**
 	 * Resets the request, the post meta and the capability.
 	 *
 	 * @return void
@@ -32,6 +39,7 @@ class TranslationSaveHandlerTest extends TestCase {
 
 		$i18nly_test_post_meta = array();
 		$this->persisted       = array();
+		$this->conflicts       = 0;
 		$_POST                 = array( 'i18nly_translation_meta_box_nonce' => 'nonce-i18nly_translation_meta_box' );
 
 		i18nly_test_set_can_manage_options( true );
@@ -56,8 +64,10 @@ class TranslationSaveHandlerTest extends TestCase {
 			'i18nly_translation',
 			'_source',
 			'_language',
-			function ( $translation_id, $source_slug, array $entries_payload ) {
-				$this->persisted[] = array( $translation_id, $source_slug, $entries_payload );
+			function ( $translation_id, $source_slug, array $entries_payload, $loaded_at = '' ) {
+				$this->persisted[] = array( $translation_id, $source_slug, $entries_payload, $loaded_at );
+
+				return $this->conflicts;
 			},
 			static function () {
 				return 0;
@@ -166,5 +176,39 @@ class TranslationSaveHandlerTest extends TestCase {
 
 		$this->assertCount( 1, $this->persisted );
 		$this->assertSame( $forms, array_values( $this->persisted[0][2]['5']['forms'] ) );
+	}
+
+	/**
+	 * The load time is passed on when valid, and conflicts are remembered for the notice.
+	 *
+	 * @return void
+	 */
+	public function test_load_time_is_passed_and_conflicts_are_remembered() {
+		$_POST['i18nly_plugin_selector']             = 'good/good.php';
+		$_POST['i18nly_target_language_selector']    = 'fr_FR';
+		$_POST['i18nly_translation_entries_payload'] = '{"5":{"forms":{"0":"x"}}}';
+		$_POST['i18nly_loaded_at']                   = '2026-10-08 10:00:00';
+		$this->conflicts                             = 2;
+
+		$this->save();
+
+		$this->assertSame( '2026-10-08 10:00:00', $this->persisted[0][3] );
+		$this->assertSame( 2, get_transient( 'i18nly_save_conflicts_10_1' ) );
+	}
+
+	/**
+	 * A malformed load time is ignored.
+	 *
+	 * @return void
+	 */
+	public function test_malformed_load_time_is_ignored() {
+		$_POST['i18nly_plugin_selector']             = 'good/good.php';
+		$_POST['i18nly_target_language_selector']    = 'fr_FR';
+		$_POST['i18nly_translation_entries_payload'] = '{"5":{"forms":{"0":"x"}}}';
+		$_POST['i18nly_loaded_at']                   = 'yesterday';
+
+		$this->save();
+
+		$this->assertSame( '', $this->persisted[0][3] );
 	}
 }
