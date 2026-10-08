@@ -22,11 +22,10 @@ The product goal is to let users work with translations as first-class content o
 
 ## Verified Current State
 
-As verified in this repository on May 2, 2026:
+As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- current HEAD: `82c5923` — `Brainstorming around glossaries (aligning glossaries and translations)`,
-- PHPUnit status: `OK (140 tests, 589 assertions)`,
+- PHPUnit status: `OK (150 tests, 666 assertions)`,
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -148,15 +147,19 @@ Current identity metadata is stored in post meta:
 
 The current canonical business tables are created by `SourceSchemaManager`:
 
-- `i18nly_source_catalogs`,
-- `i18nly_source_entries`,
-- `i18nly_translated_entries`.
+- `i18nly_linguistic_resources`,
+- `i18nly_linguistic_resource_entries`,
+- `i18nly_linguistic_resource_targets`.
 
 These tables currently hold:
 
-- extracted source catalog metadata,
-- extracted source entries,
-- translated forms keyed by translation, source entry, and `form_index`.
+- resource rows: one `source_catalog` row per extracted plugin catalog, and one `translation` row per translation, the latter anchored on the WordPress post through `anchor_post_id`,
+- source entries, which belong to a `source_catalog` resource,
+- target values keyed by translation resource, source entry, and `form_index`.
+
+The `i18nly_linguistic_resource_links` and `i18nly_linguistic_resource_compilations` tables from the refactoring plan are intentionally not created yet; they are only needed by the glossary slices.
+
+Known gap: `TranslationResource::get_resource_id()` in the editor model still carries the translation post ID, not the storage resource ID.
 
 ### Translation entry semantics
 

@@ -306,6 +306,8 @@ Validation:
 
 ### Slice 2: Introduce resource-centric schema and repositories
 
+Status: done for the tables needed by translations (`linguistic_resources`, `_entries`, `_targets`). Translations own a `translation` resource row anchored on the post, targets reference it, and the legacy catalog/translated-entry aliases are removed. The `_links` and `_compilations` tables are deferred to Slice 6, when glossaries need them.
+
 Goal:
 
 - replace translation-centric business tables with the new resource-centric tables.
