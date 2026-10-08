@@ -398,6 +398,8 @@ Validation: security tests green; manual check as Contributor, Author and Admini
 
 Status: done. `Support\TranslationTextNormalizer` replaces `sanitize_text_field()`/`sanitize_textarea_field()` for translations, source texts sent to DeepL and the JSON payloads (it only removes invalid UTF-8 and control characters, and normalizes line breaks to `\n`). A double `wp_unslash()` of the entries payload, which corrupted backslashes and quotes, was removed. The PHPUnit stubs of `wp_unslash()` and `sanitize_text_field()` now behave like WordPress's, which is what had hidden these bugs. Output stays escaped (`esc_html` in the list table). Not done: size limits on payloads (see H6).
 
+Correction (found during H6): the first H2 commit missed `Support\TranslationEntriesPersister`, which still called `sanitize_text_field()` just before saving, so translations were still altered in production; the save-handler test did not see it because it replaces the persister with a callback. The persister now uses `TranslationTextNormalizer` (test `TranslationEntriesPersisterTest`, checked to fail with the old call), and its unused duplicate `normalize()` method was removed.
+
 Goal:
 
 - store exactly what the translator typed.
