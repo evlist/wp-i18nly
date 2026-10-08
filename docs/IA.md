@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (214 tests, 1013 assertions)`, plus 65 JavaScript tests (`tests/js`),
+- PHPUnit status: `OK (233 tests, 1095 assertions)`, plus 65 JavaScript tests (`tests/js`),
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -234,6 +234,13 @@ Current usage model:
 
 This quota-aware behavior is part of the implemented product, not just a design note.
 
+### Server-side structure
+
+- `TranslationAiAjaxHandler` handles the requests of the single and batch endpoints: parameters, capability, nonce, translation lookup, API key, quota guard, and the JSON answers.
+- `TranslationBatchTranslator` translates one batch and knows nothing about HTTP: it prepares the texts, calls the provider once, derives the status of each translation, persists it and runs the throttle, rate limit and post-batch callbacks.
+- The nonce verification stays inside each endpoint method, next to the request data it protects: the WordPress sniffs of the shared ruleset only accept it there, and the custom ruleset forbids `phpcs:ignore` comments in the plugin.
+- The batch endpoint accepts the batch nonce and the single-entry nonce. The editor script sends the single-entry nonce for batches, so both must stay valid.
+
 ### Current plural heuristic in AI flow
 
 The current AI plural mapping logic is intentionally limited:
@@ -278,6 +285,7 @@ Implemented extraction work includes dedicated collaborators such as:
 - `TranslationEntriesListTable`,
 - `AiTranslationManager`,
 - `TranslationFilterQuery` (entries filter query handling),
+- `UI\EntryStatusBadges` and `UI\PluralFormPresenter` (badges and plural form metadata used by `TranslationEntriesListTable`),
 - `DeepLUsageWidgets` (dashboard widget and edit-screen gauge),
 - `DeepLUsageFactory` (single place building the DeepL usage status provider from saved settings),
 - `TranslationDuplicateGuard` (duplicate translation detection),
@@ -325,6 +333,14 @@ The build namespace and supporting classes exist and are real:
 - `PotSourceImporter`,
 - `PotSourceEntryExtractor`,
 - `PotWorkspaceService`.
+
+`PotSourceEntryExtractor` only orchestrates: it finds the source files and merges the entries found in several places (same context, string and plural) into one entry with all its references. The extraction itself is delegated by kind of source:
+
+- `PluginSourceFiles`: main file resolution and file discovery (a directory plugin is scanned recursively, a root-level single-file plugin never triggers a scan of the plugins root),
+- `PhpGettextExtractor`: PHP code (tokenizer) and Blade templates,
+- `JsGettextExtractor`: JavaScript and JSX (Peast syntax tree) and the sources embedded in `.js.map` files,
+- `JsonI18nExtractor`: `block.json`, `theme.json` and style variations,
+- `GettextPlaceholders`: printf placeholder detection shared by the PHP and JS extractors.
 
 What is implemented today is mainly:
 
@@ -434,6 +450,22 @@ This repository should continue to follow a small-slice XP workflow:
 - behavior-oriented tests,
 - deletion of stale scaffolding rather than speculative accumulation.
 
+## Validation
+
+Run these before pushing. The CI runs PHPUnit, the repository-wide phpcs check, `reuse lint` and Plugin Check (`WORKFLOWS_CI_TESTS` in `.devcontainer/.cs_env.d/30-i18nly.local.env`).
+
+- **PHPUnit**: `phpunit` from the repository root (`phpunit.xml`). Expected: `OK`.
+- **phpcs, as the CI runs it**: `phpcs --standard=.vscode/phpcs.xml .` from the repository root. Expected: no output and exit code 0. The ruleset sets `warning-severity` to 0, so only errors count, and it scans the tests as well as the plugin.
+- **phpcs, with warnings**: the codespace alias `phpcs` adds `--warning-severity=1`. Running it on `plugin` only hides the errors of the test files, so run it on the whole repository. The warnings that remain are informative: files above the 400-line recommendation of the custom `FileLength` sniff (the hard limit that raises an error is 700 lines), the reserved parameter names `$resource` and `$default` in two abstract classes, and the direct `fwrite()` of `FileLockThrottle`.
+- **JavaScript tests**: `cd tests/js && npm install && npm test`. They are not run by the CI yet; `tests/js/README.md` explains how to enable them.
+- **REUSE**: `reuse lint`. If `tests/js/node_modules` exists locally it is listed as non-compliant although git ignores it; the CI checkout does not have it.
+
+What the automated tests do not cover:
+
+- **No real database.** The repository tests run on an in-memory double (`tests/phpunit/support/class-i18nly-test-inmemory-wpdb.php`). It emulates unique keys, defaults, transactions with rollback and the simple `SELECT` statements the repositories use; it approximates the case folding of a MySQL `*_ci` collation (no accent folding) and rejects any statement it does not know. SQL syntax, indexes and `dbDelta` behavior are therefore not verified against MySQL.
+- **No real WordPress.** The admin screens, hooks and AJAX endpoints run against stubs. The editor script is tested in jsdom, and was checked once by hand in Chromium with a simulated `admin-ajax`, not in a full WordPress with DeepL.
+- **Plugin Check** is only run by the CI.
+
 ## Known Limitations
 
 ### Restoring a trashed translation
@@ -453,16 +485,46 @@ Possible fixes, not implemented:
 
 Any decision should also settle whether a trashed translation should keep blocking or not.
 
+### Source extraction
+
+The extractor output is pinned by `PotSourceEntryExtractorGoldenTest`, limits included:
+
+- fully qualified PHP calls such as `\__( 'text' )` or `\esc_html__( 'text' )` are not extracted (PHP 8 tokenizes them as a single name); calls after `use function __;` are,
+- a TypeScript file containing type syntax cannot be parsed by Peast and yields no entry, silently; `.ts` files without type syntax and `.jsx` files work,
+- a method call such as `$object->__( 'text' )` is extracted as if it were gettext,
+- a Blade template is scanned twice, as a PHP file and after Blade compilation; the duplicates are merged,
+- the two printf detection patterns of `GettextPlaceholders` overlap: the second one already matches everything the first one does.
+
+### Schema changes and development databases
+
+The schema version is stored in the `i18nly_source_schema_version` option and `dbDelta` runs when it changes. `dbDelta` adds missing columns and indexes but never drops or alters an existing one, and there is no migration (see the refactoring plan). After a version bump that changes a key, a development database must be reset (drop the `i18nly_linguistic_resource*` tables and delete the option). For instance, version 0.3.1 replaced the unique key `resource_identity` by `resource_scope`; a database created earlier keeps the old key, which blocks recreating a translation after its predecessor was trashed.
+
+### Glossaries
+
+- there is no human readable glossary name (the slug is the only label), no editor model, no UI, no import or export format (CSV, TBX...) and no DeepL glossary synchronization,
+- terms are unique per glossary ignoring case; the repository checks it with PHP case folding, while the database key relies on the collation, so the two can disagree on accented characters,
+- the glossary persistence has only been tested on the in-memory double (see Validation).
+
+### Editor script quirks kept on purpose
+
+These behaviors predate the refactoring of the script and are pinned by the jsdom tests:
+
+- the hidden payload field is rebuilt on input events and on submit; after an AI translation, or after choosing a quality status on an empty field, it is only up to date again at the next input or at submit,
+- the browser `alert()` fallback of the AI error dialog is unreachable while the message is not empty, which is always the case,
+- the `suppressNotice` flag of the modified rows tracker has no observable effect after "Apply filters and close", because the tracked rows are emptied anyway.
+
 ## Open Items
 
 The most meaningful current open items are:
 
 1. finish reducing `AdminPage` to a thin composition facade (about 650 lines today, target under 400),
-2. decide and implement the first glossary slice,
-3. introduce the linguistic-resource refactoring only when it supports a concrete glossary/translation slice,
-4. define a real translation revision/history model if revision browsing becomes product-critical,
-5. clarify the long-term artifact build/save pipeline for final PO/MO/JSON generation,
-6. optionally add better runtime observability for AI translation and throttling behavior.
+2. build the glossary UI and usage on top of the backend: editor model and screen (slice 5), links to translations, QA and DeepL glossary synchronization (slice 6),
+3. define a real translation revision/history model if revision browsing becomes product-critical,
+4. clarify the long-term artifact build/save pipeline for final PO/MO/JSON generation,
+5. decide how to handle the restoration of a trashed translation (see Known Limitations),
+6. extend the source extractor: fully qualified PHP calls, and TypeScript with type syntax (see Known Limitations),
+7. run the JavaScript tests in the CI (see `tests/js/README.md`),
+8. optionally add better runtime observability for AI translation and throttling behavior.
 
 ## Scope Rule for Future Updates
 
