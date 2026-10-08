@@ -602,21 +602,49 @@ class AdminPageRenderTest extends TestCase {
 			public $captured_duplicate = array();
 
 			/**
-			 * Captures duplicate handling call.
+			 * Returns a guard capturing the duplicate handling call.
 			 *
-			 * @param int    $new_post_id New post ID.
-			 * @param int    $existing_translation_id Existing translation ID.
-			 * @param string $source_slug Source slug.
-			 * @param string $target_language Target language.
-			 * @return void
+			 * @return \WP_I18nly\Admin\TranslationDuplicateGuard
 			 */
-			protected function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
-				$this->captured_duplicate = array(
-					'new_post_id'             => (int) $new_post_id,
-					'existing_translation_id' => (int) $existing_translation_id,
-					'source_slug'             => (string) $source_slug,
-					'target_language'         => (string) $target_language,
-				);
+			protected function get_duplicate_guard() {
+				$page = $this;
+
+				return new class( $page ) extends \WP_I18nly\Admin\TranslationDuplicateGuard {
+					/**
+					 * Page capturing the call.
+					 *
+					 * @var object
+					 */
+					private $page;
+
+					/**
+					 * Constructor.
+					 *
+					 * @param object $page Page capturing the call.
+					 */
+					public function __construct( $page ) {
+						parent::__construct( 'i18nly_translation', '_i18nly_source_slug', '_i18nly_target_language', 'post-new.php?post_type=i18nly_translation' );
+						$this->page = $page;
+					}
+
+					/**
+					 * Captures duplicate handling call.
+					 *
+					 * @param int    $new_post_id New post ID.
+					 * @param int    $existing_translation_id Existing translation ID.
+					 * @param string $source_slug Source slug.
+					 * @param string $target_language Target language.
+					 * @return void
+					 */
+					public function handle_duplicate_translation_creation( $new_post_id, $existing_translation_id, $source_slug, $target_language ) {
+						$this->page->captured_duplicate = array(
+							'new_post_id'             => (int) $new_post_id,
+							'existing_translation_id' => (int) $existing_translation_id,
+							'source_slug'             => (string) $source_slug,
+							'target_language'         => (string) $target_language,
+						);
+					}
+				};
 			}
 		};
 
