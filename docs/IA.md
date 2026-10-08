@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (166 tests, 715 assertions)`,
+- PHPUnit status: `OK (172 tests, 804 assertions)`, plus 65 JavaScript tests (`tests/js`),
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -295,6 +295,25 @@ For new code, keep responsibilities separated across:
 - UI rendering,
 - business/storage services,
 - technical support helpers.
+
+## Front-end Architecture
+
+The translation edit screen script is split into ES2015 classes under `plugin/assets/js/`, mirroring the PHP linguistic resource split. There is no build step: files share the `window.I18nly` namespace and are loaded as separate scripts, in the order of the manifest returned by `EditScreenAssets::get_script_definitions()`.
+
+Generic layer, `linguistic-resource/` (independent of the resource kind):
+
+- `AbstractLinguisticResourceEditor`: loads the entries table, keeps the hidden payload field of the post form in sync, applies filters, handles row selection, bulk actions and quality menus. Concrete editors implement `createRow()` and extend `getBulkActionHandlers()`, `bindRowControls()` and `onBoot()`.
+- `AbstractLinguisticResourceRow`: one table row (inputs, quality and provenance tokens, filter matching, copy/clear/mark operations, payload serialization). Concrete rows implement `getKind()`.
+- `EntryBadges`, `EntryFilterBar`, `ModifiedRowsTracker`, `AjaxClient`, `UiText`: stateless helpers and small collaborators.
+
+Translation layer, `translation/`:
+
+- `TranslationEditor` and `TranslationRow`: the first concrete editor and row.
+- `AiBatchTranslation`, `AiErrorDialog`, `DeepLUsageGauge`: AI translation specifics.
+
+`translation-edit.js` is only the entry point and keeps its handle and globals (`window.i18nlyTranslationEditConfig`, `window.i18nlyRebuildEntriesPayload`, `window.i18nlyPotInitDone`).
+
+The JavaScript behavior is covered by jsdom tests in `tests/js` (see its README); the HTML fixtures they use are generated from the PHP renderers. A glossary editor will extend the same abstract classes.
 
 ## Build and Revision Status
 

@@ -22,4 +22,4 @@ Node.js 20 or later is required. These tests are not part of the PHP CI workflow
   npm run fixtures
   ```
 
-- When a script is added, renamed or split, update `helpers/scripts.js`: it must list the files in the order WordPress loads them.
+- When a script is added, renamed or split, update `helpers/scripts.js` together with `EditScreenAssets`: it must list the same files in the same order. A PHPUnit test (`EditScreenAssetsTest`) fails when they drift apart.

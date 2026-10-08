@@ -330,6 +330,8 @@ Validation:
 
 ### Slice 3: Introduce JS editor abstraction for translations
 
+Status: done. `AbstractLinguisticResourceEditor` and `AbstractLinguisticResourceRow` are implemented by `TranslationEditor` and `TranslationRow` (ES2015 classes, no build step, shared `window.I18nly` namespace, one script per class). Behavior is pinned by the jsdom suite in `tests/js`. `AbstractLinguisticResourceTarget` has no JS counterpart yet: targets are still the inputs of a row.
+
 Goal:
 
 - make the current translation editor the first concrete implementation of a generic resource editor.
