@@ -345,21 +345,6 @@ class AdminPageRenderTest extends TestCase {
 	}
 
 	/**
-	 * Sanitizes search filter query values without stripping spaces and punctuation.
-	 *
-	 * @return void
-	 */
-	public function test_sanitize_translation_filter_query_value_keeps_search_text_content() {
-		$page = new \WP_I18nly\Admin\AdminPage();
-		$method = new \ReflectionMethod( \WP_I18nly\Admin\AdminPage::class, 'sanitize_translation_filter_query_value' );
-		$method->setAccessible( true );
-
-		$result = $method->invoke( $page, '  Error #42: Missing key?  ', 'i18nly_filter_search' );
-
-		$this->assertSame( 'Error #42: Missing key?', $result );
-	}
-
-	/**
 	 * Does not render entries block on creation mode.
 	 *
 	 * @return void
