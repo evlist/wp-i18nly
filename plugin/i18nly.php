@@ -68,6 +68,9 @@ function i18nly_bootstrap() {
 	$admin_page = new \WP_I18nly\Admin\AdminPage();
 	$admin_page->register();
 
+	$resource_cleaner = new \WP_I18nly\Support\TranslationResourceCleaner();
+	add_action( 'before_delete_post', array( $resource_cleaner, 'handle_before_delete_post' ), 10, 2 );
+
 	$settings_page = new \WP_I18nly\Admin\TranslationSettingsPage();
 	add_action( 'admin_menu', array( $settings_page, 'register_menu' ) );
 	add_action( 'admin_init', array( $settings_page, 'register_settings' ) );

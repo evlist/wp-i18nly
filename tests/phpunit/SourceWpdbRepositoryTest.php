@@ -139,6 +139,61 @@ class SourceWpdbRepositoryTest extends TestCase {
 	}
 
 	/**
+	 * Deletes one translation resource with its targets and nothing else.
+	 *
+	 * @return void
+	 */
+	public function test_delete_translation_resource_removes_resource_and_its_targets_only() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$catalog_id = $repo->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$wpdb_stub->seed_entry(
+			array(
+				'resource_id'  => $catalog_id,
+				'msgctxt'      => '',
+				'msgid'        => 'Hello world',
+				'msgid_plural' => '',
+				'status'       => 'active',
+			)
+		);
+
+		$repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00', 2 );
+		$repo->ensure_translation_target_rows( 43, 'sample-plugin/sample.php', 'de_DE', '2026-05-10 11:00:00', 2 );
+		$kept_resource_id = $repo->find_translation_resource_id( 43 );
+
+		$this->assertTrue( $repo->delete_translation_resource( 42 ) );
+
+		$this->assertSame( 0, $repo->find_translation_resource_id( 42 ) );
+		$this->assertSame( $kept_resource_id, $repo->find_translation_resource_id( 43 ) );
+		$this->assertCount( 1, $wpdb_stub->get_targets() );
+		$this->assertSame( $kept_resource_id, $wpdb_stub->get_targets()[0]['resource_id'] );
+		$this->assertCount( 2, $wpdb_stub->get_resources() );
+		$this->assertFalse( $repo->delete_translation_resource( 42 ) );
+	}
+
+	/**
+	 * Lets a new translation reuse the identity of a trashed one.
+	 *
+	 * @return void
+	 */
+	public function test_new_translation_resource_coexists_with_trashed_translation_of_same_identity() {
+		$wpdb_stub = new I18nly_Test_WPDB_Repository_Stub();
+		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
+		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
+
+		$trashed = $repo->ensure_translation_resource( 42, 'sample-plugin/sample.php', 'fr_FR', '2026-05-10 11:00:00' );
+		$new     = $repo->ensure_translation_resource( 77, 'sample-plugin/sample.php', 'fr_FR', '2026-05-11 11:00:00' );
+
+		$this->assertGreaterThan( 0, $trashed );
+		$this->assertGreaterThan( 0, $new );
+		$this->assertNotSame( $trashed, $new );
+		$this->assertSame( $new, $repo->find_translation_resource_id( 77 ) );
+		$this->assertSame( $trashed, $repo->find_translation_resource_id( 42 ) );
+	}
+
+	/**
 	 * Lists source rows through the new resource-centric alias.
 	 *
 	 * @return void
@@ -250,6 +305,44 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 		$this->insert_id = 0;
 
 		return $entry_id;
+	}
+
+	/**
+	 * Deletes rows matching a simple where clause.
+	 *
+	 * @param string               $table Table name.
+	 * @param array<string, mixed> $where Match conditions.
+	 * @param array<int, string>   $where_format Where formats.
+	 * @return int|false
+	 */
+	public function delete( $table, $where, $where_format = null ) {
+		unset( $where_format );
+
+		$table   = (string) $table;
+		$deleted = 0;
+
+		if ( false !== strpos( $table, 'i18nly_linguistic_resource_targets' ) ) {
+			$property = 'targets';
+		} elseif ( false !== strpos( $table, 'i18nly_linguistic_resources' ) ) {
+			$property = 'catalogs';
+		} else {
+			return false;
+		}
+
+		foreach ( $this->{$property} as $index => $row ) {
+			foreach ( $where as $column => $value ) {
+				if ( ! isset( $row[ $column ] ) || (int) $row[ $column ] !== (int) $value ) {
+					continue 2;
+				}
+			}
+
+			unset( $this->{$property}[ $index ] );
+			++$deleted;
+		}
+
+		$this->{$property} = array_values( $this->{$property} );
+
+		return $deleted;
 	}
 
 	/**

@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (150 tests, 666 assertions)`,
+- PHPUnit status: `OK (154 tests, 681 assertions)`,
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -153,7 +153,7 @@ The current canonical business tables are created by `SourceSchemaManager`:
 
 These tables currently hold:
 
-- resource rows: one `source_catalog` row per extracted plugin catalog, and one `translation` row per translation, the latter anchored on the WordPress post through `anchor_post_id`,
+- resource rows: one `source_catalog` row per extracted plugin catalog, and one `translation` row per translation, the latter anchored on the WordPress post through `anchor_post_id` (`0` for source catalogs); a translation resource is deleted with its targets when its post is permanently deleted, while a trashed translation keeps its data,
 - source entries, which belong to a `source_catalog` resource,
 - target values keyed by translation resource, source entry, and `form_index`.
 

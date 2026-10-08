@@ -83,6 +83,28 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 	}
 
 	/**
+	 * Deletes the translation resource row anchored on one post, with its target rows.
+	 *
+	 * @param int $translation_id Translation post ID.
+	 * @return bool True when a resource row was deleted.
+	 */
+	public function delete_translation_resource( $translation_id ) {
+		$resource_id   = $this->find_translation_resource_id( $translation_id );
+		$resources_tbl = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+		$targets_tbl   = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
+
+		if ( $resource_id <= 0 || '' === $resources_tbl || '' === $targets_tbl ) {
+			return false;
+		}
+
+		$this->wpdb->delete( $targets_tbl, array( 'resource_id' => $resource_id ), array( '%d' ) );
+
+		$deleted = $this->wpdb->delete( $resources_tbl, array( 'id' => $resource_id ), array( '%d' ) );
+
+		return false !== $deleted && $deleted > 0;
+	}
+
+	/**
 	 * Ensures target rows exist for all source entries of one translation.
 	 *
 	 * @param int    $translation_id Translation post ID.

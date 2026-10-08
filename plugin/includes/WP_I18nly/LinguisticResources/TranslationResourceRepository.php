@@ -46,6 +46,16 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	}
 
 	/**
+	 * Deletes one translation resource with its target rows.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return bool
+	 */
+	public function delete_translation_resource( $translation_id ) {
+		return (bool) $this->get_storage_repository()->delete_translation_resource( (int) $translation_id );
+	}
+
+	/**
 	 * Returns editor rows for one translation resource.
 	 *
 	 * @param int    $translation_id Translation ID.
