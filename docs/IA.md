@@ -940,7 +940,7 @@ The project audit (`docs/AUDIT.md`) reorders the work. Hardening slices H1-H7 ar
 4. H4 uninstall, activation and schema migrations: done,
 5. H5 PO/MO/JSON export pipeline and decision about the vendored wp-cli code: PO and MO download (H5a), JSON files of the scripts (H5b), direct installation (H5c) and extractor comparison (H5d) done; `.l10n.php` optional and open,
 6. H6 concurrency, N+1 queries, restoring a trashed translation, truncation warning: done; real pagination of the editor open (needs server-side filters),
-7. H7 quality backlog (JS internationalisation, extractor gaps, `AdminPage` under 400 lines, plural data regeneration),
+7. H7 quality backlog (JS internationalisation, extractor gaps, plugin POT): done; the 400-line target of `AdminPage` is dropped (see the refactoring plan),
 8. slice 5a: dedicated glossary editor screen; slice 5b only if duplication is proven,
 9. slice 6: glossary links, local QA and DeepL sync restricted to exact entries,
 10. later: translation revision/history model, runtime observability for AI translation and throttling.
