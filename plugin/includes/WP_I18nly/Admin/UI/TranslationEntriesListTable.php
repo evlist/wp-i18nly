@@ -24,12 +24,20 @@ class TranslationEntriesListTable extends \WP_List_Table {
 	private $rows;
 
 	/**
+	 * Status badge renderer.
+	 *
+	 * @var EntryStatusBadges
+	 */
+	private $badges;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array<int, array<string, mixed>> $rows Translation entry rows.
 	 */
 	public function __construct( array $rows ) {
-		$this->rows = $rows;
+		$this->rows   = $rows;
+		$this->badges = new EntryStatusBadges();
 
 		if ( is_callable( array( 'WP_List_Table', '__construct' ) ) ) {
 			parent::__construct(
@@ -137,18 +145,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		$translations  = isset( $item['translations'] ) && is_array( $item['translations'] )
 			? $item['translations']
 			: array();
-		$form_labels   = isset( $item['form_labels'] ) && is_array( $item['form_labels'] )
-			? array_values( $item['form_labels'] )
-			: array();
-		$forms         = isset( $item['forms'] ) && is_array( $item['forms'] )
-			? array_values( $item['forms'] )
-			: array();
-		$form_markers  = isset( $item['form_markers'] ) && is_array( $item['form_markers'] )
-			? array_values( $item['form_markers'] )
-			: array();
-		$form_tooltips = isset( $item['form_tooltips'] ) && is_array( $item['form_tooltips'] )
-			? array_values( $item['form_tooltips'] )
-			: array();
+		$forms         = PluralFormPresenter::from_item( $item );
 
 		if ( $source_entry <= 0 ) {
 			return '';
@@ -180,10 +177,10 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				continue;
 			}
 
-			$form_label   = $this->resolve_form_label( $form_index, $forms, $form_labels );
-			$form_marker  = $this->resolve_form_marker( $form_index, $forms, $form_markers );
-			$form_tooltip = $this->resolve_form_tooltip( $form_index, $forms, $form_tooltips );
-			$witness      = $this->resolve_form_witness_example( $form_index, $forms );
+			$form_label   = $forms->label( $form_index );
+			$form_marker  = $forms->marker( $form_index );
+			$form_tooltip = $forms->tooltip( $form_index );
+			$witness      = $forms->witness_example( $form_index );
 			$input_label  = '' !== trim( $form_tooltip ) ? $form_tooltip : $form_label;
 			$input_html   = $this->render_translation_input(
 				$input_id,
@@ -191,7 +188,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$form_index,
 				$value,
 				$input_label,
-				$this->get_source_text_for_form( $form_index, $singular, $source_plural, $forms ),
+				$forms->source_text( $form_index, $singular, $source_plural ),
 				$witness
 			);
 
@@ -258,7 +255,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 
 			$form_index          = isset( $translation_row['form_index'] ) ? absint( $translation_row['form_index'] ) : 0;
 			$current_translation = isset( $translation_row['translation'] ) ? (string) $translation_row['translation'] : '';
-			$current_status      = $this->normalize_translation_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
+			$current_status      = $this->badges->normalize_status( isset( $translation_row['status'] ) ? (string) $translation_row['status'] : '' );
 			$used_ai             = isset( $translation_row['used_ai'] ) ? (int) $translation_row['used_ai'] : 0;
 			$used_manual         = isset( $translation_row['used_manual'] )
 				? (int) $translation_row['used_manual']
@@ -275,9 +272,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 				$current_status = 'draft';
 			}
 
-			$badge_html = $this->render_status_badge_for_input( $input_id, $current_status )
-				. $this->render_provenance_badges_for_input( $input_id, $used_ai, $used_manual )
-				. $this->render_obsolete_badge( $is_obsolete );
+			$badge_html = $this->badges->render_quality_badge( $input_id, $current_status )
+				. $this->badges->render_provenance_badges( $input_id, $used_ai, $used_manual )
+				. $this->badges->render_obsolete_badge( $is_obsolete );
 
 			if ( ! $has_plural ) {
 				$lines[] = sprintf( '<p class="i18nly-form-line">%s</p>', $badge_html );
@@ -290,9 +287,9 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		if ( empty( $lines ) ) {
 			$lines[] = sprintf(
 				'<p class="i18nly-form-line">%s</p>',
-				$this->render_status_badge_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' )
-				. $this->render_provenance_badges_for_input( sprintf( 'i18nly-translation-%d-0', $source_entry ), 0, 0 )
-				. $this->render_obsolete_badge( $is_obsolete )
+				$this->badges->render_quality_badge( sprintf( 'i18nly-translation-%d-0', $source_entry ), '' )
+				. $this->badges->render_provenance_badges( sprintf( 'i18nly-translation-%d-0', $source_entry ), 0, 0 )
+				. $this->badges->render_obsolete_badge( $is_obsolete )
 			);
 		}
 
@@ -303,208 +300,12 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		return implode( '', $lines );
 	}
 
-	/**
-	 * Renders one status badge associated to one translation input.
-	 *
-	 * @param string $input_id Translation input ID.
-	 * @param string $status Normalized status token.
-	 * @return string
-	 */
-	private function render_status_badge_for_input( $input_id, $status ) {
-		$status_map = array(
-			'draft'     => array(
-				'class' => 'i18nly-entry-status--draft',
-				'label' => __( 'Draft', 'i18nly' ),
-			),
-			'suspect'   => array(
-				'class' => 'i18nly-entry-status--suspect',
-				'label' => __( 'Suspect', 'i18nly' ),
-			),
-			'validated' => array(
-				'class' => 'i18nly-entry-status--validated',
-				'label' => __( 'Validated', 'i18nly' ),
-			),
-		);
 
-		$status_token = isset( $status_map[ $status ] ) ? $status : '__empty__';
-		$status_meta  = isset( $status_map[ $status ] ) ? $status_map[ $status ] : array(
-			'class' => 'i18nly-entry-status--placeholder',
-			'label' => '&nbsp;',
-		);
 
-		$toggle_html = sprintf(
-			'<button type="button" class="i18nly-quality-toggle" aria-haspopup="true" aria-expanded="false"%1$s><span class="i18nly-quality-label">%2$s</span><span class="i18nly-quality-caret" aria-hidden="true">&#9662;</span></button>',
-			'__empty__' === $status_token ? ' disabled="disabled"' : '',
-			'__empty__' === $status_token ? '&nbsp;' : esc_html( (string) $status_meta['label'] )
-		);
 
-		$menu_html = sprintf(
-			'<span class="i18nly-quality-menu" role="menu" hidden><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="suspect">%1$s</button><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="draft">%2$s</button><button type="button" class="i18nly-quality-option" role="menuitemradio" data-quality-token="validated">%3$s</button></span>',
-			esc_html( (string) $status_map['suspect']['label'] ),
-			esc_html( (string) $status_map['draft']['label'] ),
-			esc_html( (string) $status_map['validated']['label'] )
-		);
 
-		return sprintf(
-			'<span class="i18nly-entry-status i18nly-entry-status--quality %1$s" data-for="%2$s" data-status-token="%3$s">%4$s%5$s</span>',
-			esc_attr( (string) $status_meta['class'] ),
-			esc_attr( $input_id ),
-			esc_attr( $status_token ),
-			$toggle_html,
-			$menu_html
-		);
-	}
 
-	/**
-	 * Renders the obsolete badge for source entries marked as obsolete.
-	 *
-	 * @param bool $is_obsolete Whether the source entry is obsolete.
-	 * @return string
-	 */
-	private function render_obsolete_badge( $is_obsolete ) {
-		if ( ! $is_obsolete ) {
-			return '';
-		}
 
-		return sprintf(
-			'<span class="i18nly-entry-status i18nly-entry-status--obsolete" data-status-token="obsolete">%s</span>',
-			esc_html__( 'Obsolete', 'i18nly' )
-		);
-	}
-
-	/**
-	 * Renders provenance chips associated to one translation input.
-	 *
-	 * @param string $input_id Translation input ID.
-	 * @param int    $used_ai Whether AI was used.
-	 * @param int    $used_manual Whether manual editing was used.
-	 * @return string
-	 */
-	private function render_provenance_badges_for_input( $input_id, $used_ai, $used_manual ) {
-		$chips = array();
-
-		if ( 1 === (int) $used_ai ) {
-			$chips[] = sprintf(
-				'<span class="i18nly-entry-status i18nly-entry-status--provenance-ai" data-for="%1$s" data-provenance-token="ai">%2$s</span>',
-				esc_attr( $input_id ),
-				esc_html__( 'AI', 'i18nly' )
-			);
-		}
-
-		if ( 1 === (int) $used_manual ) {
-			$chips[] = sprintf(
-				'<span class="i18nly-entry-status i18nly-entry-status--provenance-manual" data-for="%1$s" data-provenance-token="manual">%2$s</span>',
-				esc_attr( $input_id ),
-				esc_html__( 'Manual', 'i18nly' )
-			);
-		}
-
-		return implode( ' ', $chips );
-	}
-
-	/**
-	 * Normalizes translated quality status values.
-	 *
-	 * @param string $status Raw status.
-	 * @return string
-	 */
-	private function normalize_translation_status( $status ) {
-		$status = (string) $status;
-
-		if ( 'draft_ai' === $status || 'ai_draft_ok' === $status ) {
-			return 'draft';
-		}
-
-		if ( in_array( $status, array( 'draft', 'suspect', 'validated' ), true ) ) {
-			return $status;
-		}
-
-		return 'draft';
-	}
-
-	/**
-	 * Resolves one form marker label.
-	 *
-	 * @param int                              $form_index Plural form index.
-	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
-	 * @param array<int, mixed>                $form_labels Ordered locale form labels.
-	 * @return string
-	 */
-	private function resolve_form_label( $form_index, array $forms, array $form_labels ) {
-		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['label'] ) ) {
-			$label = (string) $forms[ $form_index ]['label'];
-
-			if ( '' !== trim( $label ) ) {
-				return $label;
-			}
-		}
-
-		if ( isset( $form_labels[ $form_index ] ) ) {
-			$label = (string) $form_labels[ $form_index ];
-
-			if ( '' !== trim( $label ) ) {
-				return $label;
-			}
-		}
-
-		return (string) $form_index;
-	}
-
-	/**
-	 * Resolves one marker symbol for one form index.
-	 *
-	 * @param int                              $form_index Plural form index.
-	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
-	 * @param array<int, mixed>                $form_markers Ordered marker symbols.
-	 * @return string
-	 */
-	private function resolve_form_marker( $form_index, array $forms, array $form_markers ) {
-		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['marker'] ) ) {
-			$marker = (string) $forms[ $form_index ]['marker'];
-
-			if ( '' !== trim( $marker ) ) {
-				return $marker;
-			}
-		}
-
-		if ( isset( $form_markers[ $form_index ] ) ) {
-			$marker = (string) $form_markers[ $form_index ];
-
-			if ( '' !== trim( $marker ) ) {
-				return $marker;
-			}
-		}
-
-		return (string) $form_index;
-	}
-
-	/**
-	 * Resolves one tooltip for one form index.
-	 *
-	 * @param int                              $form_index Plural form index.
-	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
-	 * @param array<int, mixed>                $form_tooltips Ordered form tooltips.
-	 * @return string
-	 */
-	private function resolve_form_tooltip( $form_index, array $forms, array $form_tooltips ) {
-		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['tooltip'] ) ) {
-			$tooltip = (string) $forms[ $form_index ]['tooltip'];
-
-			if ( '' !== trim( $tooltip ) ) {
-				return $tooltip;
-			}
-		}
-
-		if ( isset( $form_tooltips[ $form_index ] ) ) {
-			$tooltip = (string) $form_tooltips[ $form_index ];
-
-			if ( '' !== trim( $tooltip ) ) {
-				return $tooltip;
-			}
-		}
-
-		return '';
-	}
 
 	/**
 	 * Renders one translation text input.
@@ -539,57 +340,7 @@ class TranslationEntriesListTable extends \WP_List_Table {
 		return $input_html . ' ' . $translate_button;
 	}
 
-	/**
-	 * Returns the source text matching one target form.
-	 *
-	 * @param int                              $form_index Plural form index.
-	 * @param string                           $singular Singular source string.
-	 * @param string                           $plural Plural source string.
-	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
-	 * @return string
-	 */
-	private function get_source_text_for_form( $form_index, $singular, $plural, array $forms = array() ) {
-		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['examples'] ) && is_array( $forms[ $form_index ]['examples'] ) ) {
-			$examples = array_values( $forms[ $form_index ]['examples'] );
 
-			if ( ! empty( $examples ) ) {
-				foreach ( $examples as $example ) {
-					if ( 1 === (int) $example ) {
-						return $singular;
-					}
-				}
-
-				return $plural;
-			}
-		}
-
-		return 0 === (int) $form_index ? $singular : $plural;
-	}
-
-	/**
-	 * Returns one representative witness number for one target form.
-	 *
-	 * @param int                              $form_index Plural form index.
-	 * @param array<int, array<string, mixed>> $forms Ordered locale form metadata.
-	 * @return int
-	 */
-	private function resolve_form_witness_example( $form_index, array $forms ) {
-		if ( isset( $forms[ $form_index ] ) && is_array( $forms[ $form_index ] ) && isset( $forms[ $form_index ]['examples'] ) && is_array( $forms[ $form_index ]['examples'] ) ) {
-			$examples = array_values( $forms[ $form_index ]['examples'] );
-
-			if ( ! empty( $examples ) ) {
-				foreach ( $examples as $example ) {
-					if ( 1 === (int) $example ) {
-						return 1;
-					}
-				}
-
-				return (int) $examples[0];
-			}
-		}
-
-		return 0 === (int) $form_index ? 1 : 2;
-	}
 
 	/**
 	 * Prepares rows for display.
