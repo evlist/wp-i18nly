@@ -1760,3 +1760,4 @@ if ( ! class_exists( 'WP_List_Table', false ) ) {
 }
 
 require_once __DIR__ . '/../../plugin/third-party/vendor/autoload.php';
+require_once __DIR__ . '/support/class-i18nly-test-inmemory-wpdb.php';

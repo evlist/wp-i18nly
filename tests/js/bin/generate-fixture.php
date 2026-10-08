@@ -17,7 +17,7 @@ require_once __DIR__ . '/../../phpunit/bootstrap.php';
 /**
  * Exposes the row and table navigation rendering of the entries list table.
  */
-class I18nly_Fixture_Entries_Table extends \WP_I18nly\Admin\UI\TranslationEntriesListTable {
+$fixture_table_class = new class( array() ) extends \WP_I18nly\Admin\UI\TranslationEntriesListTable {
 	/**
 	 * Renders the table body rows.
 	 *
@@ -74,7 +74,7 @@ class I18nly_Fixture_Entries_Table extends \WP_I18nly\Admin\UI\TranslationEntrie
 
 		return $cells;
 	}
-}
+};
 
 $forms = array(
 	array(
@@ -169,7 +169,7 @@ $rows = array(
 	),
 );
 
-$table = new I18nly_Fixture_Entries_Table( $rows );
+$table = new ( get_class( $fixture_table_class ) )( $rows );
 $table->prepare_items();
 
 $table_markup = $table->render_tablenav( 'top' )
