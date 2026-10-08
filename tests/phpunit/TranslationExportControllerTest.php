@@ -22,11 +22,12 @@ use WP_I18nly\LinguisticResources\TranslationResourceRepository;
  */
 class TranslationExportControllerTest extends TestCase {
 	/**
-	 * Registers one translation into Polish and a repository returning one translated row.
+	 * Registers one translation into Polish and a repository returning two translated rows.
 	 *
+	 * @param bool $blank Whether the translations of the rows are empty.
 	 * @return TranslationExportController
 	 */
-	private function controller() {
+	private function controller( $blank = false ) {
 		global $i18nly_test_plugins;
 
 		$i18nly_test_plugins = array(
@@ -51,11 +52,22 @@ class TranslationExportControllerTest extends TestCase {
 			)
 		);
 
-		$repository = new class() extends TranslationResourceRepository {
+		$repository = new class( $blank ) extends TranslationResourceRepository {
+			/**
+			 * Whether the translations are empty.
+			 *
+			 * @var bool
+			 */
+			private $blank;
+
 			/**
 			 * Does not need storage.
+			 *
+			 * @param bool $blank Whether the translations are empty.
 			 */
-			public function __construct() {}
+			public function __construct( $blank = false ) {
+				$this->blank = $blank;
+			}
 
 			/**
 			 * Returns one translated row.
@@ -67,7 +79,7 @@ class TranslationExportControllerTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function list_translation_rows( $translation_id, $source_slug, $limit, $plural_forms_count ) {
-				return array(
+				$rows = array(
 					array(
 						'msgctxt'      => '',
 						'msgid'        => 'Hello',
@@ -98,6 +110,14 @@ class TranslationExportControllerTest extends TestCase {
 						),
 					),
 				);
+
+				if ( $this->blank ) {
+					foreach ( $rows as $index => $row ) {
+						$rows[ $index ]['translations'][0]['translation'] = '';
+					}
+				}
+
+				return $rows;
 			}
 		};
 
@@ -251,21 +271,92 @@ class TranslationExportControllerTest extends TestCase {
 		$this->assertArrayHasKey( 'Hello', $validated['locale_data']['sample'] );
 		$this->assertArrayNotHasKey( 'Draft text', $validated['locale_data']['sample'] );
 		$this->assertArrayHasKey( 'Draft text', $all['locale_data']['sample'] );
-		$this->assertTrue( $controller->has_script_files( 7 ) );
 		$this->assertSame( array(), $controller->build_script_files( 8 ) );
 	}
 
 	/**
-	 * The JSON export is an archive with the script files.
+	 * The download is one archive with the MO, the PO and the JSON files of the scripts.
 	 *
 	 * @return void
 	 */
-	public function test_json_export_is_a_zip_archive() {
-		$file = $this->controller()->build_file( 7, 'json', true );
+	public function test_download_is_an_archive_with_every_file() {
+		$file = $this->controller()->build_file( 7, 'bundle', true );
 
-		$this->assertSame( 'sample-pl_PL-json.zip', $file['name'] );
+		$this->assertSame( 'sample-pl_PL.zip', $file['name'] );
 		$this->assertSame( 'application/zip', $file['mime'] );
-		$this->assertSame( 'PK', substr( $file['contents'], 0, 2 ) );
+
+		$path = tempnam( sys_get_temp_dir(), 'bundle' );
+
+		file_put_contents( $path, $file['contents'] ); // phpcs:ignore
+
+		$archive = new ZipArchive();
+		$archive->open( $path );
+
+		$names = array();
+
+		for ( $index = 0; $index < $archive->count(); $index++ ) {
+			$names[] = $archive->getNameIndex( $index );
+		}
+
+		$archive->close();
+		unlink( $path ); // phpcs:ignore
+		sort( $names );
+
+		$this->assertSame( array( 'sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json', 'sample-pl_PL.mo', 'sample-pl_PL.po' ), $names );
+	}
+
+	/**
+	 * Nothing is exported, downloaded or installed while no string is translated.
+	 *
+	 * @return void
+	 */
+	public function test_nothing_is_exported_without_translated_string() {
+		$controller = $this->controller( true );
+		$filesystem = new I18nly_Test_Memory_Filesystem();
+
+		$this->assertSame( 0, $controller->count_translated_strings( 7 ) );
+		$this->assertNull( $controller->build_file( 7, 'bundle', true ) );
+		$this->assertNull( $controller->build_file( 7, 'po', true ) );
+		$this->assertSame( 'not_exportable', $controller->install( 7, true, new TranslationInstaller( $filesystem, '/lang/plugins' ) ) );
+		$this->assertSame( array(), $filesystem->files );
+		$this->assertSame( 2, $this->controller()->count_translated_strings( 7 ) );
+	}
+
+	/**
+	 * The box has one Install and one Download button, enabled when a string is translated.
+	 *
+	 * @return void
+	 */
+	public function test_box_has_install_and_download_buttons() {
+		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller() );
+
+		ob_start();
+		$box->render( (object) array( 'ID' => 7 ) );
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( '>Install on this site</button>', $html );
+		$this->assertStringContainsString( '>Download</button>', $html );
+		$this->assertStringContainsString( 'value="bundle"', $html );
+		$this->assertStringNotContainsString( 'disabled="disabled"', $html );
+		$this->assertStringNotContainsString( 'Download MO', $html );
+		$this->assertStringNotContainsString( 'Download PO', $html );
+		$this->assertStringNotContainsString( 'JSON (ZIP)', $html );
+	}
+
+	/**
+	 * Both buttons are disabled, with the reason, while no string is translated.
+	 *
+	 * @return void
+	 */
+	public function test_box_disables_the_buttons_without_translated_string() {
+		$box = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $this->controller( true ) );
+
+		ob_start();
+		$box->render( (object) array( 'ID' => 7 ) );
+		$html = ob_get_clean();
+
+		$this->assertSame( 2, substr_count( $html, 'disabled="disabled"' ) );
+		$this->assertStringContainsString( 'Translate at least one string to enable these buttons.', $html );
 	}
 
 	/**
@@ -279,34 +370,5 @@ class TranslationExportControllerTest extends TestCase {
 		$this->controller()->install( 7, true, new TranslationInstaller( $filesystem, '/lang/plugins' ) );
 
 		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json', $filesystem->files );
-	}
-
-	/**
-	 * The JSON archive is offered only when some script string is translated, and the reason is known otherwise.
-	 *
-	 * @return void
-	 */
-	public function test_script_files_state_explains_why_the_archive_is_missing() {
-		$controller = $this->controller();
-
-		$this->assertSame( 'available', $controller->get_script_files_state( 7 ) );
-		$this->assertSame( 'no_translated_script_string', $controller->get_script_files_state( 8 ) );
-	}
-
-	/**
-	 * The box tells the translator why there is no JSON button yet.
-	 *
-	 * @return void
-	 */
-	public function test_box_explains_the_missing_json_button() {
-		$controller = $this->controller();
-		$box        = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $controller );
-
-		ob_start();
-		$box->render( (object) array( 'ID' => 7 ) );
-		$with_button = ob_get_clean();
-
-		$this->assertStringContainsString( 'Download JSON (ZIP)', $with_button );
-		$this->assertStringNotContainsString( 'appears when a string used by a JavaScript file', $with_button );
 	}
 }

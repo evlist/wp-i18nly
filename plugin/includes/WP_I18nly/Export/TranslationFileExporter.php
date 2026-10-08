@@ -33,8 +33,8 @@ class TranslationFileExporter {
 			'extension' => 'mo',
 			'mime'      => 'application/x-gettext-translation',
 		),
-		// The JSON files of the scripts, packed into one archive.
-		'json' => array(
+		// Every generated file (MO, PO and the JSON files of the scripts), packed into one archive.
+		'bundle' => array(
 			'extension' => 'zip',
 			'mime'      => 'application/zip',
 		),
@@ -59,9 +59,7 @@ class TranslationFileExporter {
 	 * @return string
 	 */
 	public static function get_file_name( $text_domain, $locale, $format ) {
-		$suffix = 'json' === $format ? '-json' : '';
-
-		return sanitize_file_name( $text_domain . '-' . $locale . $suffix . '.' . self::FORMATS[ $format ]['extension'] );
+		return sanitize_file_name( $text_domain . '-' . $locale . '.' . self::FORMATS[ $format ]['extension'] );
 	}
 
 	/**
@@ -83,7 +81,7 @@ class TranslationFileExporter {
 	 * @throws \InvalidArgumentException When the format is not supported.
 	 */
 	public function generate( $translations, $format ) {
-		if ( ! self::is_supported_format( $format ) || 'json' === $format ) {
+		if ( ! self::is_supported_format( $format ) || 'bundle' === $format ) {
 			throw new \InvalidArgumentException( 'Unsupported export format.' );
 		}
 

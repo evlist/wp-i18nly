@@ -158,7 +158,7 @@ class TranslationExportController {
 		$file = $this->build_file( $translation_id, $format, $include );
 
 		if ( null === $file ) {
-			wp_die( esc_html__( 'This translation cannot be exported.', 'i18nly' ), 400 );
+			$this->redirect_to_edit_screen( $translation_id, 'not_exportable' );
 		}
 
 		$this->send_file( $file );
@@ -271,27 +271,47 @@ class TranslationExportController {
 			return null;
 		}
 
-		$metadata    = new PluginMetadataProvider();
-		$text_domain = $metadata->resolve_text_domain( $source_slug );
-		$spec        = PluralFormsRegistry::get_spec_for_locale( $locale );
-		$headers     = $metadata->build_pot_header_overrides( $source_slug, $text_domain );
+		$text_domain = ( new PluginMetadataProvider() )->resolve_text_domain( $source_slug );
 
-		if ( 'json' === $format ) {
-			$scripts = $this->build_script_files( $translation_id, $include_unvalidated );
-			$archive = ( new TranslationFileExporter() )->zip( $scripts );
-
-			return null === $archive ? null : array(
-				'text_domain' => $text_domain,
-				'locale'      => $locale,
-				'name'        => TranslationFileExporter::get_file_name( $text_domain, $locale, 'json' ),
-				'mime'        => TranslationFileExporter::get_mime_type( 'json' ),
-				'contents'    => $archive,
-			);
+		if ( 'bundle' === $format ) {
+			return $this->build_bundle( $translation_id, $text_domain, $locale, $include_unvalidated );
 		}
+
+		$catalog = $this->build_catalog( $translation_id, $source_slug, $locale, $text_domain, $format, $include_unvalidated );
+
+		// Without any translated string (left out ones included) there is nothing worth a file.
+		if ( 'po' === $format && 0 === count( $catalog ) ) {
+			return null;
+		}
+
+		return array(
+			'text_domain' => $text_domain,
+			'locale'      => $locale,
+			'name'        => TranslationFileExporter::get_file_name( $text_domain, $locale, $format ),
+			'mime'        => TranslationFileExporter::get_mime_type( $format ),
+			'contents'    => ( new TranslationFileExporter() )->generate( $catalog, $format ),
+		);
+	}
+
+	/**
+	 * Builds the gettext catalog of a translation for a format.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $source_slug Source slug.
+	 * @param string $locale Locale.
+	 * @param string $text_domain Text domain.
+	 * @param string $format "po" or "mo".
+	 * @param bool   $include_unvalidated Whether to include the translations that are not validated.
+	 * @return \Gettext\Translations
+	 */
+	private function build_catalog( $translation_id, $source_slug, $locale, $text_domain, $format, $include_unvalidated ) {
+		$metadata = new PluginMetadataProvider();
+		$spec     = PluralFormsRegistry::get_spec_for_locale( $locale );
+		$headers  = $metadata->build_pot_header_overrides( $source_slug, $text_domain );
 
 		$headers['X-Generator'] = 'I18nly ' . ( defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '' );
 
-		$catalog = ( new TranslationCatalogBuilder() )->build(
+		return ( new TranslationCatalogBuilder() )->build(
 			$this->get_rows( $translation_id, $source_slug, $locale ),
 			$locale,
 			$text_domain,
@@ -305,14 +325,68 @@ class TranslationExportController {
 				'fuzzy_unvalidated'     => 'po' === $format,
 			)
 		);
+	}
+
+	/**
+	 * Builds the archive of every generated file: MO, PO and the JSON files of the scripts.
+	 *
+	 * @param int    $translation_id Translation ID.
+	 * @param string $text_domain Text domain.
+	 * @param string $locale Locale.
+	 * @param bool   $include_unvalidated Whether to include the translations that are not validated.
+	 * @return array{text_domain: string, locale: string, name: string, mime: string, contents: string}|null Null when there is nothing to export or archives are not available.
+	 */
+	private function build_bundle( $translation_id, $text_domain, $locale, $include_unvalidated ) {
+		$mo_file = $this->build_file( $translation_id, 'mo', $include_unvalidated );
+		$po_file = $this->build_file( $translation_id, 'po', $include_unvalidated );
+
+		if ( null === $mo_file || null === $po_file ) {
+			return null;
+		}
+
+		$files   = array(
+			$mo_file['name'] => $mo_file['contents'],
+			$po_file['name'] => $po_file['contents'],
+		) + $this->build_script_files( $translation_id, $include_unvalidated );
+		$archive = ( new TranslationFileExporter() )->zip( $files );
+
+		if ( null === $archive ) {
+			return null;
+		}
 
 		return array(
 			'text_domain' => $text_domain,
 			'locale'      => $locale,
-			'name'        => TranslationFileExporter::get_file_name( $text_domain, $locale, $format ),
-			'mime'        => TranslationFileExporter::get_mime_type( $format ),
-			'contents'    => ( new TranslationFileExporter() )->generate( $catalog, $format ),
+			'name'        => TranslationFileExporter::get_file_name( $text_domain, $locale, 'bundle' ),
+			'mime'        => TranslationFileExporter::get_mime_type( 'bundle' ),
+			'contents'    => $archive,
 		);
+	}
+
+	/**
+	 * Counts the translated texts of a translation (every non-empty text of every form, whatever its status).
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return int
+	 */
+	public function count_translated_strings( $translation_id ) {
+		$translation = $this->get_translation( $translation_id );
+
+		if ( null === $translation || '' === $translation['source_slug'] || '' === $translation['target_language'] ) {
+			return 0;
+		}
+
+		$count = 0;
+
+		foreach ( $this->get_rows( $translation_id, $translation['source_slug'], $translation['target_language'] ) as $row ) {
+			foreach ( isset( $row['translations'] ) && is_array( $row['translations'] ) ? $row['translations'] : array() as $target ) {
+				if ( isset( $target['translation'] ) && '' !== (string) $target['translation'] ) {
+					++$count;
+				}
+			}
+		}
+
+		return $count;
 	}
 
 	/**
@@ -341,30 +415,6 @@ class TranslationExportController {
 			(bool) $include_unvalidated,
 			'I18nly ' . ( defined( 'I18NLY_VERSION' ) ? I18NLY_VERSION : '' )
 		);
-	}
-
-	/**
-	 * Tells whether some script of the plugin has translated strings (whatever their status), so that a JSON archive is worth offering.
-	 *
-	 * @param int $translation_id Translation ID.
-	 * @return bool
-	 */
-	public function has_script_files( $translation_id ) {
-		return 'available' === $this->get_script_files_state( $translation_id );
-	}
-
-	/**
-	 * Tells whether the JSON archive can be offered, and why not when it cannot.
-	 *
-	 * @param int $translation_id Translation ID.
-	 * @return string "available", "no_archive_support" (the PHP zip extension is missing) or "no_translated_script_string" (no JavaScript string is translated yet).
-	 */
-	public function get_script_files_state( $translation_id ) {
-		if ( ! TranslationFileExporter::can_create_archives() ) {
-			return 'no_archive_support';
-		}
-
-		return array() === $this->build_script_files( $translation_id, true ) ? 'no_translated_script_string' : 'available';
 	}
 
 	/**

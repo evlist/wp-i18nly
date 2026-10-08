@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 21:53+0000\n"
+"POT-Creation-Date: 2026-10-08 22:00+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -358,10 +358,6 @@ msgstr ""
 msgid "Translation"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/TranslationExportController.php:161
-msgid "This translation cannot be exported."
-msgstr ""
-
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:52
 msgid "DeepL API"
 msgstr ""
@@ -591,84 +587,80 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:50
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:51
 msgid "Export"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:64
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:65
 msgid "Save the translation with a plugin and a language to enable the export."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:78
-msgid "Download MO"
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:80
-msgid "Download PO"
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:86
-msgid "Download JSON (ZIP)"
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:92
-msgid "The JSON download for JavaScript files appears when a string used by a JavaScript file of the plugin is translated."
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:94
-msgid "The JSON download is not available: the PHP zip extension is missing on this server. \"Install on this site\" still writes the JSON files."
-msgstr ""
-
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:99
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:82
 msgid "Install on this site"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:101
-msgid "Install writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:84
+msgid "Download"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:102
-msgid "Entries without translation are left out. In the MO and JSON files, plural entries are left out unless all their forms are translated. The JSON files are the translations of the JavaScript files of the plugin; install them on the site, or unpack the ZIP into wp-content/languages/plugins/."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:88
+msgid "Translate at least one string to enable these buttons."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:90
+msgid "Download is not available: the PHP zip extension is missing on this server."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:93
+msgid "Install makes the translation available on this site. Download gives a ZIP with all the files, to use on another site."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:94
+msgid "Strings without translation are left out. A plural string is left out unless all its forms are translated."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:95
+msgid "A language pack from WordPress.org may replace the installed files when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup."
 msgstr ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:120
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:113
 #, php-format
 msgid "%d entry has a translation that is not validated."
 msgid_plural "%d entries have a translation that is not validated."
 msgstr[0] ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:123
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:116
 msgid "Drafts, machine suggestions and suspect translations may be wrong. Choose what to do with them:"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:124
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:117
 msgid "Leave them out"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:125
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:118
 msgid "Include them (flagged fuzzy in the PO file)"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:160
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:154
 msgid "Translation installed in the languages directory."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:161
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:155
 msgid "The languages directory cannot be written: WordPress needs direct file access or file system credentials."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:162
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:156
 msgid "A translation file could not be written."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:163
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:157
 msgid "Some translations are not validated: choose whether to include them or to leave them out, then try again."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:164
-msgid "This translation cannot be installed."
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:158
+msgid "There is nothing to export: no string is translated, or the translated ones were left out."
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:35

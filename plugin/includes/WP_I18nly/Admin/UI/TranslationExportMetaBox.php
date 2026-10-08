@@ -11,6 +11,7 @@
 namespace WP_I18nly\Admin\UI;
 
 use WP_I18nly\Admin\TranslationExportController;
+use WP_I18nly\Export\TranslationFileExporter;
 use WP_I18nly\Export\TranslationInstaller;
 
 defined( 'ABSPATH' ) || exit;
@@ -74,31 +75,24 @@ class TranslationExportMetaBox {
 
 		$this->render_choice( $doubtful );
 
+		$can_export  = $this->controller->count_translated_strings( $translation_id ) > 0;
+		$can_archive = TranslationFileExporter::can_create_archives();
+
 		echo '<p>';
-		$this->render_button( TranslationExportController::ACTION, __( 'Download MO', 'i18nly' ), 'mo' );
+		$this->render_button( TranslationExportController::INSTALL_ACTION, __( 'Install on this site', 'i18nly' ), '', true, ! $can_export );
 		echo ' ';
-		$this->render_button( TranslationExportController::ACTION, __( 'Download PO', 'i18nly' ), 'po' );
-
-		$script_state = $this->controller->get_script_files_state( $translation_id );
-
-		if ( 'available' === $script_state ) {
-			echo ' ';
-			$this->render_button( TranslationExportController::ACTION, __( 'Download JSON (ZIP)', 'i18nly' ), 'json' );
-		}
-
+		$this->render_button( TranslationExportController::ACTION, __( 'Download', 'i18nly' ), 'bundle', false, ! $can_export || ! $can_archive );
 		echo '</p>';
 
-		if ( 'no_translated_script_string' === $script_state ) {
-			echo '<p class="description">' . esc_html__( 'The JSON download for JavaScript files appears when a string used by a JavaScript file of the plugin is translated.', 'i18nly' ) . '</p>';
-		} elseif ( 'no_archive_support' === $script_state ) {
-			echo '<p class="description">' . esc_html__( 'The JSON download is not available: the PHP zip extension is missing on this server. "Install on this site" still writes the JSON files.', 'i18nly' ) . '</p>';
+		if ( ! $can_export ) {
+			echo '<p class="description">' . esc_html__( 'Translate at least one string to enable these buttons.', 'i18nly' ) . '</p>';
+		} elseif ( ! $can_archive ) {
+			echo '<p class="description">' . esc_html__( 'Download is not available: the PHP zip extension is missing on this server.', 'i18nly' ) . '</p>';
 		}
 
-		echo '<p>';
-		$this->render_button( TranslationExportController::INSTALL_ACTION, __( 'Install on this site', 'i18nly' ), '', true );
-		echo '</p>';
-		echo '<p class="description">' . esc_html__( 'Install writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup.', 'i18nly' ) . '</p>';
-		echo '<p class="description">' . esc_html__( 'Entries without translation are left out. In the MO and JSON files, plural entries are left out unless all their forms are translated. The JSON files are the translations of the JavaScript files of the plugin; install them on the site, or unpack the ZIP into wp-content/languages/plugins/.', 'i18nly' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Install makes the translation available on this site. Download gives a ZIP with all the files, to use on another site.', 'i18nly' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Strings without translation are left out. A plural string is left out unless all its forms are translated.', 'i18nly' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'A language pack from WordPress.org may replace the installed files when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup.', 'i18nly' ) . '</p>';
 		echo '</form>';
 	}
 
@@ -131,10 +125,11 @@ class TranslationExportMetaBox {
 	 * @param string $label Label.
 	 * @param string $format Format sent with the button, if any.
 	 * @param bool   $primary Whether it is the primary button.
+	 * @param bool   $disabled Whether the button is disabled.
 	 * @return void
 	 */
-	private function render_button( $action, $label, $format, $primary = false ) {
-		echo '<button type="submit" class="button' . ( $primary ? ' button-primary' : '' ) . '" formaction="' . esc_url( admin_url( 'admin-post.php?action=' . $action ) ) . '"';
+	private function render_button( $action, $label, $format, $primary = false, $disabled = false ) {
+		echo '<button type="submit" class="button' . ( $primary ? ' button-primary' : '' ) . '"' . ( $disabled ? ' disabled="disabled"' : '' ) . ' formaction="' . esc_url( admin_url( 'admin-post.php?action=' . $action ) ) . '"';
 
 		if ( '' !== $format ) {
 			echo ' name="format" value="' . esc_attr( $format ) . '"';
@@ -160,7 +155,7 @@ class TranslationExportMetaBox {
 			TranslationInstaller::FILESYSTEM_ERROR           => array( 'error', __( 'The languages directory cannot be written: WordPress needs direct file access or file system credentials.', 'i18nly' ) ),
 			TranslationInstaller::WRITE_ERROR                => array( 'error', __( 'A translation file could not be written.', 'i18nly' ) ),
 			TranslationExportController::CONFIRMATION_REQUIRED => array( 'warning', __( 'Some translations are not validated: choose whether to include them or to leave them out, then try again.', 'i18nly' ) ),
-			'not_exportable'                                 => array( 'error', __( 'This translation cannot be installed.', 'i18nly' ) ),
+			'not_exportable'                                 => array( 'error', __( 'There is nothing to export: no string is translated, or the translated ones were left out.', 'i18nly' ) ),
 		);
 		$code     = sanitize_key( wp_unslash( $_GET[ TranslationExportController::RESULT_ARG ] ) );
 

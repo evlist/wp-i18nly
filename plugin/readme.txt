@@ -22,7 +22,7 @@ Features of the current development version:
 * translations as dedicated admin items, with list, add and edit screens,
 * import of the translatable strings of an installed plugin,
 * plural-aware editing, with the plural forms of each language explained,
-* download of the translations as PO, MO and JSON (JavaScript) files, or installation on the site in one click,
+* installation of the translations on the site in one click, or download of all the generated files (MO, PO and JavaScript JSON files) as one ZIP,
 * optional machine translation with DeepL (single strings and batches), with
   monthly usage display, quota protection and rate-limit handling.
 
