@@ -182,15 +182,14 @@ but missing from the current GlotPress baseline snapshot.
 
 `gettext/languages` (CLDR data, installed by Composer as a dependency of `gettext/gettext`) is deliberately not used at runtime.
 
-What the editor needs for each plural form of a locale (see `PluralFormPresenter` and the generated `Lang*.php` classes):
+**Main reason: it cannot tell the user what a form means.** Gettext and CLDR identify the plural forms only by index or by category name (`zero`, `one`, `two`, `few`, `many`, `other`), and the meaning of `few` or `many` is different in each language (for example, in Polish `few` is 2-4, 22-24..., whereas in Arabic it is 3-10). The editor tries to tell the translator, for each form of each language, which numbers it applies to. The generated `Lang*.php` classes therefore carry, for each form index (`msgstr[0..n-1]`), a short label, a marker, a tooltip written for humans (for example "2, 3, 4, 22, ...") and example numbers. The example numbers are also used as the witness number shown in the source text and sent to the machine translation.
 
-- the gettext `nplurals` and `plural_expression`, as WordPress and `Plural-Forms` headers use them,
-- one entry per form index (`msgstr[0..n-1]`) with a short label, a marker and a tooltip meant for the translator,
-- example numbers per form, used as the witness number shown in the source text and sent to the machine translation.
+Secondary reasons:
 
-`gettext/languages` describes the same rules as CLDR categories (`zero`, `one`, `few`, `many`, `other`) with raw CLDR formulas and exemplar range strings. Turning them into the presentation above would need post-processing for every locale (mapping categories to gettext indexes, building tooltips and witness numbers), and the locale list and rules would differ from the ones used by WordPress.org (see the first section).
+- the editor needs the gettext `nplurals` and `plural_expression` as WordPress and `Plural-Forms` headers use them, per form index; `gettext/languages` exposes CLDR categories with raw formulas and exemplar range strings, which would need post-processing for every locale,
+- the locale list and rules would differ from those used by WordPress.org (see the first section).
 
-Status of this note: reconstructed from the code and from the maintainer's recollection ("pluralization handling and the way things are presented to the user"). The exact missing features of `gettext/languages` were not recorded at the time; confirm or complete this list before relying on it.
+Status of this note: written from the maintainer's recollection and from the code (`PluralFormPresenter`, generated classes). Technical limits of `gettext/languages` beyond the missing human-readable meaning were not recorded at the time.
 
 ## WordPress / Gettext Boundaries
 
