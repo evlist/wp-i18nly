@@ -397,6 +397,25 @@ This repository should continue to follow a small-slice XP workflow:
 - behavior-oriented tests,
 - deletion of stale scaffolding rather than speculative accumulation.
 
+## Known Limitations
+
+### Restoring a trashed translation
+
+Duplicate detection (`AdminPage::find_duplicate_translation_id()`) queries translation posts with `post_status => any`, which excludes the trash. This is deliberate: a trashed translation does not block creating a new one for the same source slug and target language.
+
+Consequence:
+
+- a trashed translation keeps its data (resource row and targets are only deleted when the post is permanently deleted),
+- if a new translation was created for the same source slug and target language in the meantime, restoring the trashed one from the trash leaves two active translations for the same pair,
+- both have their own resource row and their own targets, so no data is lost or mixed, but the pair is no longer unique from the user's point of view.
+
+Possible fixes, not implemented:
+
+- block the `trash_to_*` status transition when an active duplicate exists,
+- or delete the translation resource on trash and accept that restoring starts from an empty translation.
+
+Any decision should also settle whether a trashed translation should keep blocking or not.
+
 ## Open Items
 
 The most meaningful current open items are:
