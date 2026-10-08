@@ -1236,6 +1236,23 @@ if ( ! function_exists( 'submit_button' ) ) {
 	}
 }
 
+if ( ! function_exists( '_n' ) ) {
+	/**
+	 * Returns the singular or the plural text.
+	 *
+	 * @param string $single Singular.
+	 * @param string $plural Plural.
+	 * @param int    $number Number.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function _n( $single, $plural, $number, $domain = 'default' ) {
+		unset( $domain );
+
+		return 1 === (int) $number ? $single : $plural;
+	}
+}
+
 if ( ! function_exists( 'esc_textarea' ) ) {
 	/**
 	 * Escapes the content of a textarea.

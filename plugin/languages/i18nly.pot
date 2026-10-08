@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 21:40+0000\n"
+"POT-Creation-Date: 2026-10-08 21:53+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -607,59 +607,67 @@ msgstr ""
 msgid "Download PO"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:84
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:86
 msgid "Download JSON (ZIP)"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:89
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:92
+msgid "The JSON download for JavaScript files appears when a string used by a JavaScript file of the plugin is translated."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:94
+msgid "The JSON download is not available: the PHP zip extension is missing on this server. \"Install on this site\" still writes the JSON files."
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:99
 msgid "Install on this site"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:91
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:101
 msgid "Install writes the MO and PO files in wp-content/languages/plugins/, where WordPress looks for the translations of the plugin. A language pack from WordPress.org may replace them when it is updated. A file not created by I18nly is kept with the suffix .i18nly-backup."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:92
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:102
 msgid "Entries without translation are left out. In the MO and JSON files, plural entries are left out unless all their forms are translated. The JSON files are the translations of the JavaScript files of the plugin; install them on the site, or unpack the ZIP into wp-content/languages/plugins/."
 msgstr ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:110
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:120
 #, php-format
 msgid "%d entry has a translation that is not validated."
 msgid_plural "%d entries have a translation that is not validated."
 msgstr[0] ""
 
 #. translators: %d: number of entries.
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:113
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:123
 msgid "Drafts, machine suggestions and suspect translations may be wrong. Choose what to do with them:"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:114
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:124
 msgid "Leave them out"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:115
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:125
 msgid "Include them (flagged fuzzy in the PO file)"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:150
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:160
 msgid "Translation installed in the languages directory."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:151
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:161
 msgid "The languages directory cannot be written: WordPress needs direct file access or file system credentials."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:152
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:162
 msgid "A translation file could not be written."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:153
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:163
 msgid "Some translations are not validated: choose whether to include them or to leave them out, then try again."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:154
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:164
 msgid "This translation cannot be installed."
 msgstr ""
 

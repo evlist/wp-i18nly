@@ -280,4 +280,33 @@ class TranslationExportControllerTest extends TestCase {
 
 		$this->assertArrayHasKey( '/lang/plugins/sample-pl_PL-' . md5( 'assets/js/app.js' ) . '.json', $filesystem->files );
 	}
+
+	/**
+	 * The JSON archive is offered only when some script string is translated, and the reason is known otherwise.
+	 *
+	 * @return void
+	 */
+	public function test_script_files_state_explains_why_the_archive_is_missing() {
+		$controller = $this->controller();
+
+		$this->assertSame( 'available', $controller->get_script_files_state( 7 ) );
+		$this->assertSame( 'no_translated_script_string', $controller->get_script_files_state( 8 ) );
+	}
+
+	/**
+	 * The box tells the translator why there is no JSON button yet.
+	 *
+	 * @return void
+	 */
+	public function test_box_explains_the_missing_json_button() {
+		$controller = $this->controller();
+		$box        = new \WP_I18nly\Admin\UI\TranslationExportMetaBox( $controller );
+
+		ob_start();
+		$box->render( (object) array( 'ID' => 7 ) );
+		$with_button = ob_get_clean();
+
+		$this->assertStringContainsString( 'Download JSON (ZIP)', $with_button );
+		$this->assertStringNotContainsString( 'appears when a string used by a JavaScript file', $with_button );
+	}
 }

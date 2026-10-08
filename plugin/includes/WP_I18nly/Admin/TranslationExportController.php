@@ -350,7 +350,21 @@ class TranslationExportController {
 	 * @return bool
 	 */
 	public function has_script_files( $translation_id ) {
-		return TranslationFileExporter::can_create_archives() && array() !== $this->build_script_files( $translation_id, true );
+		return 'available' === $this->get_script_files_state( $translation_id );
+	}
+
+	/**
+	 * Tells whether the JSON archive can be offered, and why not when it cannot.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return string "available", "no_archive_support" (the PHP zip extension is missing) or "no_translated_script_string" (no JavaScript string is translated yet).
+	 */
+	public function get_script_files_state( $translation_id ) {
+		if ( ! TranslationFileExporter::can_create_archives() ) {
+			return 'no_archive_support';
+		}
+
+		return array() === $this->build_script_files( $translation_id, true ) ? 'no_translated_script_string' : 'available';
 	}
 
 	/**

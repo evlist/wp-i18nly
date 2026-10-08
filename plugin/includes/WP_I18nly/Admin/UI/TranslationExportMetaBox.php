@@ -79,12 +79,21 @@ class TranslationExportMetaBox {
 		echo ' ';
 		$this->render_button( TranslationExportController::ACTION, __( 'Download PO', 'i18nly' ), 'po' );
 
-		if ( $this->controller->has_script_files( $translation_id ) ) {
+		$script_state = $this->controller->get_script_files_state( $translation_id );
+
+		if ( 'available' === $script_state ) {
 			echo ' ';
 			$this->render_button( TranslationExportController::ACTION, __( 'Download JSON (ZIP)', 'i18nly' ), 'json' );
 		}
 
 		echo '</p>';
+
+		if ( 'no_translated_script_string' === $script_state ) {
+			echo '<p class="description">' . esc_html__( 'The JSON download for JavaScript files appears when a string used by a JavaScript file of the plugin is translated.', 'i18nly' ) . '</p>';
+		} elseif ( 'no_archive_support' === $script_state ) {
+			echo '<p class="description">' . esc_html__( 'The JSON download is not available: the PHP zip extension is missing on this server. "Install on this site" still writes the JSON files.', 'i18nly' ) . '</p>';
+		}
+
 		echo '<p>';
 		$this->render_button( TranslationExportController::INSTALL_ACTION, __( 'Install on this site', 'i18nly' ), '', true );
 		echo '</p>';
