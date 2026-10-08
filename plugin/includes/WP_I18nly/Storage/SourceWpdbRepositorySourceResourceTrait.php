@@ -17,16 +17,16 @@ defined( 'ABSPATH' ) || exit;
  */
 trait SourceWpdbRepositorySourceResourceTrait {
 	/**
-	 * Upserts one source catalog row.
+	 * Upserts one source catalog resource row.
 	 *
 	 * @param string $plugin_slug Plugin slug.
 	 * @param string $domain Text domain.
 	 * @param string $headers_json POT headers JSON.
 	 * @param string $now_gmt Datetime in GMT.
-	 * @return int Catalog ID.
+	 * @return int Source resource ID.
 	 */
-	public function upsert_catalog( $plugin_slug, $domain, $headers_json, $now_gmt ) {
-		$table = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
+	public function upsert_source_resource( $plugin_slug, $domain, $headers_json, $now_gmt ) {
+		$table = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
 
 		if ( '' === $table ) {
 			return 0;
@@ -83,7 +83,7 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	 * @return string inserted|updated|unchanged.
 	 */
 	public function upsert_source_entry( array $entry ) {
-		$table                       = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$table                       = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
 		$entry['translator_comment'] = isset( $entry['translator_comment'] )
 			? (string) $entry['translator_comment']
 			: '';
@@ -183,7 +183,7 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	 * @return int
 	 */
 	private function find_resource_entry_id( $resource_id, $msgctxt, $msgid ) {
-		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$table = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
 
 		if ( '' === $table ) {
 			return 0;
@@ -231,7 +231,7 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	 * @return int Number of rows marked obsolete.
 	 */
 	public function mark_obsolete_source_resource_entries_not_seen( $resource_id, $now_gmt ) {
-		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$table = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
 
 		if ( '' === $table ) {
 			return 0;
@@ -256,24 +256,13 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	}
 
 	/**
-	 * Marks as obsolete active entries not seen in current import.
-	 *
-	 * @param int    $catalog_id Catalog ID.
-	 * @param string $now_gmt Update datetime in GMT.
-	 * @return int Number of rows marked obsolete.
-	 */
-	public function mark_obsolete_entries_not_seen( $catalog_id, $now_gmt ) {
-		return $this->mark_obsolete_source_resource_entries_not_seen( (int) $catalog_id, (string) $now_gmt );
-	}
-
-	/**
 	 * Clears last_seen marker for active entries before one import.
 	 *
 	 * @param int $resource_id Resource ID.
 	 * @return void
 	 */
 	public function reset_last_seen_for_source_resource( $resource_id ) {
-		$table = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
+		$table = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
 
 		if ( '' === $table ) {
 			return;
@@ -290,16 +279,6 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	}
 
 	/**
-	 * Clears last_seen marker for active entries before one import.
-	 *
-	 * @param int $catalog_id Catalog ID.
-	 * @return void
-	 */
-	public function reset_last_seen_for_catalog( $catalog_id ) {
-		$this->reset_last_seen_for_source_resource( (int) $catalog_id );
-	}
-
-	/**
 	 * Lists source entries for one plugin slug.
 	 *
 	 * @param string $source_slug Source slug.
@@ -307,10 +286,10 @@ trait SourceWpdbRepositorySourceResourceTrait {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function list_source_resource_entries_by_source_slug( $source_slug, $limit = 500 ) {
-		$entries_table  = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
-		$catalogs_table = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
+		$entries_table   = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
+		$resources_table = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
 
-		if ( '' === $entries_table || '' === $catalogs_table ) {
+		if ( '' === $entries_table || '' === $resources_table ) {
 			return array();
 		}
 
@@ -319,23 +298,12 @@ trait SourceWpdbRepositorySourceResourceTrait {
 		$query = $this->wpdb->prepare(
 			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status, e.last_seen_at_gmt, e.updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC LIMIT %d',
 			$entries_table,
-			$catalogs_table,
+			$resources_table,
 			self::SOURCE_CATALOG_RESOURCE_KIND,
 			(string) $source_slug,
 			$max_rows
 		);
 
 		return $this->db_get_results( $query, ARRAY_A );
-	}
-
-	/**
-	 * Lists source entries for one plugin slug.
-	 *
-	 * @param string $plugin_slug Plugin slug.
-	 * @param int    $limit Maximum row count.
-	 * @return array<int, array<string, mixed>>
-	 */
-	public function list_source_entries_by_plugin_slug( $plugin_slug, $limit = 500 ) {
-		return $this->list_source_resource_entries_by_source_slug( (string) $plugin_slug, (int) $limit );
 	}
 }

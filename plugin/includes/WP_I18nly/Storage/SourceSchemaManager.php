@@ -82,30 +82,12 @@ class SourceSchemaManager {
 	}
 
 	/**
-	 * Returns source catalogs table name.
-	 *
-	 * @return string
-	 */
-	public function get_catalogs_table_name() {
-		return $this->get_resources_table_name();
-	}
-
-	/**
 	 * Returns linguistic resource entries table name.
 	 *
 	 * @return string
 	 */
 	public function get_resource_entries_table_name() {
 		return (string) $this->wpdb->prefix . 'i18nly_linguistic_resource_entries';
-	}
-
-	/**
-	 * Returns source entries table name.
-	 *
-	 * @return string
-	 */
-	public function get_entries_table_name() {
-		return $this->get_resource_entries_table_name();
 	}
 
 	/**
@@ -118,30 +100,21 @@ class SourceSchemaManager {
 	}
 
 	/**
-	 * Returns translated entries table name.
-	 *
-	 * @return string
-	 */
-	public function get_translated_entries_table_name() {
-		return $this->get_resource_targets_table_name();
-	}
-
-	/**
 	 * Creates source tables.
 	 *
 	 * @return void
 	 */
 	public function create_tables() {
-		$catalogs_table           = $this->escape_table_name( $this->get_catalogs_table_name() );
-		$entries_table            = $this->escape_table_name( $this->get_entries_table_name() );
-		$translated_entries_table = $this->escape_table_name( $this->get_translated_entries_table_name() );
-		$collation                = $this->get_charset_collate();
+		$resources_table = $this->escape_table_name( $this->get_resources_table_name() );
+		$entries_table   = $this->escape_table_name( $this->get_resource_entries_table_name() );
+		$targets_table   = $this->escape_table_name( $this->get_resource_targets_table_name() );
+		$collation       = $this->get_charset_collate();
 
-		if ( '' === $catalogs_table || '' === $entries_table || '' === $translated_entries_table ) {
+		if ( '' === $resources_table || '' === $entries_table || '' === $targets_table ) {
 			return;
 		}
 
-		$catalogs_sql = "CREATE TABLE {$catalogs_table} (
+		$resources_sql = "CREATE TABLE {$resources_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			resource_kind varchar(32) NOT NULL,
 			source_slug varchar(191) NOT NULL,
@@ -175,7 +148,7 @@ class SourceSchemaManager {
 			KEY resource_status (resource_id, status)
 		) {$collation}";
 
-		$translated_entries_sql = "CREATE TABLE {$translated_entries_table} (
+		$targets_sql = "CREATE TABLE {$targets_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			resource_id bigint(20) unsigned NOT NULL,
 			source_entry_id bigint(20) unsigned NOT NULL,
@@ -197,17 +170,17 @@ class SourceSchemaManager {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 			if ( function_exists( 'dbDelta' ) ) {
-				dbDelta( $catalogs_sql );
+				dbDelta( $resources_sql );
 				dbDelta( $entries_sql );
-				dbDelta( $translated_entries_sql );
+				dbDelta( $targets_sql );
 
 				return;
 			}
 		}
 
-		$this->db_query( $catalogs_sql );
+		$this->db_query( $resources_sql );
 		$this->db_query( $entries_sql );
-		$this->db_query( $translated_entries_sql );
+		$this->db_query( $targets_sql );
 	}
 
 	/**

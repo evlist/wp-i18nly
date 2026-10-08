@@ -35,7 +35,7 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	 * @return int
 	 */
 	public function ensure_translation_targets( $translation_id, $source_slug, $now_gmt, $plural_forms_count ) {
-		return (int) $this->get_storage_repository()->ensure_translated_entries_for_translation(
+		return (int) $this->get_storage_repository()->ensure_translation_target_rows(
 			(int) $translation_id,
 			(string) $source_slug,
 			(string) $now_gmt,
@@ -53,7 +53,7 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function list_translation_rows( $translation_id, $source_slug, $limit, $plural_forms_count ) {
-		return $this->get_storage_repository()->list_translation_entries_by_plugin_slug(
+		return $this->get_storage_repository()->list_translation_rows(
 			(int) $translation_id,
 			(string) $source_slug,
 			(int) $limit,
@@ -75,7 +75,7 @@ class TranslationResourceRepository extends AbstractLinguisticResourceRepository
 	 * @return bool
 	 */
 	public function upsert_translation_target( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
-		return (bool) $this->get_storage_repository()->upsert_translated_entry(
+		return (bool) $this->get_storage_repository()->upsert_translation_target(
 			(int) $translation_id,
 			(int) $source_entry_id,
 			(int) $form_index,

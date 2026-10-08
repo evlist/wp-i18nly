@@ -26,7 +26,7 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
 		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
 
-		$catalog_id = $repo->upsert_catalog( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$catalog_id = $repo->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
 		$entry_id   = $wpdb_stub->seed_entry(
 			array(
 				'resource_id'        => $catalog_id,
@@ -40,16 +40,16 @@ class SourceWpdbRepositoryTest extends TestCase {
 			)
 		);
 
-		$inserted = $repo->ensure_translated_entries_for_translation( 42, 'sample-plugin/sample.php', '2026-05-10 11:00:00', 2 );
+		$inserted = $repo->ensure_translation_target_rows( 42, 'sample-plugin/sample.php', '2026-05-10 11:00:00', 2 );
 
 		$this->assertSame( 1, $inserted );
 		$this->assertCount( 1, $wpdb_stub->get_targets() );
 		$this->assertSame( 42, $wpdb_stub->get_targets()[0]['resource_id'] );
 		$this->assertArrayNotHasKey( 'translation_id', $wpdb_stub->get_targets()[0] );
 
-		$this->assertTrue( $repo->upsert_translated_entry( 42, $entry_id, 0, 'Bonjour le monde', '2026-05-10 12:00:00', 'translated', 1, 0 ) );
+		$this->assertTrue( $repo->upsert_translation_target( 42, $entry_id, 0, 'Bonjour le monde', '2026-05-10 12:00:00', 'translated', 1, 0 ) );
 
-		$rows = $repo->list_translation_entries_by_plugin_slug( 42, 'sample-plugin/sample.php', 500, 2 );
+		$rows = $repo->list_translation_rows( 42, 'sample-plugin/sample.php', 500, 2 );
 
 		$this->assertCount( 1, $rows );
 		$this->assertSame( 'Hello world', $rows[0]['msgid'] );
@@ -70,7 +70,7 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$manager   = new \WP_I18nly\Storage\SourceSchemaManager( $wpdb_stub );
 		$repo      = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
 
-		$catalog_id = $repo->upsert_catalog( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$catalog_id = $repo->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
 		$wpdb_stub->seed_entry(
 			array(
 				'resource_id'        => $catalog_id,
@@ -102,7 +102,7 @@ class SourceWpdbRepositoryTest extends TestCase {
 		$storage   = new \WP_I18nly\Storage\SourceWpdbRepository( $manager, $wpdb_stub );
 		$repo      = new \WP_I18nly\LinguisticResources\SourceCatalogResourceRepository( $storage, $manager );
 
-		$catalog_id = $storage->upsert_catalog( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
+		$catalog_id = $storage->upsert_source_resource( 'sample-plugin/sample.php', 'sample-plugin', '{}', '2026-05-10 09:00:00' );
 		$wpdb_stub->seed_entry(
 			array(
 				'resource_id'        => $catalog_id,
@@ -318,7 +318,7 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 	}
 
 	/**
-	 * Builds source-entry rows for ensure_translated_entries_for_translation().
+	 * Builds source-entry rows for ensure_translation_target_rows().
 	 *
 	 * @param string $query Prepared query.
 	 * @return array<int, array<string, mixed>>
@@ -372,7 +372,7 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 	}
 
 	/**
-	 * Builds translation rows for list_translation_entries_by_plugin_slug().
+	 * Builds translation rows for list_translation_rows().
 	 *
 	 * @param string $query Prepared query.
 	 * @return array<int, array<string, mixed>>
@@ -444,7 +444,7 @@ class I18nly_Test_WPDB_Repository_Stub extends I18nly_Test_WPDB_Stub {
 	}
 
 	/**
-	 * Builds one joined row returned by list_translation_entries_by_plugin_slug().
+	 * Builds one joined row returned by list_translation_rows().
 	 *
 	 * @param array<string, mixed>      $entry Source entry row.
 	 * @param array<string, mixed>|null $target Target row.

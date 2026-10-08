@@ -25,13 +25,13 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 	 * @param int    $plural_forms_count Number of target plural forms.
 	 * @return int Number of inserted rows.
 	 */
-	public function ensure_translated_entries_for_translation( $translation_id, $plugin_slug, $now_gmt, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
-		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
-		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
-		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
-		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
+	public function ensure_translation_target_rows( $translation_id, $plugin_slug, $now_gmt, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
+		$entries_table      = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
+		$resources_table    = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
+		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
 
-		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
+		if ( '' === $entries_table || '' === $resources_table || '' === $targets_table ) {
 			return 0;
 		}
 
@@ -41,7 +41,7 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 			$this->wpdb->prepare(
 				'SELECT e.id AS source_entry_id, e.msgid_plural FROM %i e INNER JOIN %i c ON c.id = e.resource_id WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.id ASC',
 				$entries_table,
-				$catalogs_table,
+				$resources_table,
 				self::SOURCE_CATALOG_RESOURCE_KIND,
 				(string) $plugin_slug
 			),
@@ -61,22 +61,22 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 			$required_forms = $has_plural ? $max_forms : 1;
 
 			for ( $form_index = 0; $form_index < $required_forms; $form_index++ ) {
-				$existing_translated_entry_id = (int) $this->db_get_var(
+				$existing_target_id = (int) $this->db_get_var(
 					$this->wpdb->prepare(
 						'SELECT id FROM %i WHERE resource_id = %d AND source_entry_id = %d AND form_index = %d',
-						$translated_entries_table,
+						$targets_table,
 						$target_resource_id,
 						$source_entry_id,
 						$form_index
 					)
 				);
 
-				if ( $existing_translated_entry_id > 0 ) {
+				if ( $existing_target_id > 0 ) {
 					continue;
 				}
 
 				$result = $this->wpdb->insert(
-					$translated_entries_table,
+					$targets_table,
 					array(
 						'resource_id'     => $target_resource_id,
 						'source_entry_id' => $source_entry_id,
@@ -108,13 +108,13 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 	 * @param int    $plural_forms_count Number of target plural forms.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function list_translation_entries_by_plugin_slug( $translation_id, $plugin_slug, $limit = 500, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
-		$entries_table            = $this->escape_table_name( $this->schema_manager->get_entries_table_name() );
-		$catalogs_table           = $this->escape_table_name( $this->schema_manager->get_catalogs_table_name() );
-		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
-		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
+	public function list_translation_rows( $translation_id, $plugin_slug, $limit = 500, $plural_forms_count = self::DEFAULT_PLURAL_FORMS_COUNT ) {
+		$entries_table      = $this->escape_table_name( $this->schema_manager->get_resource_entries_table_name() );
+		$resources_table    = $this->escape_table_name( $this->schema_manager->get_resources_table_name() );
+		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
+		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
 
-		if ( '' === $entries_table || '' === $catalogs_table || '' === $translated_entries_table ) {
+		if ( '' === $entries_table || '' === $resources_table || '' === $targets_table ) {
 			return array();
 		}
 
@@ -123,8 +123,8 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 		$query = $this->wpdb->prepare(
 			'SELECT e.id AS source_entry_id, e.msgctxt, e.msgid, e.msgid_plural, e.translator_comment, e.status AS source_status, e.last_seen_at_gmt, e.updated_at_gmt, t.form_index, t.target_text AS translation, t.status AS translated_status, t.used_ai, t.used_manual, t.comment, t.updated_at_gmt AS translation_updated_at_gmt FROM %i e INNER JOIN %i c ON c.id = e.resource_id LEFT JOIN %i t ON t.source_entry_id = e.id AND t.resource_id = %d WHERE c.resource_kind = %s AND c.source_slug = %s ORDER BY e.msgid ASC, e.id ASC, t.form_index ASC LIMIT %d',
 			$entries_table,
-			$catalogs_table,
-			$translated_entries_table,
+			$resources_table,
+			$targets_table,
 			$target_resource_id,
 			self::SOURCE_CATALOG_RESOURCE_KIND,
 			(string) $plugin_slug,
@@ -210,23 +210,23 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 	 * @param int|null    $used_manual Manual provenance flag. Null preserves existing value.
 	 * @return bool
 	 */
-	public function upsert_translated_entry( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
-		$translated_entries_table = $this->escape_table_name( $this->schema_manager->get_translated_entries_table_name() );
-		$target_resource_id       = $this->get_target_resource_id_from_translation_id( $translation_id );
-		if ( '' === $translated_entries_table ) {
+	public function upsert_translation_target( $translation_id, $source_entry_id, $form_index, $translation, $now_gmt, $status = null, $used_ai = null, $used_manual = null ) {
+		$targets_table      = $this->escape_table_name( $this->schema_manager->get_resource_targets_table_name() );
+		$target_resource_id = $this->get_target_resource_id_from_translation_id( $translation_id );
+		if ( '' === $targets_table ) {
 			return false;
 		}
-		$translated_entry_id = (int) $this->db_get_var(
+		$target_id = (int) $this->db_get_var(
 			$this->wpdb->prepare(
 				'SELECT id FROM %i WHERE resource_id = %d AND source_entry_id = %d AND form_index = %d',
-				$translated_entries_table,
+				$targets_table,
 				$target_resource_id,
 				(int) $source_entry_id,
 				(int) $form_index
 			)
 		);
 
-		if ( $translated_entry_id > 0 ) {
+		if ( $target_id > 0 ) {
 			$update_data   = array(
 				'target_text'    => (string) $translation,
 				'updated_at_gmt' => (string) $now_gmt,
@@ -248,13 +248,13 @@ trait SourceWpdbRepositoryTargetResourceTrait {
 				$update_format[]            = '%d';
 			}
 
-			$result = $this->wpdb->update( $translated_entries_table, $update_data, array( 'id' => (int) $translated_entry_id ), $update_format, array( '%d' ) );
+			$result = $this->wpdb->update( $targets_table, $update_data, array( 'id' => (int) $target_id ), $update_format, array( '%d' ) );
 
 			return false !== $result;
 		}
 
 		$result = $this->wpdb->insert(
-			$translated_entries_table,
+			$targets_table,
 			array(
 				'resource_id'     => $target_resource_id,
 				'source_entry_id' => (int) $source_entry_id,

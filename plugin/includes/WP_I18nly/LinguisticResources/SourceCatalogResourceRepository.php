@@ -35,7 +35,7 @@ class SourceCatalogResourceRepository extends AbstractLinguisticResourceReposito
 	 * @return int
 	 */
 	public function upsert_source_catalog( $source_slug, $domain, $headers_json, $now_gmt ) {
-		return (int) $this->get_storage_repository()->upsert_catalog(
+		return (int) $this->get_storage_repository()->upsert_source_resource(
 			(string) $source_slug,
 			(string) $domain,
 			(string) $headers_json,
