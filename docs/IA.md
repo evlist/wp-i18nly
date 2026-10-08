@@ -25,7 +25,7 @@ The product goal is to let users work with translations as first-class content o
 As verified in this repository on October 8, 2026:
 
 - branch: `main`,
-- PHPUnit status: `OK (164 tests, 708 assertions)`,
+- PHPUnit status: `OK (166 tests, 715 assertions)`,
 - runtime PHP code lives under `plugin/includes/WP_I18nly/`.
 
 Current top-level runtime namespaces:
@@ -279,6 +279,7 @@ Implemented extraction work includes dedicated collaborators such as:
 - `AiTranslationManager`,
 - `TranslationFilterQuery` (entries filter query handling),
 - `DeepLUsageWidgets` (dashboard widget and edit-screen gauge),
+- `DeepLUsageFactory` (single place building the DeepL usage status provider from saved settings),
 - `TranslationDuplicateGuard` (duplicate translation detection),
 - `LinguisticResources\TranslationEditorRowsProvider` (editor rows assembly).
 

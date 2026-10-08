@@ -11,7 +11,6 @@
 namespace WP_I18nly\Admin;
 
 use WP_I18nly\Admin\UI\DeepLUsageGaugeRenderer;
-use WP_I18nly\AI\DeepLUsageStatusProvider;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -142,17 +141,7 @@ class DeepLUsageWidgets {
 	 */
 	private function get_status_provider() {
 		if ( null === $this->status_provider ) {
-			$settings_page = new TranslationSettingsPage();
-
-			$this->status_provider = new DeepLUsageStatusProvider(
-				function () use ( $settings_page ) {
-					return $settings_page->get_saved_api_key();
-				},
-				null,
-				function () use ( $settings_page ) {
-					return $settings_page->get_saved_reserved_characters();
-				}
-			);
+			$this->status_provider = ( new DeepLUsageFactory() )->create_status_provider();
 		}
 
 		return $this->status_provider;
