@@ -381,6 +381,8 @@ Recommended order: H1, H2, H3, H4, H5, H6, H7, then slices 5 and 6.
 
 Status: done. `PluginSourceFiles::resolve_main_file()` rejects empty, `.`/`..`, NUL and `:` segments and checks with `realpath()` that the file stays under its root (symbolic links included); `TranslationSaveHandler` drops a source slug that is not an installed plugin and a language that is not a supported target language; the post type has its own capability type and every primitive capability maps to `manage_options` (`AdminRegistration::get_capabilities()`), which the `edit_post` checks of the AJAX handlers inherit. Tests: `PluginSourceFilesTest`, `TranslationSaveHandlerTest`, `AdminRegistrationTest`. Translations already saved with a bad slug are harmless thanks to the read-side check, but are not cleaned.
 
+Correction (found by testing in a Codespace): the first version also checked with `realpath()` that the resolved file stayed under the plugins folder, which rejected every plugin folder that is a symbolic link to a working copy (the Codespace links `wp-content/plugins/i18nly` to `plugin/`), so no source string was found. The check was removed: the relative path is already validated segment by segment, only an administrator can create links in the plugins folder, and links are now followed on purpose (`PluginSourceFilesTest`).
+
 Goal:
 
 - no user input can select a path or a user right outside the intended scope.

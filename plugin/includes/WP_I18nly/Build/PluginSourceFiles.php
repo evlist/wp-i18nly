@@ -108,9 +108,11 @@ class PluginSourceFiles {
 	}
 
 	/**
-	 * Returns the readable file at a relative path under a root, or an empty string when it is missing or outside the root.
+	 * Returns the readable file at a relative path under a root, or an empty string when it is missing.
 	 *
-	 * Symbolic links are resolved before checking, so a link cannot lead out of the root.
+	 * The relative path was checked by is_safe_relative_path(), so it cannot leave the root by itself.
+	 * Symbolic links are followed on purpose: a plugin folder is often a link to a working copy elsewhere
+	 * (development environments, deployments), and only an administrator can create links in the plugins folder.
 	 *
 	 * @param string $root Root directory.
 	 * @param string $relative_path Safe relative path.
@@ -119,24 +121,7 @@ class PluginSourceFiles {
 	private function resolve_inside_root( $root, $relative_path ) {
 		$candidate = $root . '/' . $relative_path;
 
-		if ( ! is_readable( $candidate ) ) {
-			return '';
-		}
-
-		$real_root      = realpath( $root );
-		$real_candidate = realpath( $candidate );
-
-		if ( false === $real_root || false === $real_candidate ) {
-			return '';
-		}
-
-		$real_root = rtrim( $real_root, '/\\' ) . DIRECTORY_SEPARATOR;
-
-		if ( 0 !== strpos( $real_candidate, $real_root ) ) {
-			return '';
-		}
-
-		return $candidate;
+		return is_readable( $candidate ) ? $candidate : '';
 	}
 
 	/**

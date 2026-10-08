@@ -108,17 +108,17 @@ class PluginSourceFilesTest extends TestCase {
 	}
 
 	/**
-	 * A symbolic link leading out of the root is rejected.
+	 * A plugin folder that is a symbolic link to a working copy elsewhere is followed (development setups).
 	 *
 	 * @return void
 	 */
-	public function test_rejects_a_symlink_leaving_the_root() {
+	public function test_follows_symbolic_links_inside_the_plugins_root() {
 		if ( ! function_exists( 'symlink' ) || ! @symlink( $this->base . '/secret.php', $this->root . '/sample/link.php' ) ) {
 			$this->markTestSkipped( 'Symbolic links are not available.' );
 		}
 
 		$files = new \WP_I18nly\Build\PluginSourceFiles( $this->root );
 
-		$this->assertSame( '', $files->resolve_main_file( 'sample/link.php' ) );
+		$this->assertSame( $this->root . '/sample/link.php', $files->resolve_main_file( 'sample/link.php' ) );
 	}
 }
