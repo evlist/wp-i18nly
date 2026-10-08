@@ -166,16 +166,15 @@ class TranslationExportController {
 	 * @return string
 	 */
 	public function get_download_url( $translation_id, $include_unvalidated ) {
-		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'action'         => self::ACTION,
-					'translation_id' => (int) $translation_id,
-					'unvalidated'    => $include_unvalidated ? self::CHOICE_INCLUDE : self::CHOICE_EXCLUDE,
-				),
-				admin_url( 'admin-post.php' )
+		// Not wp_nonce_url(): it HTML-escapes the address (&amp;), which breaks it when used in a script.
+		return add_query_arg(
+			array(
+				'action'         => self::ACTION,
+				'translation_id' => (int) $translation_id,
+				'unvalidated'    => $include_unvalidated ? self::CHOICE_INCLUDE : self::CHOICE_EXCLUDE,
+				'_wpnonce'       => wp_create_nonce( self::get_nonce_action( $translation_id ) ),
 			),
-			self::get_nonce_action( $translation_id )
+			admin_url( 'admin-post.php' )
 		);
 	}
 

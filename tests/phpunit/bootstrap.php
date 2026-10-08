@@ -1151,7 +1151,7 @@ if ( ! function_exists( 'wp_nonce_url' ) ) {
 	 * @return string
 	 */
 	function wp_nonce_url( $action_url, $action = -1, $name = '_wpnonce' ) {
-		return add_query_arg( $name, 'nonce-' . (string) $action, (string) $action_url );
+		return esc_html( add_query_arg( $name, 'nonce-' . (string) $action, (string) $action_url ) );
 	}
 }
 

@@ -518,6 +518,8 @@ class TranslationExportControllerTest extends TestCase {
 		$this->assertStringContainsString( 'translation_id=7', $url );
 		$this->assertStringContainsString( 'unvalidated=include', $url );
 		$this->assertStringContainsString( 'nonce-i18nly_translation_files_7', $url );
+		$this->assertStringNotContainsString( '&amp;', $url );
+		$this->assertStringNotContainsString( '&#038;', $url );
 	}
 
 	/**
