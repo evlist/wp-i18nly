@@ -178,6 +178,20 @@ php scripts/generate-plural-specs.php --wp-locales-command=""
 When WP filtering is enabled, the script also reports locales supported by WP
 but missing from the current GlotPress baseline snapshot.
 
+## Why Not `gettext/languages`?
+
+`gettext/languages` (CLDR data, installed by Composer as a dependency of `gettext/gettext`) is deliberately not used at runtime.
+
+What the editor needs for each plural form of a locale (see `PluralFormPresenter` and the generated `Lang*.php` classes):
+
+- the gettext `nplurals` and `plural_expression`, as WordPress and `Plural-Forms` headers use them,
+- one entry per form index (`msgstr[0..n-1]`) with a short label, a marker and a tooltip meant for the translator,
+- example numbers per form, used as the witness number shown in the source text and sent to the machine translation.
+
+`gettext/languages` describes the same rules as CLDR categories (`zero`, `one`, `few`, `many`, `other`) with raw CLDR formulas and exemplar range strings. Turning them into the presentation above would need post-processing for every locale (mapping categories to gettext indexes, building tooltips and witness numbers), and the locale list and rules would differ from the ones used by WordPress.org (see the first section).
+
+Status of this note: reconstructed from the code and from the maintainer's recollection ("pluralization handling and the way things are presented to the user"). The exact missing features of `gettext/languages` were not recorded at the time; confirm or complete this list before relying on it.
+
 ## WordPress / Gettext Boundaries
 
 For plural rules source-of-truth, tooling roles are intentionally distinct:
