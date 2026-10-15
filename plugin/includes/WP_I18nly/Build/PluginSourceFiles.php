@@ -15,6 +15,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use SplFileObject;
+use WP_I18nly\Support\SourceReference;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -49,7 +50,8 @@ class PluginSourceFiles {
 	 * @return string Absolute path, or an empty string when the plugin cannot be found.
 	 */
 	public function resolve_main_file( $source_slug ) {
-		$source_slug = ltrim( (string) $source_slug, '/\\' );
+		$source      = SourceReference::from_identifier( $source_slug );
+		$source_slug = $source->get_key();
 
 		if ( ! $this->is_safe_relative_path( $source_slug ) ) {
 			return '';
@@ -58,14 +60,19 @@ class PluginSourceFiles {
 		$candidates = array();
 
 		if ( '' !== $this->plugins_root ) {
-			$candidates[] = array( rtrim( $this->plugins_root, '/\\' ), $source_slug );
+			$candidates[] = array( rtrim( $this->plugins_root, '/\\' ), $source->is_theme() ? $source_slug . '/style.css' : $source_slug );
 		}
 
-		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+		if ( $source->is_theme() ) {
+			// The "main file" of a theme is its style sheet, which carries the header.
+			if ( function_exists( 'get_theme_root' ) ) {
+				$candidates[] = array( rtrim( (string) get_theme_root( $source_slug ), '/\\' ), $source_slug . '/style.css' );
+			}
+		} elseif ( defined( 'WP_PLUGIN_DIR' ) ) {
 			$candidates[] = array( rtrim( (string) WP_PLUGIN_DIR, '/\\' ), $source_slug );
 		}
 
-		if ( defined( 'I18NLY_PLUGIN_FILE' ) ) {
+		if ( ! $source->is_theme() && defined( 'I18NLY_PLUGIN_FILE' ) ) {
 			$plugin_directory = dirname( (string) I18NLY_PLUGIN_FILE );
 			$slug_parts       = explode( '/', $source_slug );
 			$slug_directory   = isset( $slug_parts[0] ) ? (string) $slug_parts[0] : '';
@@ -261,7 +268,7 @@ class PluginSourceFiles {
 	 * @return bool
 	 */
 	private function is_directory_plugin( $source_slug ) {
-		return false !== strpos( (string) $source_slug, '/' );
+		return SourceReference::from_identifier( $source_slug )->is_directory();
 	}
 
 	/**

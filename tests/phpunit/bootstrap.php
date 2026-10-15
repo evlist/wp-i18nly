@@ -15,6 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/../../' );
 }
 
+if ( ! defined( 'WP_LANG_DIR' ) ) {
+	define( 'WP_LANG_DIR', '/wp-content/languages' );
+}
+
 if ( ! defined( 'ARRAY_A' ) ) {
 	define( 'ARRAY_A', 'ARRAY_A' );
 }

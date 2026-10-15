@@ -46,4 +46,29 @@ class SourcePotBuilderTest extends TestCase {
 	public function test_unknown_plugin_gives_nothing() {
 		$this->assertSame( array(), ( new SourcePotBuilder( sys_get_temp_dir() . '/i18nly-nothing-here' ) )->build( 'nothing/nothing.php' ) );
 	}
+
+	/**
+	 * The POT of a theme comes from its folder: style sheet headers, templates and theme.json.
+	 *
+	 * @return void
+	 */
+	public function test_pot_of_a_theme() {
+		$root   = sys_get_temp_dir() . '/i18nly-theme-' . uniqid( '', true );
+		$folder = $root . '/sample';
+
+		mkdir( $folder, 0777, true ); // phpcs:ignore
+		file_put_contents( $folder . '/style.css', "/*\nTheme Name: Sample Theme\nText Domain: sample\n*/\n" ); // phpcs:ignore
+		file_put_contents( $folder . '/functions.php', "<?php\n__( 'Theme string', 'sample' );\n" ); // phpcs:ignore
+
+		$files = ( new SourcePotBuilder( $root ) )->build( 'theme:sample' );
+
+		unlink( $folder . '/style.css' ); // phpcs:ignore
+		unlink( $folder . '/functions.php' ); // phpcs:ignore
+		rmdir( $folder ); // phpcs:ignore
+		rmdir( $root ); // phpcs:ignore
+
+		$this->assertSame( array( 'sample.pot' ), array_keys( $files ) );
+		$this->assertStringContainsString( 'msgid "Theme string"', $files['sample.pot'] );
+		$this->assertStringContainsString( 'msgid "Sample Theme"', $files['sample.pot'] );
+	}
 }

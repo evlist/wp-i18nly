@@ -341,11 +341,17 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_save_translation_meta_box_sets_meta_and_autogenerates_title_when_empty() {
+		i18nly_test_set_translations_rows( array() );
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array( 'Name' => 'Akismet' ),
+			)
+		);
 		i18nly_test_set_can_manage_options( true );
 		i18nly_test_reset_last_updated_post();
 
 		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_plugin_selector']            = 'plugin:akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
 		$page = new \WP_I18nly\Admin\AdminPage();
@@ -358,12 +364,12 @@ class AdminPageRenderTest extends TestCase {
 			false
 		);
 
-		$this->assertSame( 'akismet/akismet.php', get_post_meta( 42, '_i18nly_source_slug', true ) );
+		$this->assertSame( 'plugin:akismet/akismet.php', get_post_meta( 42, '_i18nly_source_slug', true ) );
 		$this->assertSame( 'fr_FR', get_post_meta( 42, '_i18nly_target_language', true ) );
 		$this->assertSame(
 			array(
 				'ID'         => 42,
-				'post_title' => 'akismet/akismet.php → fr_FR',
+				'post_title' => 'plugin:akismet/akismet.php → fr_FR',
 			),
 			i18nly_test_get_last_updated_post()
 		);
@@ -381,7 +387,7 @@ class AdminPageRenderTest extends TestCase {
 		i18nly_test_reset_last_updated_post();
 
 		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_plugin_selector']            = 'plugin:akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
 		$page = new \WP_I18nly\Admin\AdminPage();
@@ -419,7 +425,7 @@ class AdminPageRenderTest extends TestCase {
 		);
 
 		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_plugin_selector']            = 'hello-dolly/hello.php';
+		$_POST['i18nly_plugin_selector']            = 'plugin:hello-dolly/hello.php';
 		$_POST['i18nly_target_language_selector']   = 'de_DE';
 
 		$page = new \WP_I18nly\Admin\AdminPage();
@@ -582,12 +588,17 @@ class AdminPageRenderTest extends TestCase {
 	 * @return void
 	 */
 	public function test_save_translation_meta_box_prevents_duplicate_translation_creation() {
+		i18nly_test_set_plugins(
+			array(
+				'akismet/akismet.php' => array( 'Name' => 'Akismet' ),
+			)
+		);
 		i18nly_test_set_can_manage_options( true );
 		i18nly_test_set_translations_rows(
 			array(
 				array(
 					'id'               => 100,
-					'source_slug'      => 'akismet/akismet.php',
+					'source_slug'      => 'plugin:akismet/akismet.php',
 					'target_language'  => 'fr_FR',
 					'created_at_gmt'   => '2026-03-02 00:00:00',
 					'created_at_local' => '2026-03-02 00:00:00',
@@ -596,7 +607,7 @@ class AdminPageRenderTest extends TestCase {
 		);
 
 		$_POST['i18nly_translation_meta_box_nonce'] = 'nonce-i18nly_translation_meta_box';
-		$_POST['i18nly_plugin_selector']            = 'akismet/akismet.php';
+		$_POST['i18nly_plugin_selector']            = 'plugin:akismet/akismet.php';
 		$_POST['i18nly_target_language_selector']   = 'fr_FR';
 
 		$page = new class() extends \WP_I18nly\Admin\AdminPage {
@@ -665,7 +676,7 @@ class AdminPageRenderTest extends TestCase {
 
 		$this->assertSame( 42, $page->captured_duplicate['new_post_id'] );
 		$this->assertSame( 100, $page->captured_duplicate['existing_translation_id'] );
-		$this->assertSame( 'akismet/akismet.php', $page->captured_duplicate['source_slug'] );
+		$this->assertSame( 'plugin:akismet/akismet.php', $page->captured_duplicate['source_slug'] );
 		$this->assertSame( 'fr_FR', $page->captured_duplicate['target_language'] );
 
 		unset( $_POST['i18nly_translation_meta_box_nonce'], $_POST['i18nly_plugin_selector'], $_POST['i18nly_target_language_selector'] );
@@ -1486,7 +1497,7 @@ class AdminPageRenderTest extends TestCase {
 		$page->render_translation_meta_box( (object) array( 'ID' => 42 ) );
 
 		$this->assertTrue( $renderer->called );
-		$this->assertArrayHasKey( 'akismet/akismet.php', $renderer->captured['plugin_options'] );
+		$this->assertArrayHasKey( 'plugin:akismet/akismet.php', $renderer->captured['plugin_options'] );
 		$this->assertSame( 'akismet/akismet.php', $renderer->captured['selected_source'] );
 		$this->assertSame( 'fr_FR', $renderer->captured['selected_language'] );
 		$this->assertSame( true, $renderer->captured['is_locked'] );

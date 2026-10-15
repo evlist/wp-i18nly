@@ -48,6 +48,19 @@ class TranslationInstallerTest extends TestCase {
 	}
 
 	/**
+	 * The translations of a theme go to the themes directory, those of a plugin to the plugins one.
+	 *
+	 * @return void
+	 */
+	public function test_installs_in_the_directory_of_the_source_type() {
+		( new TranslationInstaller( $this->fs ) )->install( 'sample', 'fr_FR', 'MO', 'PO', array(), 'themes' );
+		( new TranslationInstaller( $this->fs ) )->install( 'sample', 'fr_FR', 'MO2', 'PO2' );
+
+		$this->assertSame( 'MO', $this->fs->files[ WP_LANG_DIR . '/themes/sample-fr_FR.mo' ] );
+		$this->assertSame( 'MO2', $this->fs->files[ WP_LANG_DIR . '/plugins/sample-fr_FR.mo' ] );
+	}
+
+	/**
 	 * A file written by I18nly is replaced without backup.
 	 *
 	 * @return void

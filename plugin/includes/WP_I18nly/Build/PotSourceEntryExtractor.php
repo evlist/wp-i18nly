@@ -10,6 +10,8 @@
 
 namespace WP_I18nly\Build;
 
+use WP_I18nly\Support\SourceReference;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -81,6 +83,10 @@ class PotSourceEntryExtractor {
 		$this->collect( $entries_map, $directory, $this->files->list_blade_files( $main_file, $source_slug ), array( $this->php, 'extract_from_blade' ) );
 		$this->collect( $entries_map, $directory, $this->files->list_js_files( $main_file, $source_slug ), array( $this->js, 'extract_from_code' ) );
 		$this->collect( $entries_map, $directory, $this->files->list_js_map_files( $main_file, $source_slug ), array( $this->js, 'extract_from_sourcemap' ) );
+		if ( SourceReference::from_identifier( $source_slug )->is_theme() ) {
+			$this->collect( $entries_map, $directory, array( $main_file ), array( new ThemeHeaderExtractor(), 'extract_from_file_contents' ) );
+		}
+
 		$this->collect( $entries_map, $directory, $this->files->list_json_files( $main_file, $source_slug ), array( $this->json, 'extract_from_file_contents' ) );
 
 		return array_values( $entries_map );

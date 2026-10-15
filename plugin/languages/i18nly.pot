@@ -7,7 +7,7 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "MIME-Version: 1.0\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"POT-Creation-Date: 2026-10-08 22:22+0000\n"
+"POT-Creation-Date: 2026-10-15 13:22+0000\n"
 "Project-Id-Version: I18nly 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
 "X-Domain: i18nly\n"
@@ -122,7 +122,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:175
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:198
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:250
-#: includes/WP_I18nly/Admin/TranslationExportController.php:192
+#: includes/WP_I18nly/Admin/TranslationExportController.php:194
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:226
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:260
 msgid "You are not allowed to perform this action."
@@ -132,7 +132,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:179
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:202
 #: includes/WP_I18nly/Admin/Glossary/GlossaryAdminController.php:254
-#: includes/WP_I18nly/Admin/TranslationExportController.php:196
+#: includes/WP_I18nly/Admin/TranslationExportController.php:198
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:234
 #: includes/WP_I18nly/Admin/TranslationSettingsPage.php:268
 msgid "Invalid request."
@@ -204,7 +204,7 @@ msgstr ""
 #: includes/WP_I18nly/Admin/Glossary/GlossaryScreen.php:226
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:36
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:44
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:49
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:77
 msgid "Target language"
 msgstr ""
 
@@ -350,13 +350,13 @@ msgstr ""
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:63
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:214
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:254
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:129
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:157
 #: includes/WP_I18nly/Support/AdminRegistration.php:31
 #: includes/WP_I18nly/Support/AdminRegistration.php:35
 msgid "Translation"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/TranslationExportController.php:203
+#: includes/WP_I18nly/Admin/TranslationExportController.php:205
 msgid "There is nothing to export: no string is translated, or the translated ones were left out."
 msgstr ""
 
@@ -473,36 +473,36 @@ msgid "stale values"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:30
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:88
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:116
 #: assets/js/linguistic-resource/entry-badges.js:15
 msgid "Draft"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:34
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:84
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:112
 #: assets/js/linguistic-resource/entry-badges.js:16
 msgid "Suspect"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:38
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:92
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:120
 #: assets/js/linguistic-resource/entry-badges.js:17
 msgid "Validated"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:84
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:77
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:105
 msgid "Obsolete"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:103
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:103
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:131
 #: assets/js/linguistic-resource/entry-badges.js:21
 msgid "AI"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/EntryStatusBadges.php:111
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:107
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:135
 #: assets/js/linguistic-resource/entry-badges.js:22
 msgid "Manual"
 msgstr ""
@@ -527,7 +527,7 @@ msgid "Source string"
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/TranslationEntriesListTable.php:64
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:81
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:109
 msgid "Status"
 msgstr ""
 
@@ -645,37 +645,37 @@ msgstr ""
 msgid "Include them (flagged fuzzy in the PO file)"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:207
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:225
 msgid "Translation saved and installed in the languages directory."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:208
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:226
 msgid "Translation saved, but the languages directory cannot be written: WordPress needs direct file access or file system credentials."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:209
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:227
 msgid "Translation saved, but a translation file could not be written."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:210
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:228
 msgid "Translation saved. Some translations are not validated: choose whether to include them or to leave them out, then use the button again."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:211
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:229
 msgid "Translation saved, but you are not allowed to install languages."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:212
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:230
 msgid "Translation saved. There is nothing to export: no string is translated, or the translated ones were left out."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:217
+#: includes/WP_I18nly/Admin/UI/TranslationExportMetaBox.php:235
 msgid "Translation saved. The download starts."
 msgstr ""
 
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:35
 #: includes/WP_I18nly/Admin/UI/TranslationListColumns.php:40
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:125
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:153
 msgid "Source"
 msgstr ""
 
@@ -753,63 +753,71 @@ msgid "%s translation restored from the Trash."
 msgid_plural "%s translations restored from the Trash."
 msgstr[0] ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:36
-msgid "Plugin"
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:27
+msgid "Plugins"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:40
-msgid "Select a plugin"
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:28
+msgid "Themes"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:53
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:58
+msgid "Plugin or theme"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:62
+msgid "Select a plugin or a theme"
+msgstr ""
+
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:81
 msgid "Select a target language"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:63
-msgid "Plugin and target language are locked after creation."
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:91
+msgid "Plugin or theme and target language are locked after creation."
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:67
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:95
 msgid "Translation entries"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:68
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:96
 msgid "Translation entry filters"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:70
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:98
 msgid "Entries"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:73
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:101
 msgid "Active"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:96
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:124
 msgid "Non translated"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:100
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:128
 msgid "Provenance"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:111
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:139
 msgid "None"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:115
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:143
 msgid "Search"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:116
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:144
 msgid "Search text"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:121
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:149
 msgid "Contains text…"
 msgstr ""
 
-#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:134
+#: includes/WP_I18nly/Admin/UI/TranslationMetaBoxRenderer.php:162
 msgid "Loading translation entries…"
 msgstr ""
 

@@ -19,6 +19,7 @@ use WP_I18nly\Export\TranslationInstaller;
 use WP_I18nly\LinguisticResources\TranslationResourceRepository;
 use WP_I18nly\Plurals\PluralFormsRegistry;
 use WP_I18nly\Support\PluginMetadataProvider;
+use WP_I18nly\Support\SourceReference;
 use WP_I18nly\Support\TranslationRepository;
 
 defined( 'ABSPATH' ) || exit;
@@ -474,6 +475,18 @@ class TranslationExportController {
 	}
 
 	/**
+	 * Tells where WordPress looks for the translations of the source of a translation.
+	 *
+	 * @param int $translation_id Translation ID.
+	 * @return string "plugins" or "themes".
+	 */
+	private function get_languages_subdirectory( $translation_id ) {
+		$translation = $this->get_translation( $translation_id );
+
+		return null === $translation ? 'plugins' : SourceReference::from_identifier( $translation['source_slug'] )->get_languages_subdirectory();
+	}
+
+	/**
 	 * Builds the POT file of the installed version of the plugin.
 	 *
 	 * @param int $translation_id Translation ID.
@@ -507,7 +520,7 @@ class TranslationExportController {
 
 		$installer = $installer instanceof TranslationInstaller ? $installer : ( $this->installer instanceof TranslationInstaller ? $this->installer : new TranslationInstaller() );
 
-		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) + $this->build_pot_files( $translation_id ) );
+		return $installer->install( $mo_file['text_domain'], $mo_file['locale'], $mo_file['contents'], $po_file['contents'], $this->build_script_files( $translation_id, $include_unvalidated ) + $this->build_pot_files( $translation_id ), $this->get_languages_subdirectory( $translation_id ) );
 	}
 
 	/**

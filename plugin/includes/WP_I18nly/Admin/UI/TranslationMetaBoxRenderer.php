@@ -17,6 +17,28 @@ defined( 'ABSPATH' ) || exit;
  */
 class TranslationMetaBoxRenderer {
 	/**
+	 * Splits the sources in plugins and themes, in the order they are shown.
+	 *
+	 * @param array<string, string> $sources Names indexed by source identifier.
+	 * @return array<string, array<string, string>>
+	 */
+	private function group_sources( array $sources ) {
+		$groups = array(
+			__( 'Plugins', 'i18nly' ) => array(),
+			__( 'Themes', 'i18nly' )  => array(),
+		);
+		$keys   = array_keys( $groups );
+
+		foreach ( $sources as $identifier => $name ) {
+			$index = 0 === strpos( (string) $identifier, 'theme:' ) ? 1 : 0;
+
+			$groups[ $keys[ $index ] ][ $identifier ] = $name;
+		}
+
+		return $groups;
+	}
+
+	/**
 	 * Renders translation meta box fields.
 	 *
 	 * @param array<string, string>                                           $plugin_options Plugin selector options.
@@ -33,13 +55,19 @@ class TranslationMetaBoxRenderer {
 			<tbody>
 				<tr>
 					<th scope="row">
-						<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin', 'i18nly' ); ?></label>
+						<label for="i18nly-plugin-selector"><?php echo esc_html__( 'Plugin or theme', 'i18nly' ); ?></label>
 					</th>
 					<td>
 						<select id="i18nly-plugin-selector" name="i18nly_plugin_selector" required<?php echo disabled( (bool) $is_locked, true, false ); ?>>
-							<option value=""><?php echo esc_html__( 'Select a plugin', 'i18nly' ); ?></option>
-							<?php foreach ( $plugin_options as $plugin_file => $plugin_name ) : ?>
-								<option value="<?php echo esc_attr( $plugin_file ); ?>"<?php selected( (string) $selected_source, (string) $plugin_file ); ?>><?php echo esc_html( $plugin_name ); ?></option>
+							<option value=""><?php echo esc_html__( 'Select a plugin or a theme', 'i18nly' ); ?></option>
+							<?php foreach ( $this->group_sources( $plugin_options ) as $group_label => $group_options ) : ?>
+								<?php if ( ! empty( $group_options ) ) : ?>
+									<optgroup label="<?php echo esc_attr( $group_label ); ?>">
+										<?php foreach ( $group_options as $plugin_file => $plugin_name ) : ?>
+											<option value="<?php echo esc_attr( $plugin_file ); ?>"<?php selected( (string) $selected_source, (string) $plugin_file ); ?>><?php echo esc_html( $plugin_name ); ?></option>
+										<?php endforeach; ?>
+									</optgroup>
+								<?php endif; ?>
 							<?php endforeach; ?>
 						</select>
 					</td>
@@ -60,7 +88,7 @@ class TranslationMetaBoxRenderer {
 			</tbody>
 		</table>
 		<?php if ( $is_locked ) : ?>
-			<p class="description"><?php echo esc_html__( 'Plugin and target language are locked after creation.', 'i18nly' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Plugin or theme and target language are locked after creation.', 'i18nly' ); ?></p>
 		<?php endif; ?>
 
 		<?php if ( $is_locked ) : ?>

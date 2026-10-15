@@ -17,49 +17,106 @@ defined( 'ABSPATH' ) || exit;
  */
 class PluginMetadataProvider {
 	/**
-	 * Returns installed plugins as options for selector.
+	 * Returns installed plugins and themes as options for selector, indexed by source identifier.
 	 *
 	 * @return array<string, string>
 	 */
 	public function get_plugin_options() {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
+		$groups = $this->get_source_groups();
 
-		$plugins = get_plugins();
-		$options = array();
-
-		foreach ( $plugins as $plugin_file => $plugin_data ) {
-			if ( empty( $plugin_data['Name'] ) ) {
-				continue;
-			}
-
-			$options[ $plugin_file ] = (string) $plugin_data['Name'];
-		}
-
-		asort( $options );
-
-		return $options;
+		return $groups['plugins'] + $groups['themes'];
 	}
 
 	/**
-	 * Returns source plugin metadata from installed plugins list.
+	 * Returns the installed plugins and themes, in two groups of options indexed by source identifier.
 	 *
-	 * @param string $source_slug Source slug.
+	 * @return array{plugins: array<string, string>, themes: array<string, string>}
+	 */
+	public function get_source_groups() {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugins = array();
+
+		foreach ( get_plugins() as $plugin_file => $plugin_data ) {
+			if ( ! empty( $plugin_data['Name'] ) ) {
+				$plugins[ SourceReference::plugin( $plugin_file )->get_identifier() ] = (string) $plugin_data['Name'];
+			}
+		}
+
+		$themes = array();
+
+		if ( function_exists( 'wp_get_themes' ) ) {
+			foreach ( wp_get_themes() as $stylesheet => $theme ) {
+				$name = (string) $theme->get( 'Name' );
+
+				if ( '' !== $name ) {
+					$themes[ SourceReference::theme( $stylesheet )->get_identifier() ] = $name;
+				}
+			}
+		}
+
+		asort( $plugins );
+		asort( $themes );
+
+		return array(
+			'plugins' => $plugins,
+			'themes'  => $themes,
+		);
+	}
+
+	/**
+	 * Returns the header data of a plugin or of a theme, with the keys of get_plugins().
+	 *
+	 * @param string $source_slug Source identifier.
 	 * @return array<string, string>
 	 */
 	public function get_plugin_data( $source_slug ) {
+		$source = SourceReference::from_identifier( $source_slug );
+
+		if ( $source->is_theme() ) {
+			return $this->get_theme_data( $source->get_key() );
+		}
+
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
 		$plugins = get_plugins();
 
-		if ( isset( $plugins[ $source_slug ] ) && is_array( $plugins[ $source_slug ] ) ) {
-			return array_map( 'strval', $plugins[ $source_slug ] );
+		if ( isset( $plugins[ $source->get_key() ] ) && is_array( $plugins[ $source->get_key() ] ) ) {
+			return array_map( 'strval', $plugins[ $source->get_key() ] );
 		}
 
 		return array();
+	}
+
+	/**
+	 * Returns the header data of a theme, with the keys of get_plugins() (the theme URI is the "PluginURI").
+	 *
+	 * @param string $stylesheet Theme folder name.
+	 * @return array<string, string>
+	 */
+	private function get_theme_data( $stylesheet ) {
+		if ( ! function_exists( 'wp_get_theme' ) ) {
+			return array();
+		}
+
+		$theme = wp_get_theme( $stylesheet );
+
+		if ( ! is_object( $theme ) || ! $theme->exists() ) {
+			return array();
+		}
+
+		return array(
+			'Name'       => (string) $theme->get( 'Name' ),
+			'Version'    => (string) $theme->get( 'Version' ),
+			'TextDomain' => (string) $theme->get( 'TextDomain' ),
+			'DomainPath' => (string) $theme->get( 'DomainPath' ),
+			'PluginURI'  => (string) $theme->get( 'ThemeURI' ),
+			'AuthorURI'  => (string) $theme->get( 'AuthorURI' ),
+		);
 	}
 
 	/**
@@ -69,7 +126,7 @@ class PluginMetadataProvider {
 	 * @return string
 	 */
 	public function infer_text_domain( $source_slug ) {
-		$parts = explode( '/', trim( (string) $source_slug, '/\\' ) );
+		$parts = explode( '/', trim( SourceReference::from_identifier( $source_slug )->get_key(), '/\\' ) );
 
 		if ( empty( $parts[0] ) ) {
 			return 'i18nly';

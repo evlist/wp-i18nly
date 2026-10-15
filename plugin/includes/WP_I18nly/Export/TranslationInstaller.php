@@ -13,7 +13,7 @@ namespace WP_I18nly\Export;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Writes the PO and MO files of a translation into wp-content/languages/plugins/, where WordPress
+ * Writes the PO and MO files of a translation into wp-content/languages/plugins/ or themes/, where WordPress
  * looks for the translations of a plugin before its own languages directory.
  *
  * Files are written through the WordPress filesystem API. A file that was not written by I18nly is not
@@ -63,11 +63,12 @@ class TranslationInstaller {
 	 * @param string                $mo_contents MO file contents.
 	 * @param string                $po_contents PO file contents.
 	 * @param array<string, string> $extra_files Other files (the JSON files of the scripts), contents indexed by file name.
+	 * @param string                $subdirectory "plugins" or "themes": where WordPress looks for the translations of the source.
 	 * @return string One of the class constants.
 	 */
-	public function install( $text_domain, $locale, $mo_contents, $po_contents, array $extra_files = array() ) {
+	public function install( $text_domain, $locale, $mo_contents, $po_contents, array $extra_files = array(), $subdirectory = 'plugins' ) {
 		$filesystem = $this->get_filesystem();
-		$directory  = $this->get_directory();
+		$directory  = $this->get_directory( $subdirectory );
 
 		if ( null === $filesystem || '' === $directory ) {
 			return self::FILESYSTEM_ERROR;
@@ -120,14 +121,15 @@ class TranslationInstaller {
 	/**
 	 * Returns the target directory.
 	 *
+	 * @param string $subdirectory "plugins" or "themes".
 	 * @return string
 	 */
-	private function get_directory() {
+	private function get_directory( $subdirectory ) {
 		if ( '' !== $this->directory ) {
 			return $this->directory;
 		}
 
-		return defined( 'WP_LANG_DIR' ) ? rtrim( (string) WP_LANG_DIR, '/\\' ) . '/plugins' : '';
+		return defined( 'WP_LANG_DIR' ) ? rtrim( (string) WP_LANG_DIR, '/\\' ) . '/' . ( 'themes' === $subdirectory ? 'themes' : 'plugins' ) : '';
 	}
 
 	/**
